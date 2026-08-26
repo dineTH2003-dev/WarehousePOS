@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>WarehousePOS.Domain</RootNamespace>
+    <AssemblyName>WarehousePOS.Domain</AssemblyName>
+    <!-- Domain has NO external dependencies — pure C# only -->
+  </PropertyGroup>
+
+</Project>
