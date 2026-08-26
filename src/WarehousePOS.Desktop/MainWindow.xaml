@@ -1,0 +1,35 @@
+<Window x:Class="WarehousePOS.Desktop.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Warehouse POS"
+        Height="768"
+        Width="1280"
+        MinHeight="600"
+        MinWidth="1024"
+        WindowStartupLocation="CenterScreen"
+        Background="{StaticResource BackgroundBrush}">
+
+    <Grid>
+        <!-- Shell layout: sidebar navigation + main content area -->
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="220" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <!-- Sidebar placeholder -->
+        <Border Grid.Column="0"
+                Background="{StaticResource SidebarBrush}">
+            <TextBlock Text="Warehouse POS"
+                       Foreground="White"
+                       FontSize="18"
+                       FontWeight="Bold"
+                       Margin="16,24,16,0"
+                       VerticalAlignment="Top" />
+        </Border>
+
+        <!-- Main content area placeholder -->
+        <Frame Grid.Column="1"
+               x:Name="MainFrame"
+               NavigationUIVisibility="Hidden" />
+    </Grid>
+</Window>

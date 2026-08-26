@@ -1,0 +1,50 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- ============================================================
+         COLOR PALETTE
+         ============================================================ -->
+
+    <!-- Primary brand color -->
+    <Color x:Key="PrimaryColor">#1A56DB</Color>
+    <Color x:Key="PrimaryDarkColor">#1E429F</Color>
+    <Color x:Key="PrimaryLightColor">#76A9FA</Color>
+
+    <!-- Success / danger / warning -->
+    <Color x:Key="SuccessColor">#0E9F6E</Color>
+    <Color x:Key="DangerColor">#E02424</Color>
+    <Color x:Key="WarningColor">#D97706</Color>
+
+    <!-- Backgrounds -->
+    <Color x:Key="BackgroundColor">#F9FAFB</Color>
+    <Color x:Key="SidebarColor">#1F2937</Color>
+    <Color x:Key="CardColor">#FFFFFF</Color>
+    <Color x:Key="BorderColor">#E5E7EB</Color>
+
+    <!-- Text -->
+    <Color x:Key="TextPrimaryColor">#111827</Color>
+    <Color x:Key="TextSecondaryColor">#6B7280</Color>
+    <Color x:Key="TextOnDarkColor">#F9FAFB</Color>
+
+    <!-- ============================================================
+         BRUSHES
+         ============================================================ -->
+
+    <SolidColorBrush x:Key="PrimaryBrush"        Color="{StaticResource PrimaryColor}" />
+    <SolidColorBrush x:Key="PrimaryDarkBrush"    Color="{StaticResource PrimaryDarkColor}" />
+    <SolidColorBrush x:Key="PrimaryLightBrush"   Color="{StaticResource PrimaryLightColor}" />
+
+    <SolidColorBrush x:Key="SuccessBrush"        Color="{StaticResource SuccessColor}" />
+    <SolidColorBrush x:Key="DangerBrush"         Color="{StaticResource DangerColor}" />
+    <SolidColorBrush x:Key="WarningBrush"        Color="{StaticResource WarningColor}" />
+
+    <SolidColorBrush x:Key="BackgroundBrush"     Color="{StaticResource BackgroundColor}" />
+    <SolidColorBrush x:Key="SidebarBrush"        Color="{StaticResource SidebarColor}" />
+    <SolidColorBrush x:Key="CardBrush"           Color="{StaticResource CardColor}" />
+    <SolidColorBrush x:Key="BorderBrush"         Color="{StaticResource BorderColor}" />
+
+    <SolidColorBrush x:Key="TextPrimaryBrush"    Color="{StaticResource TextPrimaryColor}" />
+    <SolidColorBrush x:Key="TextSecondaryBrush"  Color="{StaticResource TextSecondaryColor}" />
+    <SolidColorBrush x:Key="TextOnDarkBrush"     Color="{StaticResource TextOnDarkColor}" />
+
+</ResourceDictionary>
