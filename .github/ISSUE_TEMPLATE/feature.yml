@@ -1,0 +1,65 @@
+name: Feature Request
+description: New feature or user story
+title: "[EPIC-XX] "
+labels: ["feature"]
+body:
+  - type: dropdown
+    id: epic
+    attributes:
+      label: Epic
+      options:
+        - "EPIC-01 Project Foundation"
+        - "EPIC-02 Authentication & Authorization"
+        - "EPIC-03 Product & Catalog"
+        - "EPIC-04 Suppliers"
+        - "EPIC-05 Purchasing"
+        - "EPIC-06 Inventory"
+        - "EPIC-07 POS & Sales"
+        - "EPIC-08 Payments & Discounts"
+        - "EPIC-09 Billing & Printing"
+        - "EPIC-10 Employees & Payroll"
+        - "EPIC-11 Expenses"
+        - "EPIC-12 Reports & Analytics"
+        - "EPIC-13 Audit & Backup"
+        - "EPIC-14 Testing & Deployment"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: developer
+    attributes:
+      label: Assigned Developer
+      options:
+        - "Dev 1 — Products / Suppliers / Inventory"
+        - "Dev 2 — POS / Sales / Billing"
+        - "Dev 3 — Administration / Reporting"
+        - "All"
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What needs to be built?
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance_criteria
+    attributes:
+      label: Acceptance Criteria
+      description: Define done. Use checkboxes.
+      placeholder: |
+        - [ ] ...
+        - [ ] ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: architecture_layer
+    attributes:
+      label: Affected Layers
+      description: Which layers are touched? (Domain / Application / Infrastructure / Desktop)
+    validations:
+      required: false

@@ -1,0 +1,52 @@
+name: Bug Report
+description: Report a bug or unexpected behaviour
+title: "[BUG] "
+labels: ["bug"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What went wrong?
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      placeholder: |
+        1. Go to ...
+        2. Click ...
+        3. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behaviour
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behaviour
+    validations:
+      required: true
+
+  - type: dropdown
+    id: layer
+    attributes:
+      label: Suspected Layer
+      options:
+        - Domain
+        - Application
+        - Infrastructure
+        - Desktop / UI
+        - Database / Migration
+        - Printing
+        - Unknown
+    validations:
+      required: false
