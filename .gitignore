@@ -1,0 +1,79 @@
+## .NET / WPF / Visual Studio gitignore
+
+# Build output
+[Bb]in/
+[Oo]bj/
+[Oo]ut/
+[Ll]og/
+[Ll]ogs/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Visual Studio Code
+.vscode/
+!.vscode/extensions.json
+
+# Rider
+.idea/
+*.sln.iml
+
+# NuGet
+*.nupkg
+*.snupkg
+.nuget/
+packages/
+nuget.config
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# Roslyn analyzers
+*.sarif
+
+# Test results
+TestResults/
+[Tt]est[Rr]esult*/
+coverage/
+*.coverage
+*.coveragexml
+*.cobertura.xml
+
+# Publish output
+**/publish/
+**/PublishProfiles/
+
+# SQLite databases (never commit production DB)
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# Application data directories
+Backups/
+Data/
+
+# Rider / ReSharper
+_ReSharper*/
+*.ReSharper
+*.resharper
+
+# dotnet tools
+.config/dotnet-tools.json
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Secrets / config overrides
+appsettings.*.json
+!appsettings.json
+secrets.json
+*.pfx
+*.p12
