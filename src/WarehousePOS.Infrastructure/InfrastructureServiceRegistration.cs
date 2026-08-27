@@ -28,6 +28,8 @@ public static class InfrastructureServiceRegistration
         services.AddScoped<ISupplierRepository, SupplierRepository>();
         services.AddScoped<IPurchaseRepository, PurchaseRepository>();
         services.AddScoped<IInventoryMovementRepository, InventoryMovementRepository>();
+        services.AddScoped<ICustomerRepository, CustomerRepository>();
+        services.AddScoped<ISaleRepository, SaleRepository>();
 
         return services;
     }

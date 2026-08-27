@@ -20,6 +20,9 @@ public sealed class AppDbContext : DbContext
     public DbSet<Purchase>          Purchases          { get; set; }
     public DbSet<PurchaseItem>      PurchaseItems      { get; set; }
     public DbSet<InventoryMovement> InventoryMovements { get; set; }
+    public DbSet<Customer>          Customers          { get; set; }
+    public DbSet<Sale>              Sales              { get; set; }
+    public DbSet<SaleItem>          SaleItems          { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
