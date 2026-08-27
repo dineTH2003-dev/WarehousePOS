@@ -238,7 +238,7 @@ public sealed class PosViewModel : ViewModelBase
         IsBusy = true;
         try
         {
-            var userId = _sessionContext.CurrentUser?.Id ?? 1;
+            var userId = _sessionContext.CurrentUser?.UserId ?? 1;
 
             var items = _cartItems.Select(i => new CreateSaleItemRequest(
                 i.Product.Id, i.Quantity, i.UnitPrice, i.Discount)).ToList();

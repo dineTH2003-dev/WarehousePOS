@@ -23,7 +23,7 @@ public partial class ProductListView : Page
     private async void OnEditRequested(ProductDto? dto)
     {
         await _formVm.LoadAsync(dto);
-        var dialog = new ProductFormView(_formVm) { Owner = Window.GetWindow(this) };
+        var dialog = new ProductFormView(_formVm) { Owner = System.Windows.Window.GetWindow(this) };
         if (dialog.ShowDialog() == true)
             await _vm.LoadAsync();
     }

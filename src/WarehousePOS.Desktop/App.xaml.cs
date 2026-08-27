@@ -13,24 +13,17 @@ using WarehousePOS.Infrastructure.Persistence;
 
 namespace WarehousePOS.Desktop;
 
-public partial class App : Application
+public partial class App : System.Windows.Application
 {
     private IHost? _host;
 
     protected override async void OnStartup(StartupEventArgs e)
     {
         // ── Data directories ─────────────────────────────────────
-        string appDataPath  = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
-            "WarehousePOS");
+        DirectoryManager.EnsureDirectoriesExist();
 
-        string databasePath = Path.Combine(appDataPath, "Data", "WarehousePOS.db");
-        string logsPath     = Path.Combine(appDataPath, "Logs", "application.log");
-        string backupsPath  = Path.Combine(appDataPath, "Backups");
-
-        Directory.CreateDirectory(Path.GetDirectoryName(databasePath)!);
-        Directory.CreateDirectory(Path.GetDirectoryName(logsPath)!);
-        Directory.CreateDirectory(backupsPath);
+        string databasePath = DirectoryManager.GetDatabasePath();
+        string logsPath     = DirectoryManager.GetLogFilePath();
 
         // ── Serilog ───────────────────────────────────────────────
         Log.Logger = new LoggerConfiguration()
@@ -68,10 +61,7 @@ public partial class App : Application
         using (var scope = _host.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            await db.Database.MigrateAsync();
-
-            var hasher = scope.ServiceProvider.GetRequiredService<WarehousePOS.Application.Common.IPasswordHasher>();
-            await DatabaseSeeder.SeedAsync(db, hasher);
+            await DbInitializer.InitializeAsync(db);
         }
 
         // ── Show Login ────────────────────────────────────────────

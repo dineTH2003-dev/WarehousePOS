@@ -7,8 +7,12 @@
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <OutputType>WinExe</OutputType>
     <UseWPF>true</UseWPF>
-    <ApplicationIcon>Resources\Icons\app.ico</ApplicationIcon>
     <StartupObject>WarehousePOS.Desktop.App</StartupObject>
+    <!-- Publishing Settings -->
+    <PublishSingleFile>true</PublishSingleFile>
+    <SelfContained>true</SelfContained>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
   </PropertyGroup>
 
   <ItemGroup>

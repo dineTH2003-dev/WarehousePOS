@@ -20,7 +20,7 @@
                 Margin="40,40,40,20"
                 VerticalAlignment="Center">
 
-            <StackPanel Spacing="20">
+            <StackPanel>
 
                 <!-- Logo / title -->
                 <StackPanel HorizontalAlignment="Center"
@@ -39,7 +39,7 @@
                 </StackPanel>
 
                 <!-- Username -->
-                <StackPanel>
+                <StackPanel Margin="0,0,0,12">
                     <TextBlock Text="Username"
                                Style="{StaticResource LabelText}"
                                Margin="0,0,0,6"/>
@@ -50,7 +50,7 @@
                 </StackPanel>
 
                 <!-- Password -->
-                <StackPanel>
+                <StackPanel Margin="0,0,0,16">
                     <TextBlock Text="Password"
                                Style="{StaticResource LabelText}"
                                Margin="0,0,0,6"/>

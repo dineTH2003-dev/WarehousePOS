@@ -24,7 +24,7 @@ public partial class CustomerListView : Page
     private async void OnEditRequested(CustomerDto? dto)
     {
         _formVm.Load(dto);
-        var dialog = new CustomerFormView(_formVm) { Owner = Window.GetWindow(this) };
+        var dialog = new CustomerFormView(_formVm) { Owner = System.Windows.Window.GetWindow(this) };
         if (dialog.ShowDialog() == true) await _vm.LoadAsync();
     }
 }

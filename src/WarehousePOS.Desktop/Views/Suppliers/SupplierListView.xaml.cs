@@ -23,7 +23,7 @@ public partial class SupplierListView : Page
     private async void OnEditRequested(SupplierDto? dto)
     {
         _formVm.Load(dto);
-        var dialog = new SupplierFormView(_formVm) { Owner = Window.GetWindow(this) };
+        var dialog = new SupplierFormView(_formVm) { Owner = System.Windows.Window.GetWindow(this) };
         if (dialog.ShowDialog() == true) await _vm.LoadAsync();
     }
 }

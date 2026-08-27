@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using WarehousePOS.Application.Authentication;
 using WarehousePOS.Application.Expenses;
+using WarehousePOS.Desktop.Services;
 using WarehousePOS.Desktop.ViewModels;
 
 namespace WarehousePOS.Desktop.ViewModels.Expenses;
@@ -8,7 +9,7 @@ namespace WarehousePOS.Desktop.ViewModels.Expenses;
 public sealed class ExpenseListViewModel : ViewModelBase
 {
     private readonly IExpenseService _expenseService;
-    private readonly ISessionContext _sessionContext;
+    private readonly SessionContext _sessionContext;
 
     private ObservableCollection<ExpenseDto> _expenses = [];
     private ObservableCollection<ExpenseCategoryDto> _categories = [];
@@ -65,7 +66,7 @@ public sealed class ExpenseListViewModel : ViewModelBase
     public RelayCommand AddExpenseCommand { get; }
     public RelayCommand RefreshCommand { get; }
 
-    public ExpenseListViewModel(IExpenseService expenseService, ISessionContext sessionContext)
+    public ExpenseListViewModel(IExpenseService expenseService, SessionContext sessionContext)
     {
         _expenseService = expenseService;
         _sessionContext = sessionContext;
@@ -106,7 +107,7 @@ public sealed class ExpenseListViewModel : ViewModelBase
         try
         {
             var req = new CreateExpenseRequest(
-                SelectedCategoryId, amount, Description, _sessionContext.CurrentUser?.Id ?? 1, DateTime.UtcNow, ReferenceNo);
+                SelectedCategoryId, amount, Description, _sessionContext.CurrentUser?.UserId ?? 1, DateTime.UtcNow, ReferenceNo);
 
             await _expenseService.CreateAsync(req);
 
