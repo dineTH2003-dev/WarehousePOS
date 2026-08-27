@@ -1,0 +1,70 @@
+<Page x:Class="WarehousePOS.Desktop.Views.Expenses.ExpenseListView"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      Title="Operational Expenses"
+      Background="{StaticResource BackgroundBrush}">
+
+    <Grid Margin="24">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="24"/>
+            <ColumnDefinition Width="340"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- Left Column: Expenses List & Total Summary Card -->
+        <Grid Grid.Column="0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <!-- Header -->
+            <TextBlock Grid.Row="0" Text="Warehouse Operational Expenses" Style="{StaticResource H2}" Margin="0,0,0,16"/>
+
+            <!-- Total Expenses Summary Card -->
+            <Border Grid.Row="1" Style="{StaticResource Card}" Margin="0,0,0,16">
+                <Grid>
+                    <TextBlock Text="TOTAL RECORDED EXPENSES:" Style="{StaticResource H3}" VerticalAlignment="Center"/>
+                    <TextBlock Text="{Binding TotalExpensesSum, StringFormat=Rs. {0:N2}}" HorizontalAlignment="Right" FontSize="20" FontWeight="Bold" Foreground="{StaticResource DangerBrush}"/>
+                </Grid>
+            </Border>
+
+            <!-- DataGrid -->
+            <DataGrid Grid.Row="2" ItemsSource="{Binding Expenses}" AutoGenerateColumns="False" IsReadOnly="True">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Date" Binding="{Binding ExpenseDate, Converter={StaticResource UtcToLocalDateTimeConverter}}" Width="150"/>
+                    <DataGridTextColumn Header="Category" Binding="{Binding CategoryName}" Width="140"/>
+                    <DataGridTextColumn Header="Description" Binding="{Binding Description}" Width="*"/>
+                    <DataGridTextColumn Header="Ref #" Binding="{Binding ReferenceNo}" Width="100"/>
+                    <DataGridTextColumn Header="Amount" Binding="{Binding Amount, StringFormat=Rs. {0:N2}}" Width="120"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Grid>
+
+        <!-- Right Column: Record New Expense Form Card -->
+        <Border Grid.Column="2" Style="{StaticResource Card}" VerticalAlignment="Top">
+            <StackPanel>
+                <TextBlock Text="Record New Expense" Style="{StaticResource H3}" Margin="0,0,0,16"/>
+
+                <TextBlock Text="{Binding ErrorMessage}" Foreground="{StaticResource DangerBrush}" Margin="0,0,0,10"
+                           Visibility="{Binding ErrorMessage, Converter={StaticResource NullToVisibilityConverter}}"/>
+
+                <TextBlock Text="Category" Style="{StaticResource FormLabel}"/>
+                <ComboBox ItemsSource="{Binding Categories}" DisplayMemberPath="Name" SelectedValuePath="Id"
+                          SelectedValue="{Binding SelectedCategoryId}" Height="38" Margin="0,0,0,12"/>
+
+                <TextBlock Text="Amount (Rs.)" Style="{StaticResource FormLabel}"/>
+                <TextBox Text="{Binding AmountText, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource FormTextBox}" Margin="0,0,0,12"/>
+
+                <TextBlock Text="Description" Style="{StaticResource FormLabel}"/>
+                <TextBox Text="{Binding Description, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource FormTextBox}" Margin="0,0,0,12"/>
+
+                <TextBlock Text="Reference / Bill #" Style="{StaticResource FormLabel}"/>
+                <TextBox Text="{Binding ReferenceNo, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource FormTextBox}" Margin="0,0,0,20"/>
+
+                <Button Content="Save Expense Entry" Style="{StaticResource DangerButton}" Command="{Binding AddExpenseCommand}"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</Page>

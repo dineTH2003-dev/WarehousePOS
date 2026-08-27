@@ -1,0 +1,43 @@
+<Page x:Class="WarehousePOS.Desktop.Views.Settings.StoreSettingsView"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      Title="Receipt &amp; Header Settings"
+      Background="{StaticResource BackgroundBrush}">
+
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Text="Receipt Header &amp; Store Configuration" Style="{StaticResource H2}" Margin="0,0,0,20"/>
+
+        <Border Grid.Row="1" Style="{StaticResource Card}" MaxWidth="600" HorizontalAlignment="Left" VerticalAlignment="Top">
+            <StackPanel>
+                <TextBlock Text="Store Information (Prints at top of Receipts)" Style="{StaticResource H3}" Margin="0,0,0,16"/>
+
+                <TextBlock Text="{Binding StatusMessage}" Foreground="{StaticResource SuccessBrush}" FontWeight="SemiBold" Margin="0,0,0,12"
+                           Visibility="{Binding StatusMessage, Converter={StaticResource NullToVisibilityConverter}}"/>
+
+                <TextBlock Text="Store / Business Name" Style="{StaticResource FormLabel}"/>
+                <TextBox Text="{Binding StoreName, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource FormTextBox}" Margin="0,0,0,12"/>
+
+                <TextBlock Text="Store Address" Style="{StaticResource FormLabel}"/>
+                <TextBox Text="{Binding StoreAddress, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource FormTextBox}" Margin="0,0,0,12"/>
+
+                <TextBlock Text="Contact Telephone Numbers" Style="{StaticResource FormLabel}"/>
+                <TextBox Text="{Binding StorePhone, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource FormTextBox}" Margin="0,0,0,12"/>
+
+                <TextBlock Text="VAT / Tax Registration Number" Style="{StaticResource FormLabel}"/>
+                <TextBox Text="{Binding TaxRegNo, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource FormTextBox}" Margin="0,0,0,12"/>
+
+                <Separator Margin="0,10,0,16"/>
+
+                <TextBlock Text="Receipt Footer Message" Style="{StaticResource FormLabel}"/>
+                <TextBox Text="{Binding FooterMessage, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource FormTextBox}" Margin="0,0,0,20"/>
+
+                <Button Content="Save Receipt Settings" Style="{StaticResource PrimaryButton}" Command="{Binding SaveCommand}" HorizontalAlignment="Right"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</Page>
