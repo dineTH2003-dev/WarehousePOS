@@ -32,6 +32,7 @@ public static class InfrastructureServiceRegistration
         services.AddScoped<ISaleRepository, SaleRepository>();
         services.AddScoped<IAuditLogRepository, AuditLogRepository>();
         services.AddScoped<IStoreSettingRepository, StoreSettingRepository>();
+        services.AddScoped<WarehousePOS.Domain.Common.IUnitOfWork, UnitOfWork>();
         services.AddScoped<IExpenseRepository, ExpenseRepository>();
 
         // Printing & Hardware

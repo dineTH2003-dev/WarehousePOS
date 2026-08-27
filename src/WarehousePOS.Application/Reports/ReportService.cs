@@ -1,12 +1,9 @@
-using Microsoft.EntityFrameworkCore;
 using WarehousePOS.Domain.Enums;
 using WarehousePOS.Domain.Interfaces;
-using WarehousePOS.Infrastructure.Persistence;
 
 namespace WarehousePOS.Application.Reports;
 
 public sealed class ReportService(
-    AppDbContext db,
     ISaleRepository saleRepo,
     IProductRepository productRepo,
     ISupplierRepository supplierRepo,
@@ -34,23 +31,8 @@ public sealed class ReportService(
 
     public async Task<IReadOnlyList<FastMovingItemDto>> GetFastMovingItemsAsync(int topCount = 10, CancellationToken ct = default)
     {
-        var query = await db.SaleItems
-            .Include(i => i.Product)
-            .ThenInclude(p => p.Category)
-            .Where(i => i.Product.IsActive)
-            .GroupBy(i => new { i.ProductId, i.Product.Name, i.Product.SKU, CategoryName = i.Product.Category.Name })
-            .Select(g => new FastMovingItemDto(
-                g.Key.ProductId,
-                g.Key.SKU,
-                g.Key.Name,
-                g.Key.CategoryName,
-                g.Sum(x => x.Quantity),
-                g.Sum(x => x.LineTotal)))
-            .OrderByDescending(x => x.QuantitySold)
-            .Take(topCount)
-            .ToListAsync(ct);
-
-        return query;
+        var raw = await saleRepo.GetTopSellingProductsAsync(topCount, ct);
+        return raw.Select(x => new FastMovingItemDto(x.ProductId, x.Sku, x.Name, x.CategoryName, x.QuantitySold, x.TotalSales)).ToList();
     }
 
     public async Task<StockValuationReportDto> GetStockValuationReportAsync(CancellationToken ct = default)
@@ -59,7 +41,7 @@ public sealed class ReportService(
 
         int totalProducts = products.Count;
         int totalQty      = products.Sum(p => p.StockQuantity);
-        decimal costVal   = products.Sum(p => p.StockQuantity * p.StockCost);
+        decimal costVal   = products.Sum(p => p.StockQuantity * p.WholesalePrice);
         decimal retailVal = products.Sum(p => p.StockQuantity * p.RetailPrice);
         decimal margin    = retailVal - costVal;
 

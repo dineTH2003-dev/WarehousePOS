@@ -1,10 +1,9 @@
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using WarehousePOS.Domain.Common;
 using WarehousePOS.Domain.Entities;
 using WarehousePOS.Domain.Enums;
 using WarehousePOS.Domain.Exceptions;
 using WarehousePOS.Domain.Interfaces;
-using WarehousePOS.Infrastructure.Persistence;
 
 namespace WarehousePOS.Application.Purchasing;
 
@@ -13,7 +12,7 @@ public sealed class PurchaseService(
     IProductRepository productRepo,
     ISupplierRepository supplierRepo,
     IInventoryMovementRepository movementRepo,
-    AppDbContext db,
+    IUnitOfWork unitOfWork,
     ILogger<PurchaseService> logger) : IPurchaseService
 {
     public async Task<IReadOnlyList<PurchaseDto>> GetAllAsync(CancellationToken ct = default)
@@ -60,8 +59,7 @@ public sealed class PurchaseService(
         var purchase = await purchaseRepo.GetByIdAsync(purchaseId, ct)
             ?? throw new EntityNotFoundException(nameof(Purchase), purchaseId);
 
-        await using var tx = await db.Database.BeginTransactionAsync(ct);
-        try
+        await unitOfWork.ExecuteInTransactionAsync(async () =>
         {
             purchase.Receive();
 
@@ -83,16 +81,10 @@ public sealed class PurchaseService(
             }
 
             await purchaseRepo.UpdateAsync(purchase, ct);
-            await tx.CommitAsync(ct);
+        }, ct);
 
-            logger.LogInformation("Purchase #{Id} received — {Count} products stocked", purchase.Id, purchase.Items.Count);
-            return Map(purchase);
-        }
-        catch
-        {
-            await tx.RollbackAsync(ct);
-            throw;
-        }
+        logger.LogInformation("Purchase #{Id} received — {Count} products stocked", purchase.Id, purchase.Items.Count);
+        return Map(purchase);
     }
 
     public async Task CancelAsync(int purchaseId, CancellationToken ct = default)

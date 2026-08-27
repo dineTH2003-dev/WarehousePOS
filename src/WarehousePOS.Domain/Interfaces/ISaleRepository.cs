@@ -22,4 +22,5 @@ public interface ISaleRepository
     Task<IReadOnlyList<Sale>> GetByCustomerAsync(int customerId, CancellationToken ct = default);
     Task AddAsync(Sale sale, CancellationToken ct = default);
     Task UpdateAsync(Sale sale, CancellationToken ct = default);
+    Task<IReadOnlyList<(int ProductId, string Sku, string Name, string CategoryName, int QuantitySold, decimal TotalSales)>> GetTopSellingProductsAsync(int topCount = 10, CancellationToken ct = default);
 }

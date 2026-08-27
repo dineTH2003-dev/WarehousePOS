@@ -3,6 +3,8 @@
   <PropertyGroup>
     <RootNamespace>WarehousePOS.Desktop</RootNamespace>
     <AssemblyName>WarehousePOS.Desktop</AssemblyName>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <OutputType>WinExe</OutputType>
     <UseWPF>true</UseWPF>
     <ApplicationIcon>Resources\Icons\app.ico</ApplicationIcon>

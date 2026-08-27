@@ -48,7 +48,7 @@ public sealed class SaleTests
     private static Product CreateTestProduct(int id, string name, decimal retail, decimal wholesale, int stock = 100)
     {
         var category = Category.Create("General");
-        var product = Product.Create(name, $"SKU-{id}", category.Id, retail, wholesale, stockCost: 50, stockQuantity: stock);
+        var product = Product.Create(name, $"SKU-{id}", retail, wholesale, category.Id);
         return product;
     }
 

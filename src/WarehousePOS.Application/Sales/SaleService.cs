@@ -1,10 +1,9 @@
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using WarehousePOS.Domain.Common;
 using WarehousePOS.Domain.Entities;
 using WarehousePOS.Domain.Enums;
 using WarehousePOS.Domain.Exceptions;
 using WarehousePOS.Domain.Interfaces;
-using WarehousePOS.Infrastructure.Persistence;
 
 namespace WarehousePOS.Application.Sales;
 
@@ -13,7 +12,7 @@ public sealed class SaleService(
     IProductRepository productRepo,
     ICustomerRepository customerRepo,
     IInventoryMovementRepository movementRepo,
-    AppDbContext db,
+    IUnitOfWork unitOfWork,
     ILogger<SaleService> logger) : ISaleService
 {
     public async Task<IReadOnlyList<SaleDto>> GetAllAsync(CancellationToken ct = default)
@@ -45,10 +44,10 @@ public sealed class SaleService(
                 ?? throw new EntityNotFoundException(nameof(Customer), req.CustomerId.Value);
         }
 
-        await using var tx = await db.Database.BeginTransactionAsync(ct);
-        try
+        Sale sale = null!;
+        await unitOfWork.ExecuteInTransactionAsync(async () =>
         {
-            var sale = Sale.Create(req.SaleType, req.CreatedByUserId, req.CustomerId, req.Notes);
+            sale = Sale.Create(req.SaleType, req.CreatedByUserId, req.CustomerId, req.Notes);
 
             foreach (var itemReq in req.Items)
             {
@@ -83,17 +82,10 @@ public sealed class SaleService(
             sale.RecordPayment(req.AmountPaid);
 
             await saleRepo.AddAsync(sale, ct);
-            await tx.CommitAsync(ct);
+        }, ct);
 
-            logger.LogInformation("Sale processed successfully: #{SaleId}, Total: {TotalAmount:C2}", sale.Id, sale.TotalAmount);
-            return Map(sale);
-        }
-        catch (Exception ex)
-        {
-            await tx.RollbackAsync(ct);
-            logger.LogError(ex, "Failed to process sale");
-            throw;
-        }
+        logger.LogInformation("Sale processed successfully: #{SaleId}, Total: {TotalAmount:C2}", sale.Id, sale.TotalAmount);
+        return Map(sale);
     }
 
     public async Task CancelSaleAsync(int saleId, CancellationToken ct = default)
@@ -101,8 +93,7 @@ public sealed class SaleService(
         var sale = await saleRepo.GetByIdAsync(saleId, ct)
             ?? throw new EntityNotFoundException(nameof(Sale), saleId);
 
-        await using var tx = await db.Database.BeginTransactionAsync(ct);
-        try
+        await unitOfWork.ExecuteInTransactionAsync(async () =>
         {
             sale.Cancel();
 
@@ -131,16 +122,9 @@ public sealed class SaleService(
             }
 
             await saleRepo.UpdateAsync(sale, ct);
-            await tx.CommitAsync(ct);
+        }, ct);
 
-            logger.LogInformation("Sale #{SaleId} cancelled and stock reverted.", sale.Id);
-        }
-        catch (Exception ex)
-        {
-            await tx.RollbackAsync(ct);
-            logger.LogError(ex, "Failed to cancel sale #{SaleId}", saleId);
-            throw;
-        }
+        logger.LogInformation("Sale #{SaleId} cancelled and stock reverted.", sale.Id);
     }
 
     private static SaleDto Map(Sale s) => new(

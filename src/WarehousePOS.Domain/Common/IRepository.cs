@@ -14,10 +14,8 @@ public interface IRepository<T> where T : AggregateRoot
     Task DeleteAsync(T entity, CancellationToken cancellationToken = default);
 }
 
-/// <summary>
-/// Unit of Work — wraps a database transaction.
-/// </summary>
 public interface IUnitOfWork
 {
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
+    Task ExecuteInTransactionAsync(Func<Task> action, CancellationToken cancellationToken = default);
 }

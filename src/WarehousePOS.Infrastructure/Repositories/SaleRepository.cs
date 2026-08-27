@@ -80,4 +80,27 @@ public sealed class SaleRepository(AppDbContext db) : ISaleRepository
         db.Sales.Update(sale);
         await db.SaveChangesAsync(ct);
     }
+
+    public async Task<IReadOnlyList<(int ProductId, string Sku, string Name, string CategoryName, int QuantitySold, decimal TotalSales)>> GetTopSellingProductsAsync(int topCount = 10, CancellationToken ct = default)
+    {
+        var items = await db.SaleItems
+            .Include(i => i.Product)
+            .ThenInclude(p => p.Category)
+            .Where(i => i.Product.IsActive)
+            .GroupBy(i => new { i.ProductId, i.Product.Name, i.Product.SKU, CategoryName = i.Product.Category.Name })
+            .Select(g => new
+            {
+                g.Key.ProductId,
+                g.Key.SKU,
+                g.Key.Name,
+                g.Key.CategoryName,
+                QuantitySold = g.Sum(x => x.Quantity),
+                TotalSales = g.Sum(x => x.LineTotal)
+            })
+            .OrderByDescending(x => x.QuantitySold)
+            .Take(topCount)
+            .ToListAsync(ct);
+
+        return items.Select(x => (x.ProductId, x.SKU, x.Name, x.CategoryName, x.QuantitySold, x.TotalSales)).ToList();
+    }
 }
