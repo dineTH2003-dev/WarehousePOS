@@ -1,29 +1,28 @@
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using WarehousePOS.Application.Common;
+using WarehousePOS.Domain.Interfaces;
+using WarehousePOS.Infrastructure.Persistence;
+using WarehousePOS.Infrastructure.Repositories;
+using WarehousePOS.Infrastructure.Security;
 
 namespace WarehousePOS.Infrastructure;
 
-/// <summary>
-/// Extension method to register all Infrastructure layer services into the DI container.
-/// Called from WarehousePOS.Desktop during startup.
-/// </summary>
 public static class InfrastructureServiceRegistration
 {
     public static IServiceCollection AddInfrastructureServices(
         this IServiceCollection services,
         string databasePath)
     {
-        // Register EF Core + SQLite
-        // services.AddDbContext<AppDbContext>(options =>
-        //     options.UseSqlite($"Data Source={databasePath}"));
+        // EF Core + SQLite
+        services.AddDbContext<AppDbContext>(options =>
+            options.UseSqlite($"Data Source={databasePath}"));
 
-        // Register repositories
-        // services.AddScoped<IProductRepository, ProductRepository>();
+        // Security
+        services.AddSingleton<IPasswordHasher, BcryptPasswordHasher>();
 
-        // Register printer service
-        // services.AddSingleton<IPrinterService, EpsonPrinterService>();
-
-        // Register backup service
-        // services.AddSingleton<IBackupService, BackupService>();
+        // Repositories
+        services.AddScoped<IUserRepository, UserRepository>();
 
         return services;
     }
