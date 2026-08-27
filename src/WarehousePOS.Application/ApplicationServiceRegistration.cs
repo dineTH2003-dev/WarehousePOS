@@ -2,6 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using WarehousePOS.Application.Authentication;
 using WarehousePOS.Application.Products;
 using WarehousePOS.Application.Purchasing;
+using WarehousePOS.Application.Reports;
 using WarehousePOS.Application.Sales;
 using WarehousePOS.Application.Suppliers;
 
@@ -28,6 +29,9 @@ public static class ApplicationServiceRegistration
         // Sales & Customers
         services.AddScoped<ICustomerService, CustomerService>();
         services.AddScoped<ISaleService, SaleService>();
+
+        // Reports & Analytics
+        services.AddScoped<IReportService, ReportService>();
 
         return services;
     }
