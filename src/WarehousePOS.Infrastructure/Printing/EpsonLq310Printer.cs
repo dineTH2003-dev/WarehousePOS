@@ -76,13 +76,18 @@ public sealed class EpsonLq310Printer(ILogger<EpsonLq310Printer> logger) : IRece
         return Task.CompletedTask;
     }
 
-    private static string FormatReceiptText(SaleDto sale)
+    public static string FormatReceiptText(
+        SaleDto sale,
+        string storeName = StoreName,
+        string storeAddress = StoreAddress,
+        string storePhone = StorePhone,
+        string footerMessage = "Thank you for your business!")
     {
         var sb = new StringBuilder();
         sb.AppendLine("========================================");
-        sb.AppendLine(Center(StoreName, 40));
-        sb.AppendLine(Center(StoreAddress, 40));
-        sb.AppendLine(Center(StorePhone, 40));
+        sb.AppendLine(Center(storeName, 40));
+        sb.AppendLine(Center(storeAddress, 40));
+        sb.AppendLine(Center(storePhone, 40));
         sb.AppendLine("========================================");
         sb.AppendLine($"Receipt #: {sale.Id,-10} Date: {sale.SaleDate.ToLocalTime():yyyy-MM-dd HH:mm}");
         sb.AppendLine($"Customer : {sale.CustomerName,-25}");
@@ -105,7 +110,7 @@ public sealed class EpsonLq310Printer(ILogger<EpsonLq310Printer> logger) : IRece
         sb.AppendLine(string.Format("{0,-28} {1,10:N2}", "Amount Paid:", sale.AmountPaid));
         sb.AppendLine(string.Format("{0,-28} {1,10:N2}", "Change Due:", sale.Change));
         sb.AppendLine("========================================");
-        sb.AppendLine(Center("Thank you for your business!", 40));
+        sb.AppendLine(Center(footerMessage, 40));
         sb.AppendLine(Center("Software by WarehousePOS", 40));
         sb.AppendLine("========================================");
 

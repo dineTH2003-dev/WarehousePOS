@@ -24,6 +24,9 @@ public sealed class AppDbContext : DbContext
     public DbSet<Sale>              Sales              { get; set; }
     public DbSet<SaleItem>          SaleItems          { get; set; }
     public DbSet<AuditLog>          AuditLogs          { get; set; }
+    public DbSet<StoreSetting>      StoreSettings      { get; set; }
+    public DbSet<ExpenseCategory>   ExpenseCategories  { get; set; }
+    public DbSet<Expense>           Expenses           { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

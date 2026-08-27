@@ -31,6 +31,8 @@ public static class InfrastructureServiceRegistration
         services.AddScoped<ICustomerRepository, CustomerRepository>();
         services.AddScoped<ISaleRepository, SaleRepository>();
         services.AddScoped<IAuditLogRepository, AuditLogRepository>();
+        services.AddScoped<IStoreSettingRepository, StoreSettingRepository>();
+        services.AddScoped<IExpenseRepository, ExpenseRepository>();
 
         // Printing & Hardware
         services.AddTransient<Application.Printing.IReceiptPrinter, Printing.EpsonLq310Printer>();
