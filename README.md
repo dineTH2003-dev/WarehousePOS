@@ -1,10 +1,24 @@
 # WarehousePOS
 
-A **single-PC, fully offline Windows desktop** Point of Sale and Warehouse Management System.
+A **single-PC, fully offline Windows desktop** Point of Sale and Warehouse Management System built with .NET 10, WPF, MVVM, and EF Core + SQLite.
 
 ---
 
-## Technology Stack
+## 🌟 Key Features
+
+- **Authentication & Role-Based Access Control**: BCrypt-hashed security with `Admin` and `Worker` roles.
+- **Product & Category Management**: Dynamic pricing (Retail vs. Wholesale), SKU management, and stock reorder tracking.
+- **Supplier Management**: Supplier records with automated payable balance tracking.
+- **Purchase Order System**: Full lifecycle state machine (Draft → Confirmed → Received | Cancelled) with atomic inventory stocking.
+- **Inventory & Movement Tracking**: Immutable stock movement logging (`StockIn`, `StockOut`, `Adjustment`, `PurchaseReceive`, `ReturnIn`).
+- **POS & Checkout System**: Barcode scanning / fast search, retail & wholesale pricing support, cash payment processing, and instant change calculation.
+- **Receipt & PO Printing**: Epson LQ-310 dot-matrix hardware integration via Windows Printing Subsystem (`System.Drawing.Printing`).
+- **Reports & Executive Analytics**: Daily sales revenue, top 10 fast-moving products, inventory valuation, and supplier balance reports.
+- **Backup & Audit Trail**: Automatic SQLite database backup to `C:\ProgramData\WarehousePOS\Backups\` and security action logging (`AuditLog`).
+
+---
+
+## 🛠️ Technology Stack
 
 | Component         | Technology                        |
 |-------------------|-----------------------------------|
@@ -15,16 +29,13 @@ A **single-PC, fully offline Windows desktop** Point of Sale and Warehouse Manag
 | Architecture      | Clean Architecture — Modular Monolith |
 | ORM               | Entity Framework Core             |
 | Database          | SQLite                            |
-| Printer           | Epson LQ-310 (Windows printing)   |
-| Barcode           | USB barcode scanner               |
-| Authentication    | Local, role-based                 |
-| Internet          | ❌ Not required                   |
-| ASP.NET Core      | ❌ Not used                       |
-| Cloud             | ❌ Not used                       |
+| Hardware Printer  | Epson LQ-310 (Windows Printing)   |
+| Security          | BCrypt Password Hashing           |
+| Logging           | Serilog structured logging        |
 
 ---
 
-## Architecture
+## 🏛️ Architecture
 
 ```
                     SINGLE WINDOWS PC
@@ -46,42 +57,40 @@ A **single-PC, fully offline Windows desktop** Point of Sale and Warehouse Manag
                    SQLite Printer Backup
 ```
 
+### Clean Architecture Dependency Rules
+```
+Domain          → no dependencies (pure C#)
+Application     → depends only on Domain
+Infrastructure  → implements Application/Domain abstractions
+Desktop         → depends on Application and Infrastructure through DI
+```
+
 ---
 
-## Project Structure
+## 📂 Project Structure
 
 ```
 WarehousePOS/
 ├── src/
-│   ├── WarehousePOS.Domain/          Pure business logic
-│   ├── WarehousePOS.Application/     Use-cases and service interfaces
-│   ├── WarehousePOS.Infrastructure/  EF Core, SQLite, Printer, Backup, Logging
-│   └── WarehousePOS.Desktop/         WPF UI with MVVM
+│   ├── WarehousePOS.Domain/          Pure business logic & aggregate roots
+│   ├── WarehousePOS.Application/     Use-cases, services, and DTOs
+│   ├── WarehousePOS.Infrastructure/  EF Core, SQLite, Printing, Backup, Logging
+│   └── WarehousePOS.Desktop/         WPF UI with MVVM & DI Root
 │
 ├── tests/
-│   ├── WarehousePOS.Domain.Tests/
-│   ├── WarehousePOS.Application.Tests/
-│   ├── WarehousePOS.Infrastructure.Tests/
-│   └── WarehousePOS.IntegrationTests/
+│   ├── WarehousePOS.Domain.Tests/    Domain entity unit tests
+│   ├── WarehousePOS.Application.Tests/ Use-case unit tests with mocks
+│   ├── WarehousePOS.Infrastructure.Tests/ EF Core integration tests
+│   └── WarehousePOS.IntegrationTests/ End-to-end flow tests
 │
-├── docs/
-│   ├── architecture/
-│   ├── database/
-│   └── decisions/        Architecture Decision Records (ADRs)
-│
-├── database/
-│   └── seed/
-│
-├── AGENTS.md             AI assistant instruction file
-├── CONTRIBUTING.md
-├── Directory.Build.props
-├── Directory.Packages.props
+├── AGENTS.md                         Development rules & constraints
+├── Directory.Build.props             TreatWarningsAsErrors = true
 └── WarehousePOS.sln
 ```
 
 ---
 
-## Developer Setup (Windows)
+## 💻 Developer Setup (Windows)
 
 ### Prerequisites
 
@@ -90,77 +99,30 @@ WarehousePOS/
 - Visual Studio 2022 (Community or higher) with **".NET desktop development"** workload
 - Git
 
-### Clone and build
+### Building & Running
 
 ```bash
-git clone https://github.com/your-org/WarehousePOS.git
+# Clone repository
+git clone https://github.com/dineTH2003-dev/WarehousePOS.git
 cd WarehousePOS
-dotnet restore
+
+# Build solution (zero warnings allowed)
 dotnet build
-```
 
-### Run tests
-
-```bash
+# Run unit tests
 dotnet test
 ```
 
-### Run the application
-
-Open `WarehousePOS.sln` in Visual Studio 2022, set `WarehousePOS.Desktop` as the startup project, and press F5.
-
-### First-time database setup
-
-On first launch, the application will automatically:
-1. Create the data directory at `C:\ProgramData\WarehousePOS\Data\`
-2. Apply EF Core migrations to create `WarehousePOS.db`
-
----
-
-## Database Location (Production)
-
+### Local Database Directory
+On first launch, the application automatically initializes the local SQLite database at:
 ```
-C:\ProgramData\WarehousePOS\
-├── Data\
-│   └── WarehousePOS.db
-├── Backups\
-└── Logs\
-    └── application.log
+C:\ProgramData\WarehousePOS\Data\WarehousePOS.db
 ```
-
----
-
-## Team
-
-| Developer | Area                                                |
-|-----------|-----------------------------------------------------|
-| Dev 1     | Products, Categories, Suppliers, Purchasing, Inventory |
-| Dev 2     | POS, Sales, Customers, Payments, Invoices, Printing |
-| Dev 3     | Auth, Users, Employees, Reports, Backup, Audit      |
-
----
-
-## Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md).
-
----
-
-## Epics
-
-| Epic    | Description                 |
-|---------|-----------------------------|
-| EPIC-01 | Project Foundation          |
-| EPIC-02 | Authentication              |
-| EPIC-03 | Product & Catalog           |
-| EPIC-04 | Suppliers                   |
-| EPIC-05 | Purchasing                  |
-| EPIC-06 | Inventory                   |
-| EPIC-07 | POS & Sales                 |
-| EPIC-08 | Payments & Discounts        |
-| EPIC-09 | Billing & Printing          |
-| EPIC-10 | Employees & Payroll         |
-| EPIC-11 | Expenses                    |
-| EPIC-12 | Reports & Analytics         |
-| EPIC-13 | Audit & Backup              |
-| EPIC-14 | Testing & Deployment        |
+Backups are automatically saved to:
+```
+C:\ProgramData\WarehousePOS\Backups\
+```
+Logs are saved to:
+```
+C:\ProgramData\WarehousePOS\Logs\application.log
+```
