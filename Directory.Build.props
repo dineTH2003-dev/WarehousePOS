@@ -3,6 +3,7 @@
   <PropertyGroup>
     <!-- All projects target Windows for WPF compatibility -->
     <TargetFramework>net10.0-windows</TargetFramework>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
 
     <!-- Code quality -->
     <Nullable>enable</Nullable>
