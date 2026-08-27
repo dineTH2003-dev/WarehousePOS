@@ -1,0 +1,82 @@
+<Page x:Class="WarehousePOS.Desktop.Views.Products.CategoryManagementView"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      Title="Category Management"
+      Background="{StaticResource BackgroundBrush}">
+
+    <Grid Margin="24">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="320" />
+            <ColumnDefinition Width="16" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <!-- Left: Form panel -->
+        <Border Grid.Column="0" Style="{StaticResource Card}" VerticalAlignment="Top">
+            <StackPanel>
+                <TextBlock Text="{Binding IsEditing, Converter={StaticResource IsEditingToTitleConverter}}"
+                           Style="{StaticResource H3}" Margin="0,0,0,16"/>
+
+                <TextBlock Text="Category Name *" Style="{StaticResource LabelText}" Margin="0,0,0,6"/>
+                <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"
+                         Style="{StaticResource FormTextBox}" Margin="0,0,0,16"/>
+
+                <TextBlock Text="Description" Style="{StaticResource LabelText}" Margin="0,0,0,6"/>
+                <TextBox Text="{Binding Description, UpdateSourceTrigger=PropertyChanged}"
+                         Style="{StaticResource FormTextBox}"
+                         Height="80" AcceptsReturn="True" TextWrapping="Wrap"
+                         Margin="0,0,0,16"/>
+
+                <!-- Error -->
+                <Border Background="#FEF2F2" BorderBrush="{StaticResource DangerBrush}"
+                        BorderThickness="1" CornerRadius="6" Padding="10,8"
+                        Margin="0,0,0,12"
+                        Visibility="{Binding HasError, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <TextBlock Text="{Binding ErrorMessage}" Foreground="{StaticResource DangerBrush}"
+                               FontSize="13" TextWrapping="Wrap"/>
+                </Border>
+
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button Content="Cancel" Style="{StaticResource SecondaryButton}"
+                            Command="{Binding CancelCommand}" Margin="0,0,8,0"/>
+                    <Button Content="Save" Style="{StaticResource PrimaryButton}"
+                            Command="{Binding SaveCommand}"/>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
+        <!-- Right: Category list -->
+        <Border Grid.Column="2" Style="{StaticResource Card}">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <TextBlock Grid.Row="0" Text="All Categories"
+                           Style="{StaticResource H3}" Margin="0,0,0,16"/>
+
+                <DataGrid Grid.Row="1"
+                          ItemsSource="{Binding Categories}"
+                          SelectedItem="{Binding SelectedCategory}">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Name"        Binding="{Binding Name}"         Width="*"/>
+                        <DataGridTextColumn Header="Products"    Binding="{Binding ProductCount}"  Width="80"/>
+                        <DataGridTextColumn Header="Status"      Binding="{Binding IsActive, Converter={StaticResource BoolToStatusConverter}}" Width="80"/>
+                        <DataGridTemplateColumn Header="Action"  Width="100">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Button Content="{Binding IsActive, Converter={StaticResource BoolToToggleTextConverter}}"
+                                            Style="{StaticResource SecondaryButton}"
+                                            Padding="8,4"
+                                            Command="{Binding DataContext.ToggleActiveCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                            CommandParameter="{Binding}"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Grid>
+        </Border>
+    </Grid>
+</Page>

@@ -1,0 +1,97 @@
+<Window x:Class="WarehousePOS.Desktop.Views.Products.ProductFormView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="{Binding Title}"
+        Height="520" Width="500"
+        ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner"
+        Background="{StaticResource BackgroundBrush}">
+
+    <Border Style="{StaticResource Card}" Margin="24">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <TextBlock Grid.Row="0" Text="{Binding Title}" Style="{StaticResource H3}" Margin="0,0,0,20"/>
+
+            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                <StackPanel>
+                    <!-- Name -->
+                    <TextBlock Text="Product Name *" Style="{StaticResource LabelText}" Margin="0,0,0,6"/>
+                    <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"
+                             Style="{StaticResource FormTextBox}" Margin="0,0,0,14"/>
+
+                    <!-- SKU (read-only in edit mode) -->
+                    <TextBlock Text="SKU *" Style="{StaticResource LabelText}" Margin="0,0,0,6"/>
+                    <TextBox Text="{Binding SKU, UpdateSourceTrigger=PropertyChanged}"
+                             Style="{StaticResource FormTextBox}"
+                             IsEnabled="{Binding IsEditMode, Converter={StaticResource InvertBoolConverter}}"
+                             Margin="0,0,0,14"/>
+
+                    <!-- Barcode -->
+                    <TextBlock Text="Barcode" Style="{StaticResource LabelText}" Margin="0,0,0,6"/>
+                    <TextBox Text="{Binding Barcode, UpdateSourceTrigger=PropertyChanged}"
+                             Style="{StaticResource FormTextBox}" Margin="0,0,0,14"/>
+
+                    <!-- Category -->
+                    <TextBlock Text="Category *" Style="{StaticResource LabelText}" Margin="0,0,0,6"/>
+                    <ComboBox ItemsSource="{Binding Categories}"
+                              SelectedValuePath="Id"
+                              DisplayMemberPath="Name"
+                              SelectedValue="{Binding CategoryId}"
+                              Margin="0,0,0,14"/>
+
+                    <!-- Prices -->
+                    <Grid Margin="0,0,0,14">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="12"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="Retail Price (Rs.) *" Style="{StaticResource LabelText}" Margin="0,0,0,6"/>
+                            <TextBox Text="{Binding RetailPriceText, UpdateSourceTrigger=PropertyChanged}"
+                                     Style="{StaticResource FormTextBox}"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="2">
+                            <TextBlock Text="Wholesale Price (Rs.) *" Style="{StaticResource LabelText}" Margin="0,0,0,6"/>
+                            <TextBox Text="{Binding WholesalePriceText, UpdateSourceTrigger=PropertyChanged}"
+                                     Style="{StaticResource FormTextBox}"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- Reorder level -->
+                    <TextBlock Text="Reorder Level" Style="{StaticResource LabelText}" Margin="0,0,0,6"/>
+                    <TextBox Text="{Binding ReorderLevel, UpdateSourceTrigger=PropertyChanged}"
+                             Style="{StaticResource FormTextBox}" Margin="0,0,0,14"/>
+
+                    <!-- Description -->
+                    <TextBlock Text="Description" Style="{StaticResource LabelText}" Margin="0,0,0,6"/>
+                    <TextBox Text="{Binding Description, UpdateSourceTrigger=PropertyChanged}"
+                             Style="{StaticResource FormTextBox}"
+                             Height="72" AcceptsReturn="True" TextWrapping="Wrap"/>
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- Footer -->
+            <StackPanel Grid.Row="2" Margin="0,16,0,0">
+                <Border Background="#FEF2F2" BorderBrush="{StaticResource DangerBrush}"
+                        BorderThickness="1" CornerRadius="6" Padding="10,8" Margin="0,0,0,12"
+                        Visibility="{Binding HasError, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <TextBlock Text="{Binding ErrorMessage}" Foreground="{StaticResource DangerBrush}"
+                               FontSize="13" TextWrapping="Wrap"/>
+                </Border>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button Content="Cancel" Style="{StaticResource SecondaryButton}"
+                            Margin="0,0,8,0" Command="{Binding CancelCommand}"/>
+                    <Button Content="Save Product" Style="{StaticResource PrimaryButton}"
+                            Command="{Binding SaveCommand}"
+                            IsEnabled="{Binding IsBusy, Converter={StaticResource InvertBoolConverter}}"/>
+                </StackPanel>
+            </StackPanel>
+        </Grid>
+    </Border>
+</Window>

@@ -62,3 +62,36 @@ public sealed class UtcToLocalDateTimeConverter : IValueConverter
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) =>
         throw new NotSupportedException();
 }
+
+/// <summary>Converts bool IsActive to "Active" / "Inactive" status label.</summary>
+[ValueConversion(typeof(bool), typeof(string))]
+public sealed class BoolToStatusConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture) =>
+        value is true ? "Active" : "Inactive";
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) =>
+        throw new NotSupportedException();
+}
+
+/// <summary>Converts bool IsActive to toggle button text ("Deactivate" / "Activate").</summary>
+[ValueConversion(typeof(bool), typeof(string))]
+public sealed class BoolToToggleTextConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture) =>
+        value is true ? "Deactivate" : "Activate";
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) =>
+        throw new NotSupportedException();
+}
+
+/// <summary>IsEditing bool → form title string.</summary>
+[ValueConversion(typeof(bool), typeof(string))]
+public sealed class IsEditingToTitleConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture) =>
+        value is true ? "Edit Category" : "New Category";
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) =>
+        throw new NotSupportedException();
+}
