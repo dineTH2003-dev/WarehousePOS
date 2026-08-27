@@ -1,25 +1,26 @@
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 using System.IO;
 using System.Windows;
 using WarehousePOS.Application;
+using WarehousePOS.Desktop.Services;
+using WarehousePOS.Desktop.ViewModels.Auth;
+using WarehousePOS.Desktop.Views.Auth;
 using WarehousePOS.Infrastructure;
+using WarehousePOS.Infrastructure.Persistence;
 
 namespace WarehousePOS.Desktop;
 
-/// <summary>
-/// Application entry point and DI host configuration.
-/// This is the composition root — the only place where Infrastructure is wired up.
-/// </summary>
 public partial class App : Application
 {
     private IHost? _host;
 
     protected override async void OnStartup(StartupEventArgs e)
     {
-        // Resolve data directory (stored outside Program Files)
-        string appDataPath = Path.Combine(
+        // ── Data directories ─────────────────────────────────────
+        string appDataPath  = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
             "WarehousePOS");
 
@@ -27,12 +28,11 @@ public partial class App : Application
         string logsPath     = Path.Combine(appDataPath, "Logs", "application.log");
         string backupsPath  = Path.Combine(appDataPath, "Backups");
 
-        // Ensure directories exist
         Directory.CreateDirectory(Path.GetDirectoryName(databasePath)!);
         Directory.CreateDirectory(Path.GetDirectoryName(logsPath)!);
         Directory.CreateDirectory(backupsPath);
 
-        // Configure Serilog
+        // ── Serilog ───────────────────────────────────────────────
         Log.Logger = new LoggerConfiguration()
             .MinimumLevel.Debug()
             .WriteTo.File(logsPath, rollingInterval: RollingInterval.Day, retainedFileCountLimit: 30)
@@ -41,27 +41,52 @@ public partial class App : Application
 #endif
             .CreateLogger();
 
+        // ── DI Host ───────────────────────────────────────────────
         _host = Host.CreateDefaultBuilder()
             .UseSerilog()
             .ConfigureServices(services =>
             {
-                // Register application layers
                 services.AddApplicationServices();
                 services.AddInfrastructureServices(databasePath);
 
-                // Register ViewModels
-                // services.AddTransient<MainViewModel>();
-                // services.AddTransient<LoginViewModel>();
+                // Desktop services
+                services.AddSingleton<SessionContext>();
+                services.AddSingleton<INavigationService, NavigationService>();
 
-                // Register main window
+                // ViewModels
+                services.AddTransient<LoginViewModel>();
+
+                // Windows
+                services.AddTransient<LoginWindow>();
                 services.AddSingleton<MainWindow>();
             })
             .Build();
 
         await _host.StartAsync();
 
-        // Show the main window via DI
+        // ── Database: migrate + seed ───────────────────────────────
+        using (var scope = _host.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            await db.Database.MigrateAsync();
+
+            var hasher = scope.ServiceProvider.GetRequiredService<WarehousePOS.Application.Common.IPasswordHasher>();
+            await DatabaseSeeder.SeedAsync(db, hasher);
+        }
+
+        // ── Show Login ────────────────────────────────────────────
+        var loginWindow = _host.Services.GetRequiredService<LoginWindow>();
+        bool? loggedIn = loginWindow.ShowDialog();
+
+        if (loggedIn != true)
+        {
+            Shutdown();
+            return;
+        }
+
+        // ── Show Main Window ──────────────────────────────────────
         var mainWindow = _host.Services.GetRequiredService<MainWindow>();
+        MainWindow = mainWindow;
         mainWindow.Show();
 
         base.OnStartup(e);
@@ -74,7 +99,6 @@ public partial class App : Application
             await _host.StopAsync();
             _host.Dispose();
         }
-
         Log.CloseAndFlush();
         base.OnExit(e);
     }
