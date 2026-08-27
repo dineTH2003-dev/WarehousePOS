@@ -95,3 +95,20 @@ public sealed class IsEditingToTitleConverter : IValueConverter
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) =>
         throw new NotSupportedException();
 }
+
+/// <summary>Compares an Enum value with a string parameter for RadioButton checked binding.</summary>
+public sealed class EnumToBoolConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        if (value is null || parameter is null) return false;
+        return value.ToString()!.Equals(parameter.ToString(), StringComparison.OrdinalIgnoreCase);
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        if (value is true && parameter is string paramString)
+            return Enum.Parse(targetType, paramString);
+        return Binding.DoNothing;
+    }
+}

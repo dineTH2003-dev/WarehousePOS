@@ -10,6 +10,7 @@
     <conv:NullToVisibilityConverter  x:Key="NullToVisibilityConverter" />
     <conv:DecimalToCurrencyConverter x:Key="DecimalToCurrencyConverter" />
     <conv:UtcToLocalDateTimeConverter x:Key="UtcToLocalDateTimeConverter" />
+    <conv:EnumToBoolConverter        x:Key="EnumToBoolConverter" />
 
     <!-- ============================================================
          BUTTON STYLES

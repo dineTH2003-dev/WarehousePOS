@@ -1,0 +1,168 @@
+<Page x:Class="WarehousePOS.Desktop.Views.Sales.PosView"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      Title="Point of Sale"
+      Background="{StaticResource BackgroundBrush}">
+
+    <Grid Margin="24">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="5*"/>
+            <ColumnDefinition Width="16"/>
+            <ColumnDefinition Width="4*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- Left Panel: Product Catalog / Search -->
+        <Grid Grid.Column="0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <TextBlock Grid.Row="0" Text="Point of Sale (Cash)" Style="{StaticResource H2}" Margin="0,0,0,16"/>
+
+            <!-- Search box -->
+            <Border Grid.Row="1" Style="{StaticResource Card}" Margin="0,0,0,16" Padding="16,12">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBox Style="{StaticResource FormTextBox}"
+                             Text="{Binding SearchQuery, UpdateSourceTrigger=PropertyChanged}"
+                             ToolTip="Scan barcode or type product name / SKU..."/>
+                </Grid>
+            </Border>
+
+            <!-- Product DataGrid -->
+            <Border Grid.Row="2" Style="{StaticResource Card}" Padding="0">
+                <DataGrid ItemsSource="{Binding SearchResults}">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="SKU" Binding="{Binding SKU}" Width="100"/>
+                        <DataGridTextColumn Header="Product Name" Binding="{Binding Name}" Width="*"/>
+                        <DataGridTextColumn Header="Stock" Binding="{Binding StockQuantity}" Width="60"/>
+                        <DataGridTextColumn Header="Retail" Binding="{Binding RetailPrice, StringFormat=N2}" Width="90"/>
+                        <DataGridTextColumn Header="Wholesale" Binding="{Binding WholesalePrice, StringFormat=N2}" Width="90"/>
+                        <DataGridTemplateColumn Header="Action" Width="100">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Button Content="+ Add"
+                                            Style="{StaticResource PrimaryButton}"
+                                            Padding="10,4"
+                                            Command="{Binding DataContext.AddToCartCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                            CommandParameter="{Binding}"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Border>
+        </Grid>
+
+        <!-- Right Panel: Cart & Payment -->
+        <Border Grid.Column="2" Style="{StaticResource Card}">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!-- Customer & Sale Type controls -->
+                <StackPanel Grid.Row="0" Margin="0,0,0,12">
+                    <TextBlock Text="Customer" Style="{StaticResource LabelText}" Margin="0,0,0,4"/>
+                    <ComboBox ItemsSource="{Binding Customers}"
+                              SelectedValuePath="Id"
+                              DisplayMemberPath="Name"
+                              SelectedItem="{Binding SelectedCustomer}"
+                              Margin="0,0,0,10"/>
+
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <RadioButton Grid.Column="0" Content="Retail Price"
+                                     IsChecked="{Binding SaleType, Converter={StaticResource EnumToBoolConverter}, ConverterParameter=Retail}"
+                                     GroupName="SaleTypeGroup" FontWeight="SemiBold"/>
+                        <RadioButton Grid.Column="1" Content="Wholesale Price"
+                                     IsChecked="{Binding SaleType, Converter={StaticResource EnumToBoolConverter}, ConverterParameter=Wholesale}"
+                                     GroupName="SaleTypeGroup" FontWeight="SemiBold"/>
+                    </Grid>
+                </StackPanel>
+
+                <!-- Cart DataGrid -->
+                <DataGrid Grid.Row="1" ItemsSource="{Binding CartItems}" Margin="0,0,0,12">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Item" Binding="{Binding Product.Name}" Width="*"/>
+                        <DataGridTextColumn Header="Qty" Binding="{Binding Quantity, UpdateSourceTrigger=PropertyChanged}" Width="50"/>
+                        <DataGridTextColumn Header="Price" Binding="{Binding UnitPrice, StringFormat=N2}" Width="75"/>
+                        <DataGridTextColumn Header="Total" Binding="{Binding LineTotal, StringFormat=N2}" Width="85"/>
+                        <DataGridTemplateColumn Width="40">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Button Content="✕" Foreground="{StaticResource DangerBrush}"
+                                            Style="{StaticResource SecondaryButton}" Padding="4,2"
+                                            Command="{Binding DataContext.RemoveFromCartCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                            CommandParameter="{Binding}"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+
+                <!-- Totals & Payment panel -->
+                <StackPanel Grid.Row="2">
+                    <Separator Margin="0,0,0,12"/>
+
+                    <Grid Margin="0,0,0,6">
+                        <TextBlock Text="Sub Total:" FontSize="14" Foreground="{StaticResource TextMutedBrush}"/>
+                        <TextBlock Text="{Binding SubTotal, StringFormat=Rs. {0:N2}}" HorizontalAlignment="Right" FontSize="14" FontWeight="SemiBold"/>
+                    </Grid>
+
+                    <Grid Margin="0,0,0,6">
+                        <TextBlock Text="Discount (Rs.):" FontSize="14" Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center"/>
+                        <TextBox Text="{Binding OverallDiscount, UpdateSourceTrigger=PropertyChanged}" Width="100" HorizontalAlignment="Right" Style="{StaticResource FormTextBox}"/>
+                    </Grid>
+
+                    <Grid Margin="0,0,0,10">
+                        <TextBlock Text="TOTAL:" FontSize="18" FontWeight="Bold" Foreground="{StaticResource PrimaryBrush}"/>
+                        <TextBlock Text="{Binding TotalAmount, StringFormat=Rs. {0:N2}}" HorizontalAlignment="Right" FontSize="20" FontWeight="Bold" Foreground="{StaticResource PrimaryBrush}"/>
+                    </Grid>
+
+                    <Grid Margin="0,0,0,10">
+                        <TextBlock Text="Amount Paid (Rs.):" FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                        <TextBox Text="{Binding AmountPaid, UpdateSourceTrigger=PropertyChanged}" Width="130" HorizontalAlignment="Right" Style="{StaticResource FormTextBox}" FontSize="16" FontWeight="Bold"/>
+                    </Grid>
+
+                    <Grid Margin="0,0,0,14">
+                        <TextBlock Text="Change:" FontSize="16" FontWeight="Bold" Foreground="{StaticResource SuccessBrush}"/>
+                        <TextBlock Text="{Binding ChangeAmount, StringFormat=Rs. {0:N2}}" HorizontalAlignment="Right" FontSize="18" FontWeight="Bold" Foreground="{StaticResource SuccessBrush}"/>
+                    </Grid>
+
+                    <!-- Status messages -->
+                    <Border Background="#FEF2F2" BorderBrush="{StaticResource DangerBrush}"
+                            BorderThickness="1" CornerRadius="6" Padding="10,8" Margin="0,0,0,10"
+                            Visibility="{Binding HasError, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <TextBlock Text="{Binding ErrorMessage}" Foreground="{StaticResource DangerBrush}" FontSize="13" TextWrapping="Wrap"/>
+                    </Border>
+
+                    <Border Background="#F0FDF4" BorderBrush="{StaticResource SuccessBrush}"
+                            BorderThickness="1" CornerRadius="6" Padding="10,8" Margin="0,0,0,10"
+                            Visibility="{Binding HasSuccess, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <TextBlock Text="{Binding SuccessMessage}" Foreground="{StaticResource SuccessBrush}" FontSize="14" FontWeight="Bold" TextWrapping="Wrap"/>
+                    </Border>
+
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="10"/>
+                            <ColumnDefinition Width="2*"/>
+                        </Grid.ColumnDefinitions>
+                        <Button Grid.Column="0" Content="Clear" Style="{StaticResource SecondaryButton}" Command="{Binding ClearCartCommand}"/>
+                        <Button Grid.Column="2" Content="Complete Sale" Style="{StaticResource SuccessButton}" Command="{Binding ProcessSaleCommand}" Height="44" FontSize="16"/>
+                    </Grid>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</Page>
