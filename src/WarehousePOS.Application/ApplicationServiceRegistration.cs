@@ -33,6 +33,10 @@ public static class ApplicationServiceRegistration
         // Reports & Analytics
         services.AddScoped<IReportService, ReportService>();
 
+        // Expenses & Settings
+        services.AddScoped<Expenses.IExpenseService, Expenses.ExpenseService>();
+        services.AddScoped<Settings.IStoreSettingService, Settings.StoreSettingService>();
+
         return services;
     }
 }

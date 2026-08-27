@@ -9,7 +9,8 @@ public sealed class ReportService(
     AppDbContext db,
     ISaleRepository saleRepo,
     IProductRepository productRepo,
-    ISupplierRepository supplierRepo) : IReportService
+    ISupplierRepository supplierRepo,
+    IExpenseRepository expenseRepo) : IReportService
 {
     public async Task<DailySalesReportDto> GetDailySalesReportAsync(DateTime date, CancellationToken ct = default)
     {
@@ -24,7 +25,11 @@ public sealed class ReportService(
         var discounts = activeSales.Sum(s => s.DiscountAmount);
         var netSales  = activeSales.Sum(s => s.TotalAmount);
 
-        return new DailySalesReportDto(date.Date, count, revenue, discounts, netSales);
+        var expenses  = await expenseRepo.GetByDateRangeAsync(start, end, ct);
+        var totalExp  = expenses.Sum(e => e.Amount);
+        var trueProfit= netSales - totalExp;
+
+        return new DailySalesReportDto(date.Date, count, revenue, discounts, netSales, totalExp, trueProfit);
     }
 
     public async Task<IReadOnlyList<FastMovingItemDto>> GetFastMovingItemsAsync(int topCount = 10, CancellationToken ct = default)

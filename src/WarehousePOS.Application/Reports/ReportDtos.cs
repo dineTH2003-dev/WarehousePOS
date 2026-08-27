@@ -5,7 +5,9 @@ public sealed record DailySalesReportDto(
     int TotalSalesCount,
     decimal TotalRevenue,
     decimal TotalDiscounts,
-    decimal NetSales);
+    decimal NetSales,
+    decimal TotalOperationalExpenses,
+    decimal TrueNetProfit);
 
 public sealed record FastMovingItemDto(
     int ProductId,
