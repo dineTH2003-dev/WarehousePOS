@@ -1,0 +1,132 @@
+<Page x:Class="WarehousePOS.Desktop.Views.Reports.ReportsView"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      Title="Reports &amp; Analytics"
+      Background="{StaticResource BackgroundBrush}">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <Grid Margin="24">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Header -->
+            <Grid Grid.Row="0" Margin="0,0,0,20">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="Reports &amp; Executive Analytics" Style="{StaticResource H2}"/>
+                <Button Grid.Column="1" Content="Refresh All Reports" Style="{StaticResource PrimaryButton}" Command="{Binding RefreshCommand}"/>
+            </Grid>
+
+            <!-- Top Row: Daily Sales & Stock Valuation Cards -->
+            <Grid Grid.Row="1" Margin="0,0,0,20">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="16"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Daily Sales Summary Card -->
+                <Border Grid.Column="0" Style="{StaticResource Card}">
+                    <StackPanel>
+                        <Grid Margin="0,0,0,12">
+                            <TextBlock Text="Daily Sales Summary" Style="{StaticResource H3}"/>
+                            <DatePicker SelectedDate="{Binding SelectedDate}" HorizontalAlignment="Right" Width="140"/>
+                        </Grid>
+
+                        <Grid Margin="0,0,0,6">
+                            <TextBlock Text="Total Transactions:" Foreground="{StaticResource TextMutedBrush}"/>
+                            <TextBlock Text="{Binding DailySales.TotalSalesCount}" HorizontalAlignment="Right" FontWeight="Bold"/>
+                        </Grid>
+
+                        <Grid Margin="0,0,0,6">
+                            <TextBlock Text="Gross Sales:" Foreground="{StaticResource TextMutedBrush}"/>
+                            <TextBlock Text="{Binding DailySales.TotalRevenue, StringFormat=Rs. {0:N2}}" HorizontalAlignment="Right" FontWeight="Bold"/>
+                        </Grid>
+
+                        <Grid Margin="0,0,0,6">
+                            <TextBlock Text="Discounts Given:" Foreground="{StaticResource TextMutedBrush}"/>
+                            <TextBlock Text="{Binding DailySales.TotalDiscounts, StringFormat=Rs. {0:N2}}" HorizontalAlignment="Right" FontWeight="Bold" Foreground="{StaticResource DangerBrush}"/>
+                        </Grid>
+
+                        <Separator Margin="0,8,0,8"/>
+
+                        <Grid>
+                            <TextBlock Text="NET SALES REVENUE:" FontSize="15" FontWeight="Bold" Foreground="{StaticResource PrimaryBrush}"/>
+                            <TextBlock Text="{Binding DailySales.NetSales, StringFormat=Rs. {0:N2}}" HorizontalAlignment="Right" FontSize="16" FontWeight="Bold" Foreground="{StaticResource PrimaryBrush}"/>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- Stock Valuation Summary Card -->
+                <Border Grid.Column="2" Style="{StaticResource Card}">
+                    <StackPanel>
+                        <TextBlock Text="Inventory Stock Valuation" Style="{StaticResource H3}" Margin="0,0,0,12"/>
+
+                        <Grid Margin="0,0,0,6">
+                            <TextBlock Text="Active Products:" Foreground="{StaticResource TextMutedBrush}"/>
+                            <TextBlock Text="{Binding StockValuation.TotalActiveProducts}" HorizontalAlignment="Right" FontWeight="Bold"/>
+                        </Grid>
+
+                        <Grid Margin="0,0,0,6">
+                            <TextBlock Text="Total Quantity in Stock:" Foreground="{StaticResource TextMutedBrush}"/>
+                            <TextBlock Text="{Binding StockValuation.TotalQuantityInStock}" HorizontalAlignment="Right" FontWeight="Bold"/>
+                        </Grid>
+
+                        <Grid Margin="0,0,0,6">
+                            <TextBlock Text="Stock Cost Value:" Foreground="{StaticResource TextMutedBrush}"/>
+                            <TextBlock Text="{Binding StockValuation.TotalCostValue, StringFormat=Rs. {0:N2}}" HorizontalAlignment="Right" FontWeight="Bold"/>
+                        </Grid>
+
+                        <Grid Margin="0,0,0,6">
+                            <TextBlock Text="Retail Valuation:" Foreground="{StaticResource TextMutedBrush}"/>
+                            <TextBlock Text="{Binding StockValuation.TotalRetailValuation, StringFormat=Rs. {0:N2}}" HorizontalAlignment="Right" FontWeight="Bold"/>
+                        </Grid>
+
+                        <Separator Margin="0,8,0,8"/>
+
+                        <Grid>
+                            <TextBlock Text="ESTIMATED MARGIN:" FontSize="15" FontWeight="Bold" Foreground="{StaticResource SuccessBrush}"/>
+                            <TextBlock Text="{Binding StockValuation.PotentialProfitMargin, StringFormat=Rs. {0:N2}}" HorizontalAlignment="Right" FontSize="16" FontWeight="Bold" Foreground="{StaticResource SuccessBrush}"/>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- Middle Row: Fast-Moving Items DataGrid -->
+            <Border Grid.Row="2" Style="{StaticResource Card}" Margin="0,0,0,20">
+                <StackPanel>
+                    <TextBlock Text="Top 10 Fast-Moving Products" Style="{StaticResource H3}" Margin="0,0,0,12"/>
+                    <DataGrid ItemsSource="{Binding FastMovingItems}" AutoGenerateColumns="False" IsReadOnly="True" MaxHeight="240">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="SKU" Binding="{Binding SKU}" Width="100"/>
+                            <DataGridTextColumn Header="Product Name" Binding="{Binding ProductName}" Width="*"/>
+                            <DataGridTextColumn Header="Category" Binding="{Binding CategoryName}" Width="140"/>
+                            <DataGridTextColumn Header="Qty Sold" Binding="{Binding QuantitySold}" Width="90"/>
+                            <DataGridTextColumn Header="Total Revenue" Binding="{Binding TotalRevenue, StringFormat=Rs. {0:N2}}" Width="130"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </StackPanel>
+            </Border>
+
+            <!-- Bottom Row: Supplier Balances DataGrid -->
+            <Border Grid.Row="3" Style="{StaticResource Card}">
+                <StackPanel>
+                    <TextBlock Text="Supplier Payable Balances" Style="{StaticResource H3}" Margin="0,0,0,12"/>
+                    <DataGrid ItemsSource="{Binding SupplierBalances}" AutoGenerateColumns="False" IsReadOnly="True" MaxHeight="220">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Supplier Name" Binding="{Binding SupplierName}" Width="*"/>
+                            <DataGridTextColumn Header="Phone" Binding="{Binding Phone}" Width="150"/>
+                            <DataGridTextColumn Header="Current Payable Balance" Binding="{Binding CurrentBalance, StringFormat=Rs. {0:N2}}" Width="180"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </StackPanel>
+            </Border>
+        </Grid>
+    </ScrollViewer>
+</Page>
