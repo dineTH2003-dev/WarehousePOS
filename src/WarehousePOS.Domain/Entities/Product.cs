@@ -67,6 +67,20 @@ public sealed class Product : AggregateRoot
         SetUpdatedAt();
     }
 
+    public void UpdateDetails(string name, string? barcode, string? description, int categoryId, int reorderLevel)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(name);
+        if (reorderLevel < 0)
+            throw new ArgumentOutOfRangeException(nameof(reorderLevel));
+
+        Name = name.Trim();
+        Barcode = barcode?.Trim();
+        Description = description?.Trim();
+        CategoryId = categoryId;
+        ReorderLevel = reorderLevel;
+        SetUpdatedAt();
+    }
+
     public void AddStock(int quantity)
     {
         if (quantity <= 0)
