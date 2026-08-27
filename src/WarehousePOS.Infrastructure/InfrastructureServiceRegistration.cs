@@ -30,6 +30,14 @@ public static class InfrastructureServiceRegistration
         services.AddScoped<IInventoryMovementRepository, InventoryMovementRepository>();
         services.AddScoped<ICustomerRepository, CustomerRepository>();
         services.AddScoped<ISaleRepository, SaleRepository>();
+        services.AddScoped<IAuditLogRepository, AuditLogRepository>();
+
+        // Printing & Hardware
+        services.AddTransient<Application.Printing.IReceiptPrinter, Printing.EpsonLq310Printer>();
+
+        // Backup
+        services.AddSingleton<IBackupService>(sp =>
+            new Backup.BackupService(databasePath, sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Backup.BackupService>>()));
 
         return services;
     }
