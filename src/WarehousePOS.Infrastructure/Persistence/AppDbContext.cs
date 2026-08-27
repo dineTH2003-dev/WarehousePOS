@@ -13,9 +13,13 @@ public sealed class AppDbContext : DbContext
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
     // --- Entities ---
-    public DbSet<Product>  Products  { get; set; }
-    public DbSet<Category> Categories { get; set; }
-    public DbSet<User>     Users     { get; set; }
+    public DbSet<Product>           Products           { get; set; }
+    public DbSet<Category>          Categories         { get; set; }
+    public DbSet<User>              Users              { get; set; }
+    public DbSet<Supplier>          Suppliers          { get; set; }
+    public DbSet<Purchase>          Purchases          { get; set; }
+    public DbSet<PurchaseItem>      PurchaseItems      { get; set; }
+    public DbSet<InventoryMovement> InventoryMovements { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
