@@ -30,19 +30,22 @@ public enum PaymentMethod
 public enum MovementType
 {
     /// <summary>Stock received from a purchase.</summary>
-    StockIn = 1,
+    PurchaseReceive = 1,
 
     /// <summary>Stock deducted from a sale.</summary>
     StockOut = 2,
 
-    /// <summary>Manual adjustment (e.g., damaged goods, correction).</summary>
-    Adjustment = 3,
+    /// <summary>Manual positive adjustment (e.g., correction).</summary>
+    StockIn = 3,
+
+    /// <summary>Manual negative adjustment (e.g., damaged goods).</summary>
+    Adjustment = 4,
 
     /// <summary>Stock returned from a customer.</summary>
-    ReturnIn = 4,
+    ReturnIn = 5,
 
     /// <summary>Stock returned to a supplier.</summary>
-    ReturnOut = 5
+    ReturnOut = 6
 }
 
 /// <summary>Status of a purchase order.</summary>
