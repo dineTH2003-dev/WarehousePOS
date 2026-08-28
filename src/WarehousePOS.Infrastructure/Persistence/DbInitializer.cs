@@ -10,11 +10,26 @@ public static class DbInitializer
     {
         DirectoryManager.EnsureDirectoriesExist();
 
-        // EnsureCreatedAsync: creates the full database schema from the EF Core model
-        // if the database file does not yet exist. For v1.0 (first install on a fresh PC)
-        // this is the correct strategy. In v1.1+ we will switch to MigrateAsync() once
-        // a formal migration baseline exists.
-        await db.Database.EnsureCreatedAsync();
+        // ── Schema bootstrap (handles all 3 scenarios) ───────────────
+        // Returns true  → DB file was just created, full schema is ready.
+        // Returns false → DB file already existed (tables may or may not be present).
+        bool justCreated = await db.Database.EnsureCreatedAsync();
+
+        if (!justCreated)
+        {
+            // The file existed already. Check how many tables are inside.
+            // A stale empty .db left by a previous failed startup will have 0 tables.
+            int tableCount = db.Database
+                .SqlQueryRaw<int>("SELECT COUNT(*) as Value FROM sqlite_master WHERE type='table'")
+                .FirstOrDefault();
+
+            if (tableCount == 0)
+            {
+                // File is empty — delete it and rebuild the full schema cleanly.
+                await db.Database.EnsureDeletedAsync();
+                await db.Database.EnsureCreatedAsync();
+            }
+        }
 
         // Seed Admin user if no users exist
         if (!await db.Users.AnyAsync())
