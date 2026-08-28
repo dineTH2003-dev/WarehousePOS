@@ -9,27 +9,121 @@
         WindowStartupLocation="CenterScreen"
         Background="{StaticResource BackgroundBrush}">
 
+    <Window.Resources>
+        <!-- Sidebar nav button style -->
+        <Style x:Key="NavButton" TargetType="Button">
+            <Setter Property="Background"        Value="Transparent"/>
+            <Setter Property="Foreground"        Value="#CBD5E1"/>
+            <Setter Property="BorderThickness"   Value="0"/>
+            <Setter Property="Padding"           Value="16,12"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+            <Setter Property="FontSize"          Value="14"/>
+            <Setter Property="FontFamily"        Value="Segoe UI"/>
+            <Setter Property="Cursor"            Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}"
+                                CornerRadius="8" Margin="8,2">
+                            <ContentPresenter Margin="{TemplateBinding Padding}"
+                                              HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#2D3F55"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#1E4976"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
     <Grid>
-        <!-- Shell layout: sidebar navigation + main content area -->
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="220" />
-            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="220"/>
+            <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
-        <!-- Sidebar placeholder -->
-        <Border Grid.Column="0"
-                Background="{StaticResource SidebarBrush}">
-            <TextBlock Text="Warehouse POS"
-                       Foreground="White"
-                       FontSize="18"
-                       FontWeight="Bold"
-                       Margin="16,24,16,0"
-                       VerticalAlignment="Top" />
+        <!-- ── Sidebar ─────────────────────────────────────── -->
+        <Border Grid.Column="0" Background="{StaticResource SidebarBrush}">
+            <DockPanel>
+
+                <!-- App logo / title -->
+                <StackPanel DockPanel.Dock="Top" Margin="16,24,16,20">
+                    <TextBlock Text="📦" FontSize="28" HorizontalAlignment="Left"/>
+                    <TextBlock Text="Warehouse POS"
+                               Foreground="White"
+                               FontSize="16"
+                               FontWeight="Bold"
+                               Margin="0,4,0,0"/>
+                    <TextBlock x:Name="UserLabel"
+                               Foreground="#94A3B8"
+                               FontSize="12"
+                               Margin="0,2,0,0"/>
+                </StackPanel>
+
+                <Separator DockPanel.Dock="Top" Background="#2D3F55" Margin="16,0,16,12"/>
+
+                <!-- Logout at bottom -->
+                <Button x:Name="BtnLogout"
+                        DockPanel.Dock="Bottom"
+                        Content="⬅  Logout"
+                        Style="{StaticResource NavButton}"
+                        Foreground="#F87171"
+                        Margin="0,0,0,16"
+                        Click="BtnLogout_Click"/>
+
+                <Separator DockPanel.Dock="Bottom" Background="#2D3F55" Margin="16,0,16,8"/>
+
+                <!-- Navigation items -->
+                <StackPanel>
+                    <Button x:Name="BtnPos"
+                            Content="🖥️  Point of Sale"
+                            Style="{StaticResource NavButton}"
+                            Click="BtnPos_Click"/>
+                    <Button x:Name="BtnProducts"
+                            Content="📦  Products"
+                            Style="{StaticResource NavButton}"
+                            Click="BtnProducts_Click"/>
+                    <Button x:Name="BtnSuppliers"
+                            Content="🚚  Suppliers"
+                            Style="{StaticResource NavButton}"
+                            Click="BtnSuppliers_Click"/>
+                    <Button x:Name="BtnCustomers"
+                            Content="👥  Customers"
+                            Style="{StaticResource NavButton}"
+                            Click="BtnCustomers_Click"/>
+
+                    <Separator Background="#2D3F55" Margin="16,8"/>
+
+                    <Button x:Name="BtnReports"
+                            Content="📊  Reports"
+                            Style="{StaticResource NavButton}"
+                            Click="BtnReports_Click"/>
+                    <Button x:Name="BtnExpenses"
+                            Content="💸  Expenses"
+                            Style="{StaticResource NavButton}"
+                            Click="BtnExpenses_Click"/>
+
+                    <Separator Background="#2D3F55" Margin="16,8"/>
+
+                    <Button x:Name="BtnSettings"
+                            Content="⚙️  Settings"
+                            Style="{StaticResource NavButton}"
+                            Click="BtnSettings_Click"/>
+                </StackPanel>
+
+            </DockPanel>
         </Border>
 
-        <!-- Main content area placeholder -->
+        <!-- ── Main content Frame ──────────────────────────── -->
         <Frame Grid.Column="1"
                x:Name="MainFrame"
-               NavigationUIVisibility="Hidden" />
+               NavigationUIVisibility="Hidden"/>
     </Grid>
 </Window>
