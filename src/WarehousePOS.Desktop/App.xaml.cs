@@ -8,7 +8,19 @@ using System.Windows.Threading;
 using WarehousePOS.Application;
 using WarehousePOS.Desktop.Services;
 using WarehousePOS.Desktop.ViewModels.Auth;
+using WarehousePOS.Desktop.ViewModels.Expenses;
+using WarehousePOS.Desktop.ViewModels.Products;
+using WarehousePOS.Desktop.ViewModels.Reports;
+using WarehousePOS.Desktop.ViewModels.Sales;
+using WarehousePOS.Desktop.ViewModels.Settings;
+using WarehousePOS.Desktop.ViewModels.Suppliers;
 using WarehousePOS.Desktop.Views.Auth;
+using WarehousePOS.Desktop.Views.Expenses;
+using WarehousePOS.Desktop.Views.Products;
+using WarehousePOS.Desktop.Views.Reports;
+using WarehousePOS.Desktop.Views.Sales;
+using WarehousePOS.Desktop.Views.Settings;
+using WarehousePOS.Desktop.Views.Suppliers;
 using WarehousePOS.Infrastructure;
 using WarehousePOS.Infrastructure.Persistence;
 
@@ -57,14 +69,46 @@ public partial class App : System.Windows.Application
                     services.AddSingleton<SessionContext>();
                     services.AddSingleton<INavigationService, NavigationService>();
 
-                    // ViewModels
+                    // ── ViewModels ────────────────────────────────
                     services.AddTransient<LoginViewModel>();
+                    services.AddTransient<PosViewModel>();
+                    services.AddTransient<ProductListViewModel>();
+                    services.AddTransient<ProductFormViewModel>();
+                    services.AddTransient<CategoryManagementViewModel>();
+                    services.AddTransient<SupplierListViewModel>();
+                    services.AddTransient<SupplierFormViewModel>();
+                    services.AddTransient<CustomerListViewModel>();
+                    services.AddTransient<CustomerFormViewModel>();
+                    services.AddTransient<ReportsViewModel>();
+                    services.AddTransient<StoreSettingsViewModel>();
+                    services.AddTransient<ExpenseListViewModel>();
 
-                    // Windows
+                    // ── Views (Pages) ─────────────────────────────
+                    services.AddTransient<PosView>();
+                    services.AddTransient<ProductListView>();
+                    services.AddTransient<CategoryManagementView>();
+                    services.AddTransient<SupplierListView>();
+                    services.AddTransient<CustomerListView>();
+                    services.AddTransient<ReportsView>();
+                    services.AddTransient<StoreSettingsView>();
+                    services.AddTransient<ExpenseListView>();
+
+                    // ── Windows ───────────────────────────────────
                     services.AddTransient<LoginWindow>();
                     services.AddSingleton<MainWindow>();
                 })
                 .Build();
+
+            // ── Register navigation routes ────────────────────────
+            NavigationService.Register<PosViewModel,                Views.Sales.PosView>();
+            NavigationService.Register<ProductListViewModel,        Views.Products.ProductListView>();
+            NavigationService.Register<CategoryManagementViewModel, Views.Products.CategoryManagementView>();
+            NavigationService.Register<SupplierListViewModel,       Views.Suppliers.SupplierListView>();
+            NavigationService.Register<CustomerListViewModel,       Views.Sales.CustomerListView>();
+            NavigationService.Register<ReportsViewModel,            Views.Reports.ReportsView>();
+            NavigationService.Register<StoreSettingsViewModel,      Views.Settings.StoreSettingsView>();
+            NavigationService.Register<ExpenseListViewModel,        Views.Expenses.ExpenseListView>();
+
 
             await _host.StartAsync();
 
