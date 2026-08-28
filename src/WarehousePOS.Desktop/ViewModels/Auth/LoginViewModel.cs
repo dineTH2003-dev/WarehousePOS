@@ -49,6 +49,7 @@ public sealed class LoginViewModel : ViewModelBase
     private async void ExecuteLogin(string? password)
     {
         ErrorMessage = string.Empty;
+        OnPropertyChanged(nameof(HasError));
 
         if (string.IsNullOrWhiteSpace(Username) || string.IsNullOrWhiteSpace(password))
         {
@@ -70,6 +71,11 @@ public sealed class LoginViewModel : ViewModelBase
 
             _session.SetUser(result);
             LoginSucceeded?.Invoke();
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Login error: {ex.Message}";
+            OnPropertyChanged(nameof(HasError));
         }
         finally
         {

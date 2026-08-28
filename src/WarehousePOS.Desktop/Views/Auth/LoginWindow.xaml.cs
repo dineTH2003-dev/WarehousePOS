@@ -1,4 +1,5 @@
 using System.Windows;
+using System.Windows.Input;
 using WarehousePOS.Desktop.ViewModels.Auth;
 
 namespace WarehousePOS.Desktop.Views.Auth;
@@ -20,6 +21,16 @@ public partial class LoginWindow : Window
     {
         // Pass password manually — PasswordBox is not data-bindable for security
         _vm.LoginCommand.Execute(PasswordBox.Password);
+    }
+
+    private void PasswordBox_KeyDown(object sender, KeyEventArgs e)
+    {
+        // Allow pressing Enter in the password box to submit
+        if (e.Key == Key.Enter)
+        {
+            _vm.LoginCommand.Execute(PasswordBox.Password);
+            e.Handled = true;
+        }
     }
 
     private void OnLoginSucceeded()

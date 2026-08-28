@@ -2,8 +2,10 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Warehouse POS — Login"
-        Height="480"
-        Width="420"
+        MinHeight="480"
+        Height="520"
+        Width="440"
+        SizeToContent="Height"
         ResizeMode="NoResize"
         WindowStartupLocation="CenterScreen"
         Background="{StaticResource BackgroundBrush}">
@@ -56,7 +58,8 @@
                                Margin="0,0,0,6"/>
                     <PasswordBox x:Name="PasswordBox"
                                  Style="{StaticResource FormPasswordBox}"
-                                 IsEnabled="{Binding IsBusy, Converter={StaticResource InvertBoolConverter}}" />
+                                 IsEnabled="{Binding IsBusy, Converter={StaticResource InvertBoolConverter}}"
+                                 KeyDown="PasswordBox_KeyDown" />
                 </StackPanel>
 
                 <!-- Error message -->
