@@ -4,6 +4,7 @@ using Microsoft.Extensions.Hosting;
 using Serilog;
 using System.IO;
 using System.Windows;
+using System.Windows.Threading;
 using WarehousePOS.Application;
 using WarehousePOS.Desktop.Services;
 using WarehousePOS.Desktop.ViewModels.Auth;
@@ -19,67 +20,110 @@ public partial class App : System.Windows.Application
 
     protected override async void OnStartup(StartupEventArgs e)
     {
-        // ── Data directories ─────────────────────────────────────
-        DirectoryManager.EnsureDirectoriesExist();
+        // ── Global Exception Handlers ─────────────────────────────
+        // Catch ANY unhandled exception on the UI thread
+        DispatcherUnhandledException += OnDispatcherUnhandledException;
+        // Catch unhandled exceptions on background threads
+        AppDomain.CurrentDomain.UnhandledException += OnDomainUnhandledException;
 
-        string databasePath = DirectoryManager.GetDatabasePath();
-        string logsPath     = DirectoryManager.GetLogFilePath();
+        try
+        {
+            // ── Data directories ─────────────────────────────────
+            DirectoryManager.EnsureDirectoriesExist();
 
-        // ── Serilog ───────────────────────────────────────────────
-        Log.Logger = new LoggerConfiguration()
-            .MinimumLevel.Debug()
-            .WriteTo.File(logsPath, rollingInterval: RollingInterval.Day, retainedFileCountLimit: 30)
+            string databasePath = DirectoryManager.GetDatabasePath();
+            string logsPath     = DirectoryManager.GetLogFilePath();
+
+            // ── Serilog ───────────────────────────────────────────
+            Log.Logger = new LoggerConfiguration()
+                .MinimumLevel.Debug()
+                .WriteTo.File(logsPath, rollingInterval: RollingInterval.Day, retainedFileCountLimit: 30)
 #if DEBUG
-            .WriteTo.Console()
+                .WriteTo.Console()
 #endif
-            .CreateLogger();
+                .CreateLogger();
 
-        // ── DI Host ───────────────────────────────────────────────
-        _host = Host.CreateDefaultBuilder()
-            .UseSerilog()
-            .ConfigureServices(services =>
+            Log.Information("WarehousePOS starting up...");
+
+            // ── DI Host ───────────────────────────────────────────
+            _host = Host.CreateDefaultBuilder()
+                .UseSerilog()
+                .ConfigureServices(services =>
+                {
+                    services.AddApplicationServices();
+                    services.AddInfrastructureServices(databasePath);
+
+                    // Desktop services
+                    services.AddSingleton<SessionContext>();
+                    services.AddSingleton<INavigationService, NavigationService>();
+
+                    // ViewModels
+                    services.AddTransient<LoginViewModel>();
+
+                    // Windows
+                    services.AddTransient<LoginWindow>();
+                    services.AddSingleton<MainWindow>();
+                })
+                .Build();
+
+            await _host.StartAsync();
+
+            // ── Database: create schema + seed ───────────────────
+            using (var scope = _host.Services.CreateScope())
             {
-                services.AddApplicationServices();
-                services.AddInfrastructureServices(databasePath);
+                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                Log.Information("Initialising database at {Path}", databasePath);
+                await DbInitializer.InitializeAsync(db);
+                Log.Information("Database initialised successfully.");
+            }
 
-                // Desktop services
-                services.AddSingleton<SessionContext>();
-                services.AddSingleton<INavigationService, NavigationService>();
+            // ── Show Login ────────────────────────────────────────
+            var loginWindow = _host.Services.GetRequiredService<LoginWindow>();
+            bool? loggedIn = loginWindow.ShowDialog();
 
-                // ViewModels
-                services.AddTransient<LoginViewModel>();
+            if (loggedIn != true)
+            {
+                Shutdown();
+                return;
+            }
 
-                // Windows
-                services.AddTransient<LoginWindow>();
-                services.AddSingleton<MainWindow>();
-            })
-            .Build();
+            // ── Show Main Window ──────────────────────────────────
+            var mainWindow = _host.Services.GetRequiredService<MainWindow>();
+            MainWindow = mainWindow;
+            mainWindow.Show();
 
-        await _host.StartAsync();
-
-        // ── Database: migrate + seed ───────────────────────────────
-        using (var scope = _host.Services.CreateScope())
-        {
-            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            await DbInitializer.InitializeAsync(db);
+            base.OnStartup(e);
         }
-
-        // ── Show Login ────────────────────────────────────────────
-        var loginWindow = _host.Services.GetRequiredService<LoginWindow>();
-        bool? loggedIn = loginWindow.ShowDialog();
-
-        if (loggedIn != true)
+        catch (Exception ex)
         {
-            Shutdown();
-            return;
+            // Write crash to a fallback file (Serilog may not have been initialized yet)
+            var crashLogPath = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
+                "WarehousePOS", "Logs", "startup-crash.log");
+
+            try
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(crashLogPath)!);
+                File.AppendAllText(crashLogPath,
+                    $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] STARTUP CRASH:{Environment.NewLine}" +
+                    $"{ex}{Environment.NewLine}{Environment.NewLine}");
+            }
+            catch { /* best-effort */ }
+
+            // Also log to Serilog if it initialised before the crash
+            try { Log.Fatal(ex, "Fatal startup error"); Log.CloseAndFlush(); } catch { }
+
+            // Show a visible error dialog — crash is never silent
+            MessageBox.Show(
+                $"WarehousePOS failed to start.{Environment.NewLine}{Environment.NewLine}" +
+                $"Error: {ex.Message}{Environment.NewLine}{Environment.NewLine}" +
+                $"A detailed crash report has been saved to:{Environment.NewLine}{crashLogPath}",
+                "WarehousePOS — Startup Failed",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+
+            Shutdown(1);
         }
-
-        // ── Show Main Window ──────────────────────────────────────
-        var mainWindow = _host.Services.GetRequiredService<MainWindow>();
-        MainWindow = mainWindow;
-        mainWindow.Show();
-
-        base.OnStartup(e);
     }
 
     protected override async void OnExit(ExitEventArgs e)
@@ -89,7 +133,31 @@ public partial class App : System.Windows.Application
             await _host.StopAsync();
             _host.Dispose();
         }
+        Log.Information("WarehousePOS shut down.");
         Log.CloseAndFlush();
         base.OnExit(e);
+    }
+
+    // ── Global fallback handlers ──────────────────────────────────────
+
+    private void OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs ex)
+    {
+        try { Log.Fatal(ex.Exception, "Unhandled UI thread exception"); Log.CloseAndFlush(); } catch { }
+        MessageBox.Show(
+            $"An unexpected error occurred:{Environment.NewLine}{Environment.NewLine}{ex.Exception.Message}",
+            "WarehousePOS — Unexpected Error",
+            MessageBoxButton.OK,
+            MessageBoxImage.Error);
+        ex.Handled = true;
+    }
+
+    private static void OnDomainUnhandledException(object sender, UnhandledExceptionEventArgs ex)
+    {
+        try
+        {
+            Log.Fatal(ex.ExceptionObject as Exception, "Unhandled background thread exception");
+            Log.CloseAndFlush();
+        }
+        catch { }
     }
 }
