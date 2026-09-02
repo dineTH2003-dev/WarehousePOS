@@ -37,4 +37,8 @@
         <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}" />
     </Style>
 
+    <Style x:Key="FormLabel" TargetType="TextBlock" BasedOn="{StaticResource LabelText}">
+        <Setter Property="Margin" Value="0,0,0,4" />
+    </Style>
+
 </ResourceDictionary>

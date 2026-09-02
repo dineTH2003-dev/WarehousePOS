@@ -45,6 +45,7 @@
 
     <SolidColorBrush x:Key="TextPrimaryBrush"    Color="{StaticResource TextPrimaryColor}" />
     <SolidColorBrush x:Key="TextSecondaryBrush"  Color="{StaticResource TextSecondaryColor}" />
+    <SolidColorBrush x:Key="TextMutedBrush"      Color="{StaticResource TextSecondaryColor}" />
     <SolidColorBrush x:Key="TextOnDarkBrush"     Color="{StaticResource TextOnDarkColor}" />
 
 </ResourceDictionary>

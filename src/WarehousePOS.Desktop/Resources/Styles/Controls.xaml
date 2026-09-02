@@ -11,6 +11,9 @@
     <conv:DecimalToCurrencyConverter x:Key="DecimalToCurrencyConverter" />
     <conv:UtcToLocalDateTimeConverter x:Key="UtcToLocalDateTimeConverter" />
     <conv:EnumToBoolConverter        x:Key="EnumToBoolConverter" />
+    <conv:BoolToStatusConverter      x:Key="BoolToStatusConverter" />
+    <conv:BoolToToggleTextConverter  x:Key="BoolToToggleTextConverter" />
+    <conv:IsEditingToTitleConverter  x:Key="IsEditingToTitleConverter" />
 
     <!-- ============================================================
          BUTTON STYLES

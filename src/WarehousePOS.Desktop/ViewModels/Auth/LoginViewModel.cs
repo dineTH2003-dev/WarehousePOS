@@ -1,4 +1,4 @@
-using System.Windows;
+using Serilog;
 using WarehousePOS.Application.Authentication;
 using WarehousePOS.Desktop.Services;
 
@@ -59,27 +59,40 @@ public sealed class LoginViewModel : ViewModelBase
         }
 
         IsBusy = true;
+
+        // Track login result separately so we can invoke the event outside the try block,
+        // after IsBusy has been reset in the finally clause. This prevents the LoginSucceeded
+        // event from firing while the busy indicator is still shown, and ensures any exception
+        // thrown BY the event handler itself is not masked by the catch block below.
+        AuthResult? loginResult = null;
+
         try
         {
-            var result = await _authService.LoginAsync(new LoginRequest(Username, password!));
-            if (result is null)
+            loginResult = await _authService.LoginAsync(new LoginRequest(Username, password!));
+
+            if (loginResult is null)
             {
                 ErrorMessage = "Invalid username or password.";
                 OnPropertyChanged(nameof(HasError));
-                return;
             }
-
-            _session.SetUser(result);
-            LoginSucceeded?.Invoke();
         }
         catch (Exception ex)
         {
+            Log.Error(ex, "Login attempt failed for user {Username}", Username);
             ErrorMessage = $"Login error: {ex.Message}";
             OnPropertyChanged(nameof(HasError));
         }
         finally
         {
             IsBusy = false;
+        }
+
+        // Only proceed with session + event AFTER IsBusy is cleared and outside try/catch,
+        // so any exception from SetUser or LoginSucceeded is surfaced clearly.
+        if (loginResult is not null)
+        {
+            _session.SetUser(loginResult);
+            LoginSucceeded?.Invoke();
         }
     }
 }

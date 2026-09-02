@@ -70,30 +70,35 @@ public partial class App : System.Windows.Application
                     services.AddSingleton<INavigationService, NavigationService>();
 
                     // ── ViewModels ────────────────────────────────
-                    services.AddTransient<LoginViewModel>();
-                    services.AddTransient<PosViewModel>();
-                    services.AddTransient<ProductListViewModel>();
-                    services.AddTransient<ProductFormViewModel>();
-                    services.AddTransient<CategoryManagementViewModel>();
-                    services.AddTransient<SupplierListViewModel>();
-                    services.AddTransient<SupplierFormViewModel>();
-                    services.AddTransient<CustomerListViewModel>();
-                    services.AddTransient<CustomerFormViewModel>();
-                    services.AddTransient<ReportsViewModel>();
-                    services.AddTransient<StoreSettingsViewModel>();
-                    services.AddTransient<ExpenseListViewModel>();
+                    // Use AddScoped so that each resolved scope gets its own ViewModel
+                    // instance with a properly scoped DbContext — prevents EF Core
+                    // "cannot resolve Scoped service from root provider" errors.
+                    services.AddScoped<LoginViewModel>();
+                    services.AddScoped<PosViewModel>();
+                    services.AddScoped<ProductListViewModel>();
+                    services.AddScoped<ProductFormViewModel>();
+                    services.AddScoped<CategoryManagementViewModel>();
+                    services.AddScoped<SupplierListViewModel>();
+                    services.AddScoped<SupplierFormViewModel>();
+                    services.AddScoped<CustomerListViewModel>();
+                    services.AddScoped<CustomerFormViewModel>();
+                    services.AddScoped<ReportsViewModel>();
+                    services.AddScoped<StoreSettingsViewModel>();
+                    services.AddScoped<ExpenseListViewModel>();
 
                     // ── Views (Pages) ─────────────────────────────
-                    services.AddTransient<PosView>();
-                    services.AddTransient<ProductListView>();
-                    services.AddTransient<CategoryManagementView>();
-                    services.AddTransient<SupplierListView>();
-                    services.AddTransient<CustomerListView>();
-                    services.AddTransient<ReportsView>();
-                    services.AddTransient<StoreSettingsView>();
-                    services.AddTransient<ExpenseListView>();
+                    services.AddScoped<PosView>();
+                    services.AddScoped<ProductListView>();
+                    services.AddScoped<CategoryManagementView>();
+                    services.AddScoped<SupplierListView>();
+                    services.AddScoped<CustomerListView>();
+                    services.AddScoped<ReportsView>();
+                    services.AddScoped<StoreSettingsView>();
+                    services.AddScoped<ExpenseListView>();
 
                     // ── Windows ───────────────────────────────────
+                    // LoginWindow uses a dedicated scope (one-shot, disposed after login).
+                    // MainWindow is Singleton — it lives for the whole session.
                     services.AddTransient<LoginWindow>();
                     services.AddSingleton<MainWindow>();
                 })
@@ -109,7 +114,6 @@ public partial class App : System.Windows.Application
             NavigationService.Register<StoreSettingsViewModel,      Views.Settings.StoreSettingsView>();
             NavigationService.Register<ExpenseListViewModel,        Views.Expenses.ExpenseListView>();
 
-
             await _host.StartAsync();
 
             // ── Database: create schema + seed ───────────────────
@@ -121,20 +125,34 @@ public partial class App : System.Windows.Application
                 Log.Information("Database initialised successfully.");
             }
 
-            // ── Show Login ────────────────────────────────────────
-            var loginWindow = _host.Services.GetRequiredService<LoginWindow>();
-            bool? loggedIn = loginWindow.ShowDialog();
+            // ── Show Login (inside its own DI scope) ─────────────
+            // Set ShutdownMode to OnExplicitShutdown so WPF does not shut down
+            // the application when LoginWindow closes.
+            ShutdownMode = ShutdownMode.OnExplicitShutdown;
 
-            if (loggedIn != true)
+            bool loggedIn;
+            using (var loginScope = _host.Services.CreateScope())
             {
+                var loginWindow = loginScope.ServiceProvider.GetRequiredService<LoginWindow>();
+                loggedIn = loginWindow.ShowDialog() == true;
+            }
+
+            if (!loggedIn)
+            {
+                Log.Information("Login cancelled or failed. Shutting down.");
                 Shutdown();
                 return;
             }
+
+            Log.Information("Login successful. Opening MainWindow...");
 
             // ── Show Main Window ──────────────────────────────────
             var mainWindow = _host.Services.GetRequiredService<MainWindow>();
             MainWindow = mainWindow;
             mainWindow.Show();
+
+            // Once MainWindow is active, switch ShutdownMode back so closing MainWindow terminates the app
+            ShutdownMode = ShutdownMode.OnMainWindowClose;
 
             base.OnStartup(e);
         }
