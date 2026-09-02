@@ -1,5 +1,7 @@
 # Architecture Overview
 
+> **Project Status:** ~90% feature complete. Core modules are built and functional. Active development is focused on bug fixes, validation, and UI polish.
+
 ## Project Description
 
 WarehousePOS is a **single-PC, fully offline Windows desktop application** for warehouse and point-of-sale management.
@@ -133,4 +135,4 @@ This protects the database from being overwritten during application updates.
 The application integrates with the **Epson LQ-310** dot-matrix printer via the Windows printing subsystem.
 Printing is handled in the Infrastructure layer (`InvoicePrinter.cs`, `PrinterService.cs`).
 
-**Test the printer early in development — do not leave it until the end.**
+The printer integration covers both sale receipts and Purchase Order documents.

@@ -1,18 +1,32 @@
 # Contributing to WarehousePOS
 
-Thank you for contributing. Please follow these guidelines to keep the codebase consistent.
+Thank you for contributing. WarehousePOS is a mature, near-complete product (~90% feature complete).
+The focus is now on **bug fixes, polish, validation improvements, and minor enhancements** — not new epics.
+Please follow these guidelines to keep the codebase consistent and stable.
 
 ---
 
-## Team
+## Project Status
 
-| Developer | Responsibility                                      |
-|-----------|-----------------------------------------------------|
-| Dev 1     | Products, Categories, Suppliers, Purchasing, Inventory |
-| Dev 2     | POS, Sales, Customers, Payments, Discounts, Invoices, Printing |
-| Dev 3     | Authentication, Users, Employees, Payroll, Expenses, Reports, Backup, Audit |
+The core feature set is built and functional:
 
-All three collaborate on: Domain model, Database design, Architecture, Code reviews.
+| Module | Status |
+|---|---|
+| Authentication & RBAC | ✅ Complete |
+| Product & Category Management | ✅ Complete |
+| Supplier Management | ✅ Complete |
+| Purchase Order System | ✅ Complete |
+| Inventory & Stock Movements | ✅ Complete |
+| POS & Sales Checkout | ✅ Complete |
+| Payments & Discounts | ✅ Complete |
+| Receipt & PO Printing | ✅ Complete |
+| Customers Directory | ✅ Complete |
+| Employees & Payroll | ✅ Complete |
+| Expenses Tracking | ✅ Complete |
+| Reports & Analytics | ✅ Complete |
+| Backup & Audit Trail | ✅ Complete |
+
+Active work is now tracked through **GitHub Issues** for bugs and improvements.
 
 ---
 
@@ -20,17 +34,18 @@ All three collaborate on: Domain model, Database design, Architecture, Code revi
 
 ```
 main       ← production-ready releases only
-dev        ← integration branch — all features merge here first
-feature/*  ← individual feature branches
+dev        ← integration branch — all fixes and features merge here first
+feature/*  ← new feature branches
 bugfix/*   ← bug fix branches
 ```
 
 ### Branch naming
 
 ```
-feature/EPIC-03-product-entity
-feature/EPIC-07-pos-screen
-bugfix/incorrect-discount-calculation
+bugfix/product-form-not-resetting
+bugfix/supplier-phone-max-length
+feature/logo-on-login-screen
+feature/stock-field-in-product-form
 ```
 
 ---
@@ -45,37 +60,43 @@ Use **Conventional Commits**:
 Types: feat | fix | test | docs | refactor | chore | style
 
 Examples:
-feat(domain): add Supplier entity
-fix(pos): apply discount before tax calculation
-test(domain): add unit tests for Category
-docs(db): update entity relationship diagram
-refactor(infra): extract repository base class
+fix(pos): reset product form ViewModel before opening Add dialog
+fix(suppliers): cap phone number at 10 digits and validate email format
+fix(expenses): populate category dropdown on ViewModel load
+feat(desktop): add stock quantity field to Add/Edit Product form
+test(application): add unit tests for expense category service
+docs(contributing): update project status and branch naming
 ```
 
 ---
 
 ## Pull Request Process
 
-1. Create a PR from your `feature/*` branch into `dev`.
-2. Fill in the PR template completely.
-3. All CI checks must pass before merge.
-4. At least **one other developer** must review and approve the PR.
-5. Squash merge into `dev`.
+1. Create a PR from your `bugfix/*` or `feature/*` branch into `dev`.
+2. Link the related GitHub Issue in the PR description (e.g. `Closes #12`).
+3. Fill in the PR template completely.
+4. All CI checks must pass before merge.
+5. At least **one other developer** must review and approve the PR.
+6. Squash merge into `dev`.
 
 ---
 
 ## Architecture Rules
 
-These rules are enforced through the project reference graph and code reviews:
+These rules are enforced through the project reference graph and code reviews.
+They apply to every change — no exceptions:
 
 | Rule | Why |
-|------|-----|
+|---|---|
 | Domain has no NuGet dependencies | Keeps it portable and testable |
 | Application references Domain only | Prevents infrastructure leaking upward |
-| No business logic in code-behind | Keeps UI layer thin |
-| No plaintext passwords | Security |
-| All money values as `decimal` | Precision |
-| All timestamps as UTC | Consistency |
+| Desktop does NOT reference Domain directly | All domain access goes through Application interfaces |
+| No business logic in XAML code-behind | Keeps the UI layer thin |
+| No plaintext passwords stored or logged | Security |
+| All monetary values use `decimal` | Precision — never `float` or `double` |
+| All timestamps stored as UTC | Consistency — convert to local time in UI only |
+| Never physically delete records | Use the `IsActive` soft-delete flag |
+| Every inventory change must produce an `InventoryMovement` | Traceability |
 
 ---
 
@@ -85,21 +106,24 @@ These rules are enforced through the project reference graph and code reviews:
 - Private fields: `_camelCase`
 - Public properties: `PascalCase`
 - Interfaces: `IPrefix`
-- Async methods: `AsyncSuffix`
+- Async methods: `MethodNameAsync`
 - Use `var` when the type is obvious from the right-hand side.
+- No commented-out code left in PRs.
 
 ---
 
 ## Testing
 
-Every PR touching Domain or Application **must** include unit tests.
-Every PR touching Infrastructure with schema changes **must** include a migration test.
+Every PR touching **Domain** or **Application** must include unit tests.
+Every PR touching **Infrastructure** with schema changes must include a migration test.
 
-Run locally:
+Run locally before pushing:
 ```bash
 dotnet build WarehousePOS.sln
 dotnet test WarehousePOS.sln
 ```
+
+The build must pass with **zero warnings** (`TreatWarningsAsErrors = true`).
 
 ---
 
@@ -113,10 +137,20 @@ dotnet ef migrations add <DescriptiveName> \
   --project src/WarehousePOS.Infrastructure \
   --startup-project src/WarehousePOS.Desktop
 
-# Apply migration
+# Apply migration locally
 dotnet ef database update \
   --project src/WarehousePOS.Infrastructure \
   --startup-project src/WarehousePOS.Desktop
 ```
 
-Include migration files in your PR. **Never hand-edit migration files** unless you understand exactly what you are doing.
+Include migration files in your PR. **Never hand-edit migration files.**
+
+---
+
+## Reporting Issues
+
+Use GitHub Issues for all bugs and feature requests:
+
+- **Bug**: use the **Bug Report** template — include steps to reproduce and the Affected Layer.
+- **Feature / Enhancement**: use the **Feature Request** template — include acceptance criteria.
+- Both templates have a **🔧 Technical Support / Fix Hints** section — fill it in if you know the cause or a suggested approach. This greatly speeds up the fix.
