@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+using System.Net.Mail;
 using WarehousePOS.Domain.Common;
 using WarehousePOS.Domain.Enums;
 
@@ -23,6 +25,7 @@ public sealed class Customer : AggregateRoot
         string? address = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
+        ValidateContactInformation(phone, email);
         return new Customer
         {
             Name    = name.Trim(),
@@ -36,6 +39,7 @@ public sealed class Customer : AggregateRoot
     public void Update(string name, SaleType type, string? phone, string? email, string? address)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
+        ValidateContactInformation(phone, email);
         Name    = name.Trim();
         Type    = type;
         Phone   = phone?.Trim();
@@ -46,4 +50,34 @@ public sealed class Customer : AggregateRoot
 
     public void Deactivate() { IsActive = false; SetUpdatedAt(); }
     public void Activate()   { IsActive = true;  SetUpdatedAt(); }
+
+    private static void ValidateContactInformation(string? phone, string? email)
+    {
+        if (!string.IsNullOrWhiteSpace(phone) &&
+            (phone.Length > 10 || phone.Any(character => character is < '0' or > '9')))
+            throw new ArgumentException("Phone number must contain digits only and cannot exceed 10 digits.", nameof(phone));
+
+        if (!string.IsNullOrWhiteSpace(email) && !IsValidEmail(email))
+            throw new ArgumentException("Please enter a valid email address.", nameof(email));
+    }
+
+    private static bool IsValidEmail(string email)
+    {
+        var trimmed = email.Trim();
+        if (!new EmailAddressAttribute().IsValid(trimmed))
+            return false;
+
+        try
+        {
+            var address = new MailAddress(trimmed);
+            var domain = address.Host;
+            return address.Address == trimmed && domain.Contains('.') &&
+                   !domain.StartsWith('.') && !domain.EndsWith('.') &&
+                   !domain.Contains("..", StringComparison.Ordinal);
+        }
+        catch (FormatException)
+        {
+            return false;
+        }
+    }
 }

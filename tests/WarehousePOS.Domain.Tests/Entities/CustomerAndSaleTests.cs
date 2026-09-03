@@ -25,6 +25,27 @@ public sealed class CustomerTests
     }
 
     [Theory]
+    [InlineData("07123456789")]
+    [InlineData("07123abc45")]
+    [InlineData("07123-45678")]
+    public void Create_InvalidPhone_ShouldThrow(string phone)
+    {
+        var action = () => Customer.Create("Test", phone: phone);
+        action.Should().Throw<ArgumentException>().WithMessage("Phone number*");
+    }
+
+    [Theory]
+    [InlineData("test")]
+    [InlineData("hello@")]
+    [InlineData("@example.com")]
+    [InlineData("user@.com")]
+    public void Create_InvalidEmail_ShouldThrow(string email)
+    {
+        var action = () => Customer.Create("Test", email: email);
+        action.Should().Throw<ArgumentException>().WithMessage("Please enter a valid email address.*");
+    }
+
+    [Theory]
     [InlineData("")]
     [InlineData("   ")]
     [InlineData(null)]

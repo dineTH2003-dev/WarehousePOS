@@ -9,6 +9,12 @@ public partial class SupplierFormView : Window
     {
         InitializeComponent();
         DataContext = vm;
-        vm.SaveCompleted += () => { DialogResult = true; Close(); };
+        vm.SaveCompleted += OnSaveCompleted;
+        Closed += (_, _) => vm.SaveCompleted -= OnSaveCompleted;
+    }
+
+    private void OnSaveCompleted()
+    {
+        DialogResult = true;
     }
 }
