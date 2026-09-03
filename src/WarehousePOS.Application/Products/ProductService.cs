@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using WarehousePOS.Domain.Entities;
+using WarehousePOS.Domain.Enums;
 using WarehousePOS.Domain.Exceptions;
 using WarehousePOS.Domain.Interfaces;
 
@@ -8,6 +9,7 @@ namespace WarehousePOS.Application.Products;
 public sealed class ProductService(
     IProductRepository repo,
     ICategoryRepository categoryRepo,
+    IInventoryMovementRepository movementRepo,
     ILogger<ProductService> logger) : IProductService
 {
     public async Task<IReadOnlyList<ProductDto>> GetAllAsync(CancellationToken ct = default)
@@ -57,9 +59,13 @@ public sealed class ProductService(
         var product = Product.Create(
             request.Name, request.SKU, request.RetailPrice,
             request.WholesalePrice, request.CategoryId,
-            request.Barcode, request.Description, request.ReorderLevel);
+            request.Barcode, request.Description, request.ReorderLevel, request.StockQuantity);
 
         await repo.AddAsync(product, ct);
+        if (request.StockQuantity > 0)
+            await movementRepo.AddAsync(InventoryMovement.Create(
+                product.Id, MovementType.StockIn, request.StockQuantity, 0,
+                request.UpdatedByUserId, referenceType: "Product", notes: "Initial stock"), ct);
         logger.LogInformation("Product created: {SKU} — {Name}", product.SKU, product.Name);
         return Map(product) with { CategoryName = category.Name };
     }
@@ -76,7 +82,22 @@ public sealed class ProductService(
         product.UpdateDetails(request.Name, request.Barcode, request.Description, request.CategoryId, request.ReorderLevel);
         product.UpdatePricing(request.RetailPrice, request.WholesalePrice);
 
+        var stockBefore = product.StockQuantity;
+        if (request.StockQuantity > stockBefore)
+            product.AddStock(request.StockQuantity - stockBefore);
+        else if (request.StockQuantity < stockBefore)
+            product.DeductStock(stockBefore - request.StockQuantity);
+
         await repo.UpdateAsync(product, ct);
+        if (request.StockQuantity != stockBefore)
+            await movementRepo.AddAsync(InventoryMovement.Create(
+                product.Id,
+                request.StockQuantity > stockBefore ? MovementType.StockIn : MovementType.Adjustment,
+                Math.Abs(request.StockQuantity - stockBefore),
+                stockBefore,
+                request.UpdatedByUserId,
+                referenceType: "Product",
+                notes: "Product form stock update"), ct);
         return Map(product) with { CategoryName = category.Name };
     }
 

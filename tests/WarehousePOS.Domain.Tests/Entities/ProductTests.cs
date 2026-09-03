@@ -30,6 +30,32 @@ public sealed class ProductTests
         product.StockQuantity.Should().Be(0);
     }
 
+    [Fact]
+    public void Create_WithInitialStock_ShouldSetStockQuantity()
+    {
+        var product = Product.Create("Test", "SKU001", 100, 80, 1, stockQuantity: 25);
+
+        product.StockQuantity.Should().Be(25);
+    }
+
+    [Fact]
+    public void Create_WithNegativeStock_ShouldThrow()
+    {
+        Action act = () => Product.Create("Test", "SKU001", 100, 80, 1, stockQuantity: -1);
+
+        act.Should().Throw<ArgumentOutOfRangeException>();
+    }
+
+    [Fact]
+    public void SetStockQuantity_NegativeQuantity_ShouldThrow()
+    {
+        var product = Product.Create("Test", "SKU001", 100, 80, 1);
+
+        Action act = () => product.SetStockQuantity(-1);
+
+        act.Should().Throw<ArgumentOutOfRangeException>();
+    }
+
     [Theory]
     [InlineData("")]
     [InlineData(" ")]

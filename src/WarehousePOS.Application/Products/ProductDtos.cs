@@ -33,7 +33,9 @@ public sealed record CreateProductRequest(
     decimal RetailPrice,
     decimal WholesalePrice,
     int CategoryId,
-    int ReorderLevel = 5);
+    int ReorderLevel = 5,
+    int StockQuantity = 0,
+    int UpdatedByUserId = 1);
 
 public sealed record UpdateProductRequest(
     int Id,
@@ -43,4 +45,6 @@ public sealed record UpdateProductRequest(
     decimal RetailPrice,
     decimal WholesalePrice,
     int CategoryId,
-    int ReorderLevel);
+    int ReorderLevel,
+    int StockQuantity,
+    int UpdatedByUserId = 1);
