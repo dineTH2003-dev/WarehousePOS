@@ -47,23 +47,42 @@
             <StackPanel>
                 <TextBlock Text="Record New Expense" Style="{StaticResource H3}" Margin="0,0,0,16"/>
 
-                <TextBlock Text="{Binding ErrorMessage}" Foreground="{StaticResource DangerBrush}" Margin="0,0,0,10"
-                           Visibility="{Binding ErrorMessage, Converter={StaticResource NullToVisibilityConverter}}"/>
+                <!-- Form-level error banner -->
+                <Border Background="#FEF2F2" BorderBrush="{StaticResource DangerBrush}"
+                        BorderThickness="1" CornerRadius="6" Padding="10,8" Margin="0,0,0,12"
+                        Visibility="{Binding HasError, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <TextBlock Text="{Binding ErrorMessage}" Foreground="{StaticResource DangerBrush}"
+                               FontSize="13" TextWrapping="Wrap"/>
+                </Border>
 
-                <TextBlock Text="Category" Style="{StaticResource FormLabel}"/>
+                <TextBlock Text="Category *" Style="{StaticResource FormLabel}"/>
                 <ComboBox ItemsSource="{Binding Categories}" DisplayMemberPath="Name" SelectedValuePath="Id"
                           SelectedValue="{Binding SelectedCategoryId}" Height="38" Margin="0,0,0,12"/>
 
-                <TextBlock Text="Amount (Rs.)" Style="{StaticResource FormLabel}"/>
-                <TextBox Text="{Binding AmountText, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource FormTextBox}" Margin="0,0,0,12"/>
+                <TextBlock Text="Amount (Rs.) *" Style="{StaticResource FormLabel}"/>
+                <TextBox x:Name="AmountTextBox"
+                         Text="{Binding AmountText, UpdateSourceTrigger=PropertyChanged}"
+                         PreviewTextInput="AmountTextBox_PreviewTextInput"
+                         DataObject.Pasting="AmountTextBox_Pasting"
+                         Style="{StaticResource FormTextBox}"
+                         Margin="0,0,0,4"/>
+                <!-- Field-level immediate validation feedback -->
+                <TextBlock Text="{Binding AmountError}"
+                           Foreground="{StaticResource DangerBrush}"
+                           FontSize="12"
+                           Margin="0,0,0,8"
+                           TextWrapping="Wrap"
+                           Visibility="{Binding HasAmountError, Converter={StaticResource BoolToVisibilityConverter}}"/>
 
-                <TextBlock Text="Description" Style="{StaticResource FormLabel}"/>
+                <TextBlock Text="Description *" Style="{StaticResource FormLabel}"/>
                 <TextBox Text="{Binding Description, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource FormTextBox}" Margin="0,0,0,12"/>
 
                 <TextBlock Text="Reference / Bill #" Style="{StaticResource FormLabel}"/>
                 <TextBox Text="{Binding ReferenceNo, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource FormTextBox}" Margin="0,0,0,20"/>
 
-                <Button Content="Save Expense Entry" Style="{StaticResource DangerButton}" Command="{Binding AddExpenseCommand}"/>
+                <Button Content="Save Expense Entry" Style="{StaticResource DangerButton}"
+                        Command="{Binding AddExpenseCommand}"
+                        IsEnabled="{Binding IsBusy, Converter={StaticResource InvertBoolConverter}}"/>
             </StackPanel>
         </Border>
     </Grid>

@@ -61,6 +61,22 @@ public static class DbInitializer
             await db.Categories.AddAsync(defaultCategory);
         }
 
+        // Seed Default Expense Categories if none exist
+        if (!await db.ExpenseCategories.AnyAsync())
+        {
+            var defaultExpenseCategories = new[]
+            {
+                ExpenseCategory.Create("Utility Bills", "Electricity, water, internet, telephone, etc."),
+                ExpenseCategory.Create("Transport & Fuel", "Deliveries, logistics, vehicle fuel, transport"),
+                ExpenseCategory.Create("Rent & Lease", "Warehouse, storage, and facility rent / lease"),
+                ExpenseCategory.Create("Wages & Salaries", "Staff payroll and temporary/daily labor"),
+                ExpenseCategory.Create("Maintenance & Repairs", "Equipment, building, and facility maintenance"),
+                ExpenseCategory.Create("Office Supplies", "Stationery, packaging, printing supplies"),
+                ExpenseCategory.Create("Miscellaneous", "Other operational expenses")
+            };
+            await db.ExpenseCategories.AddRangeAsync(defaultExpenseCategories);
+        }
+
         await db.SaveChangesAsync();
     }
 }
