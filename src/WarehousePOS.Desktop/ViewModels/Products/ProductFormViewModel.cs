@@ -16,6 +16,7 @@ public sealed class ProductFormViewModel : ViewModelBase
     private string _description = string.Empty;
     private string _retailPriceText    = "0.00";
     private string _wholesalePriceText = "0.00";
+    private string _stockQuantityText = "0";
     private int    _categoryId;
     private int    _reorderLevel = 5;
     private string _errorMessage = string.Empty;
@@ -29,6 +30,7 @@ public sealed class ProductFormViewModel : ViewModelBase
     public string Description       { get => _description;       set => SetField(ref _description, value); }
     public string RetailPriceText   { get => _retailPriceText;   set => SetField(ref _retailPriceText, value); }
     public string WholesalePriceText{ get => _wholesalePriceText;set => SetField(ref _wholesalePriceText, value); }
+    public string StockQuantityText { get => _stockQuantityText; set { if (SetField(ref _stockQuantityText, value)) RefreshStockValidation(); } }
     public int    CategoryId        { get => _categoryId;         set => SetField(ref _categoryId, value); }
     public int    ReorderLevel      { get => _reorderLevel;       set => SetField(ref _reorderLevel, value); }
     public string ErrorMessage      { get => _errorMessage;       set { SetField(ref _errorMessage, value); OnPropertyChanged(nameof(HasError)); } }
@@ -46,7 +48,7 @@ public sealed class ProductFormViewModel : ViewModelBase
     {
         _productService  = productService;
         _categoryService = categoryService;
-        SaveCommand   = new RelayCommand(async () => await SaveAsync(), () => !IsBusy);
+        SaveCommand   = new RelayCommand(async () => await SaveAsync(), () => !IsBusy && IsStockQuantityValid());
         CancelCommand = new RelayCommand(() => SaveCompleted?.Invoke());
     }
 
@@ -65,18 +67,27 @@ public sealed class ProductFormViewModel : ViewModelBase
             Description        = existing.Description ?? string.Empty;
             RetailPriceText    = existing.RetailPrice.ToString("F2");
             WholesalePriceText = existing.WholesalePrice.ToString("F2");
+            StockQuantityText = existing.StockQuantity.ToString();
             CategoryId         = existing.CategoryId;
             ReorderLevel       = existing.ReorderLevel;
         }
         else
         {
             _editingId = null;
+            Name = string.Empty;
+            SKU = string.Empty;
+            Barcode = string.Empty;
+            Description = string.Empty;
+            RetailPriceText = "0.00";
+            WholesalePriceText = "0.00";
+            StockQuantityText = "0";
             CategoryId = cats.FirstOrDefault()?.Id ?? 0;
+            ReorderLevel = 5;
+            ErrorMessage = string.Empty;
         }
 
         OnPropertyChanged(nameof(IsEditMode));
         OnPropertyChanged(nameof(Title));
-        OnPropertyChanged(nameof(SKU));
     }
 
     private async Task SaveAsync()
@@ -86,6 +97,8 @@ public sealed class ProductFormViewModel : ViewModelBase
         if (!IsEditMode && string.IsNullOrWhiteSpace(_sku)) { ErrorMessage = "SKU is required."; return; }
         if (!decimal.TryParse(RetailPriceText,    out var retail))    { ErrorMessage = "Invalid retail price.";    return; }
         if (!decimal.TryParse(WholesalePriceText, out var wholesale)) { ErrorMessage = "Invalid wholesale price."; return; }
+        if (!TryParseStockQuantity(out var stockQuantity))
+        { ErrorMessage = "Stock quantity must be a non-negative whole number."; return; }
         if (CategoryId == 0) { ErrorMessage = "Please select a category."; return; }
 
         IsBusy = true;
@@ -96,7 +109,7 @@ public sealed class ProductFormViewModel : ViewModelBase
                 await _productService.UpdateAsync(new UpdateProductRequest(
                     _editingId!.Value, Name, string.IsNullOrWhiteSpace(Barcode) ? null : Barcode,
                     string.IsNullOrWhiteSpace(Description) ? null : Description,
-                    retail, wholesale, CategoryId, ReorderLevel));
+                    retail, wholesale, CategoryId, ReorderLevel, stockQuantity));
             }
             else
             {
@@ -104,11 +117,32 @@ public sealed class ProductFormViewModel : ViewModelBase
                     Name, _sku.Trim(),
                     string.IsNullOrWhiteSpace(Barcode) ? null : Barcode,
                     string.IsNullOrWhiteSpace(Description) ? null : Description,
-                    retail, wholesale, CategoryId, ReorderLevel));
+                    retail, wholesale, CategoryId, ReorderLevel, stockQuantity));
             }
             SaveCompleted?.Invoke();
         }
         catch (Exception ex) { ErrorMessage = ex.Message; }
         finally { IsBusy = false; }
+    }
+
+    private void RefreshStockValidation()
+    {
+        if (!IsStockQuantityValid())
+            ErrorMessage = "Stock quantity must be a non-negative whole number.";
+        else if (ErrorMessage == "Stock quantity must be a non-negative whole number.")
+            ErrorMessage = string.Empty;
+
+        SaveCommand.RaiseCanExecuteChanged();
+    }
+
+    private bool IsStockQuantityValid() =>
+        TryParseStockQuantity(out _);
+
+    private bool TryParseStockQuantity(out int stockQuantity)
+    {
+        stockQuantity = 0;
+        return !string.IsNullOrEmpty(StockQuantityText) &&
+               StockQuantityText.All(character => character is >= '0' and <= '9') &&
+               int.TryParse(StockQuantityText, out stockQuantity);
     }
 }

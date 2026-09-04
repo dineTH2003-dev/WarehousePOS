@@ -31,7 +31,8 @@ public sealed class Product : AggregateRoot
         int categoryId,
         string? barcode = null,
         string? description = null,
-        int reorderLevel = 5)
+        int reorderLevel = 5,
+        int stockQuantity = 0)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         ArgumentException.ThrowIfNullOrWhiteSpace(sku);
@@ -42,6 +43,9 @@ public sealed class Product : AggregateRoot
         if (wholesalePrice < 0)
             throw new ArgumentOutOfRangeException(nameof(wholesalePrice), "Wholesale price cannot be negative.");
 
+        if (stockQuantity < 0)
+            throw new ArgumentOutOfRangeException(nameof(stockQuantity), "Stock quantity cannot be negative.");
+
         return new Product
         {
             Name = name.Trim(),
@@ -51,7 +55,8 @@ public sealed class Product : AggregateRoot
             RetailPrice = retailPrice,
             WholesalePrice = wholesalePrice,
             CategoryId = categoryId,
-            ReorderLevel = reorderLevel
+            ReorderLevel = reorderLevel,
+            StockQuantity = stockQuantity
         };
     }
 
@@ -99,6 +104,15 @@ public sealed class Product : AggregateRoot
             throw new Exceptions.InsufficientStockException(Name, quantity, StockQuantity);
 
         StockQuantity -= quantity;
+        SetUpdatedAt();
+    }
+
+    public void SetStockQuantity(int quantity)
+    {
+        if (quantity < 0)
+            throw new ArgumentOutOfRangeException(nameof(quantity), "Stock quantity cannot be negative.");
+
+        StockQuantity = quantity;
         SetUpdatedAt();
     }
 

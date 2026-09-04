@@ -1,5 +1,6 @@
 using WarehousePOS.Application.Sales;
 using WarehousePOS.Desktop.ViewModels;
+using WarehousePOS.Desktop.Validation;
 using WarehousePOS.Domain.Enums;
 
 namespace WarehousePOS.Desktop.ViewModels.Sales;
@@ -17,10 +18,10 @@ public sealed class CustomerFormViewModel : ViewModelBase
     private string _errorMessage = string.Empty;
     private bool   _isBusy;
 
-    public string Name         { get => _name;         set => SetField(ref _name, value); }
+    public string Name         { get => _name;         set { if (SetField(ref _name, value)) RefreshValidation(); } }
     public SaleType Type       { get => _type;         set => SetField(ref _type, value); }
-    public string Phone        { get => _phone;        set => SetField(ref _phone, value); }
-    public string Email        { get => _email;        set => SetField(ref _email, value); }
+    public string Phone        { get => _phone;        set { if (SetField(ref _phone, value)) RefreshValidation(); } }
+    public string Email        { get => _email;        set { if (SetField(ref _email, value)) RefreshValidation(); } }
     public string Address      { get => _address;      set => SetField(ref _address, value); }
     public string ErrorMessage { get => _errorMessage; set { SetField(ref _errorMessage, value); OnPropertyChanged(nameof(HasError)); } }
     public bool HasError       => !string.IsNullOrEmpty(ErrorMessage);
@@ -37,7 +38,7 @@ public sealed class CustomerFormViewModel : ViewModelBase
     public CustomerFormViewModel(ICustomerService service)
     {
         _service = service;
-        SaveCommand   = new RelayCommand(async () => await SaveAsync(), () => !IsBusy);
+        SaveCommand   = new RelayCommand(async () => await SaveAsync(), () => !IsBusy && GetValidationError() is null);
         CancelCommand = new RelayCommand(() => SaveCompleted?.Invoke());
     }
 
@@ -56,7 +57,8 @@ public sealed class CustomerFormViewModel : ViewModelBase
     private async Task SaveAsync()
     {
         ErrorMessage = string.Empty;
-        if (string.IsNullOrWhiteSpace(Name)) { ErrorMessage = "Name is required."; return; }
+        var validationError = GetValidationError();
+        if (validationError is not null) { ErrorMessage = validationError; return; }
 
         IsBusy = true;
         try
@@ -75,4 +77,17 @@ public sealed class CustomerFormViewModel : ViewModelBase
     }
 
     private static string? Null(string s) => string.IsNullOrWhiteSpace(s) ? null : s.Trim();
+
+    private void RefreshValidation()
+    {
+        ErrorMessage = GetValidationError() ?? string.Empty;
+        SaveCommand.RaiseCanExecuteChanged();
+    }
+
+    private string? GetValidationError()
+    {
+        if (string.IsNullOrWhiteSpace(Name))
+            return "Name is required.";
+        return ContactValidation.GetPhoneError(Phone) ?? ContactValidation.GetEmailError(Email);
+    }
 }

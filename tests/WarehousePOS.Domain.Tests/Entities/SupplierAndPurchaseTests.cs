@@ -22,6 +22,24 @@ public sealed class SupplierTests
     public void Create_EmptyName_ShouldThrow(string? name) =>
         ((Action)(() => Supplier.Create(name!))).Should().Throw<ArgumentException>();
 
+    [Theory]
+    [InlineData("07123456789")]
+    [InlineData("07123abc45")]
+    [InlineData("07123-45678")]
+    [InlineData("+94771234567")]
+    public void Create_InvalidPhone_ShouldThrow(string phone) =>
+        ((Action)(() => Supplier.Create("Test", phone: phone)))
+            .Should().Throw<ArgumentException>().WithMessage("Phone number*");
+
+    [Theory]
+    [InlineData("test")]
+    [InlineData("hello@")]
+    [InlineData("@example.com")]
+    [InlineData("user@.com")]
+    public void Create_InvalidEmail_ShouldThrow(string email) =>
+        ((Action)(() => Supplier.Create("Test", email: email)))
+            .Should().Throw<ArgumentException>().WithMessage("Please enter a valid email address.*");
+
     [Fact]
     public void AddToBalance_ShouldIncrease()
     {
