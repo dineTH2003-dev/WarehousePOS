@@ -83,24 +83,48 @@ public sealed class SaleRepository(AppDbContext db) : ISaleRepository
 
     public async Task<IReadOnlyList<(int ProductId, string Sku, string Name, string CategoryName, int QuantitySold, decimal TotalSales)>> GetTopSellingProductsAsync(int topCount = 10, CancellationToken ct = default)
     {
-        var items = await db.SaleItems
-            .Include(i => i.Product)
-            .ThenInclude(p => p.Category)
+        // EF Core 3+ cannot translate GroupBy over navigation properties
+        // (e.g. i.Product.Name, i.Product.Category.Name) — it throws
+        // RelationalGroupByShaperExpression. Fix: group by primitive scalar
+        // (ProductId only) so EF Core can emit a plain SQL GROUP BY, then
+        // join the aggregation result back to Products + Categories in-memory.
+
+        // Step 1 — SQL-translatable aggregation grouped only on the FK scalar.
+        var aggregated = await db.SaleItems
             .Where(i => i.Product.IsActive)
-            .GroupBy(i => new { i.ProductId, i.Product.Name, i.Product.SKU, CategoryName = i.Product.Category.Name })
+            .GroupBy(i => i.ProductId)
             .Select(g => new
             {
-                g.Key.ProductId,
-                g.Key.SKU,
-                g.Key.Name,
-                g.Key.CategoryName,
+                ProductId    = g.Key,
                 QuantitySold = g.Sum(x => x.Quantity),
-                TotalSales = g.Sum(x => x.LineTotal)
+                // LineTotal is a C# computed property (no DB column) — EF Core cannot
+                // translate it in a SQL Sum(). Inline the formula instead:
+                TotalSales   = g.Sum(x => (x.UnitPrice * x.Quantity) - x.Discount)
             })
             .OrderByDescending(x => x.QuantitySold)
             .Take(topCount)
             .ToListAsync(ct);
 
-        return items.Select(x => (x.ProductId, x.SKU, x.Name, x.CategoryName, x.QuantitySold, x.TotalSales)).ToList();
+        if (aggregated.Count == 0)
+            return [];
+
+        // Step 2 — fetch names/SKUs/categories for those product IDs.
+        var productIds = aggregated.Select(a => a.ProductId).ToList();
+        var products   = await db.Products
+            .Include(p => p.Category)
+            .Where(p => productIds.Contains(p.Id))
+            .ToListAsync(ct);
+
+        var productMap = products.ToDictionary(p => p.Id);
+
+        // Step 3 — join in memory to preserve the ORDER BY QuantitySold ranking.
+        return aggregated
+            .Where(a => productMap.ContainsKey(a.ProductId))
+            .Select(a =>
+            {
+                var p = productMap[a.ProductId];
+                return (a.ProductId, p.SKU, p.Name, p.Category.Name, a.QuantitySold, a.TotalSales);
+            })
+            .ToList();
     }
 }
