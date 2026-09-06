@@ -1,3 +1,4 @@
+using Microsoft.Extensions.DependencyInjection;
 using System.Windows.Controls;
 
 namespace WarehousePOS.Desktop.Services;
@@ -5,18 +6,20 @@ namespace WarehousePOS.Desktop.Services;
 /// <summary>
 /// Frame-based navigation service.
 /// Maps ViewModel types to View types and navigates the main Frame.
+/// Manages page-level DI scopes to prevent EF Core concurrency/DbContext lifetime issues.
 /// </summary>
 public sealed class NavigationService : INavigationService
 {
     private Frame? _frame;
-    private readonly IServiceProvider _serviceProvider;
+    private readonly IServiceScopeFactory _scopeFactory;
+    private IServiceScope? _currentScope;
 
     // ViewModel → View type mapping
     private static readonly Dictionary<Type, Type> _viewMap = new();
 
-    public NavigationService(IServiceProvider serviceProvider)
+    public NavigationService(IServiceScopeFactory scopeFactory)
     {
-        _serviceProvider = serviceProvider;
+        _scopeFactory = scopeFactory;
     }
 
     public static void Register<TViewModel, TView>()
@@ -31,16 +34,20 @@ public sealed class NavigationService : INavigationService
     }
 
     /// <summary>
-    /// Navigate using the root service provider. Prefer <see cref="NavigateToScoped{TViewModel}"/>
-    /// to avoid resolving Scoped services (e.g. DbContext) from the root container.
+    /// Navigates to the specified ViewModel, automatically creating a fresh DI scope
+    /// and disposing the previous page's scope.
     /// </summary>
     public void NavigateTo<TViewModel>() where TViewModel : class
-        => NavigateCore(typeof(TViewModel), _serviceProvider);
+    {
+        _currentScope?.Dispose();
+        _currentScope = _scopeFactory.CreateScope();
+        NavigateCore(typeof(TViewModel), _currentScope.ServiceProvider);
+    }
 
     /// <summary>
     /// Navigate using a caller-supplied scoped <see cref="IServiceProvider"/> so that
     /// Scoped services (EF Core DbContext, repositories, application services) are
-    /// resolved from the correct scope and not captured from the root container.
+    /// resolved from the specified scope.
     /// </summary>
     public void NavigateToScoped<TViewModel>(IServiceProvider scopedProvider) where TViewModel : class
         => NavigateCore(typeof(TViewModel), scopedProvider);

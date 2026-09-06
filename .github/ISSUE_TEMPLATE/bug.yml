@@ -1,13 +1,18 @@
 name: Bug Report
-description: Report a bug or unexpected behaviour
+description: Report a bug or unexpected behaviour in WarehousePOS
 title: "[BUG] "
 labels: ["bug"]
 body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug. Fill in all required fields below so the team can reproduce and fix it quickly.
+
   - type: textarea
     id: description
     attributes:
       label: Description
-      description: What went wrong?
+      description: A clear summary of what went wrong.
     validations:
       required: true
 
@@ -26,6 +31,7 @@ body:
     id: expected
     attributes:
       label: Expected Behaviour
+      description: What should have happened?
     validations:
       required: true
 
@@ -33,13 +39,15 @@ body:
     id: actual
     attributes:
       label: Actual Behaviour
+      description: What actually happened?
     validations:
       required: true
 
   - type: dropdown
     id: layer
     attributes:
-      label: Suspected Layer
+      label: Affected Layer
+      description: Which layer of the application is most likely responsible?
       options:
         - Domain
         - Application
@@ -48,5 +56,31 @@ body:
         - Database / Migration
         - Printing
         - Unknown
+    validations:
+      required: true
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      options:
+        - Critical — application crashes or data loss
+        - High — feature is broken and unusable
+        - Medium — feature works but behaves incorrectly
+        - Low — minor visual or cosmetic issue
+    validations:
+      required: true
+
+  - type: textarea
+    id: technical_support
+    attributes:
+      label: 🔧 Technical Support / Fix Hints
+      description: |
+        Optional but encouraged. If you know the likely cause or have a suggested approach to fixing this,
+        describe it here. Reference specific files, classes, methods, or patterns in the codebase.
+      placeholder: |
+        - The issue is likely in `src/WarehousePOS.Desktop/ViewModels/...`
+        - The ViewModel property is not resetting because ...
+        - Suggested fix: call Reset() before opening the form
     validations:
       required: false

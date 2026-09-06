@@ -1,39 +1,48 @@
-name: Feature Request
-description: New feature or user story
-title: "[EPIC-XX] "
-labels: ["feature"]
+name: Feature Request / Enhancement
+description: Suggest a new feature or improvement to an existing one
+title: "[FEATURE] "
+labels: ["enhancement"]
 body:
-  - type: dropdown
-    id: epic
+  - type: markdown
     attributes:
-      label: Epic
+      value: |
+        Use this template to propose new features or enhancements to WarehousePOS.
+        Please be as specific as possible so the team can evaluate and implement it correctly.
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Feature Area
+      description: Which part of the application does this feature relate to?
       options:
-        - "EPIC-01 Project Foundation"
-        - "EPIC-02 Authentication & Authorization"
-        - "EPIC-03 Product & Catalog"
-        - "EPIC-04 Suppliers"
-        - "EPIC-05 Purchasing"
-        - "EPIC-06 Inventory"
-        - "EPIC-07 POS & Sales"
-        - "EPIC-08 Payments & Discounts"
-        - "EPIC-09 Billing & Printing"
-        - "EPIC-10 Employees & Payroll"
-        - "EPIC-11 Expenses"
-        - "EPIC-12 Reports & Analytics"
-        - "EPIC-13 Audit & Backup"
-        - "EPIC-14 Testing & Deployment"
+        - Authentication & User Management
+        - Product & Category Management
+        - Supplier Management
+        - Purchase Orders
+        - Inventory & Stock Movements
+        - POS & Sales
+        - Payments & Discounts
+        - Invoices & Billing
+        - Printing (Receipts / POs)
+        - Customers
+        - Employees & Payroll
+        - Expenses
+        - Reports & Analytics
+        - Backup & Audit
+        - UI / UX Improvement
+        - Performance
+        - Other
     validations:
       required: true
 
   - type: dropdown
-    id: developer
+    id: priority
     attributes:
-      label: Assigned Developer
+      label: Priority
       options:
-        - "Dev 1 — Products / Suppliers / Inventory"
-        - "Dev 2 — POS / Sales / Billing"
-        - "Dev 3 — Administration / Reporting"
-        - "All"
+        - High — blocks important workflow
+        - Medium — improves existing workflow
+        - Low — nice to have
     validations:
       required: true
 
@@ -41,7 +50,7 @@ body:
     id: description
     attributes:
       label: Description
-      description: What needs to be built?
+      description: What needs to be built or changed? Why is it needed?
     validations:
       required: true
 
@@ -49,17 +58,36 @@ body:
     id: acceptance_criteria
     attributes:
       label: Acceptance Criteria
-      description: Define done. Use checkboxes.
+      description: Define exactly what "done" looks like. Use checkboxes.
       placeholder: |
-        - [ ] ...
-        - [ ] ...
+        - [ ] User can do X
+        - [ ] System validates Y
+        - [ ] Data is saved as Z
     validations:
       required: true
 
   - type: textarea
-    id: architecture_layer
+    id: affected_layers
     attributes:
       label: Affected Layers
-      description: Which layers are touched? (Domain / Application / Infrastructure / Desktop)
+      description: Which layers will need changes? (Domain / Application / Infrastructure / Desktop)
+      placeholder: |
+        - Desktop: new form / ViewModel
+        - Application: new use-case / DTO
+        - Infrastructure: new repository method (if schema changes, add a migration)
+    validations:
+      required: false
+
+  - type: textarea
+    id: technical_support
+    attributes:
+      label: 🔧 Technical Support / Implementation Hints
+      description: |
+        Optional but encouraged. Describe suggested implementation approaches, relevant existing
+        classes, patterns to follow, or anything that helps the developer get started quickly.
+      placeholder: |
+        - Follow the same pattern as `AddProductUseCase` in Application layer
+        - The new ViewModel should live at `WarehousePOS.Desktop/ViewModels/...`
+        - Remember to wrap DB changes in a transaction if multiple tables are updated
     validations:
       required: false

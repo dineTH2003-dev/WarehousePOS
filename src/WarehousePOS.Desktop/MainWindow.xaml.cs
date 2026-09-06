@@ -105,6 +105,9 @@ public partial class MainWindow : Window
     private void BtnProducts_Click(object sender, RoutedEventArgs e)
         => NavigateTo<ProductListViewModel>();
 
+    private void BtnCategories_Click(object sender, RoutedEventArgs e)
+        => NavigateTo<CategoryManagementViewModel>();
+
     private void BtnSuppliers_Click(object sender, RoutedEventArgs e)
         => NavigateTo<SupplierListViewModel>();
 

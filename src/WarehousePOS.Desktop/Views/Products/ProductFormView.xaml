@@ -38,12 +38,34 @@
                              Style="{StaticResource FormTextBox}" Margin="0,0,0,14"/>
 
                     <!-- Category -->
-                    <TextBlock Text="Category *" Style="{StaticResource LabelText}" Margin="0,0,0,6"/>
-                    <ComboBox ItemsSource="{Binding Categories}"
-                              SelectedValuePath="Id"
-                              DisplayMemberPath="Name"
-                              SelectedValue="{Binding CategoryId}"
-                              Margin="0,0,0,14"/>
+                    <Grid Margin="0,0,0,6">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="Category *" Style="{StaticResource LabelText}" VerticalAlignment="Center"/>
+                        <Button Grid.Column="1" Content="+ New Category"
+                                Style="{StaticResource SecondaryButton}"
+                                Padding="8,2" FontSize="11"
+                                Command="{Binding AddCategoryCommand}"
+                                ToolTip="Create a new category immediately"/>
+                    </Grid>
+                    <Grid Margin="0,0,0,14">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <ComboBox Grid.Column="0"
+                                  ItemsSource="{Binding Categories}"
+                                  SelectedValuePath="Id"
+                                  DisplayMemberPath="Name"
+                                  SelectedValue="{Binding CategoryId}"/>
+                        <Button Grid.Column="1" Content="Manage ⚙"
+                                Style="{StaticResource SecondaryButton}"
+                                Margin="6,0,0,0" Padding="8,4" FontSize="11"
+                                Command="{Binding ManageCategoriesCommand}"
+                                ToolTip="Go to Category Management page"/>
+                    </Grid>
 
                     <!-- Prices -->
                     <Grid Margin="0,0,0,14">

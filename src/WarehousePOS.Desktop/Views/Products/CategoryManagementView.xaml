@@ -5,78 +5,119 @@
       Background="{StaticResource BackgroundBrush}">
 
     <Grid Margin="24">
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="320" />
-            <ColumnDefinition Width="16" />
-            <ColumnDefinition Width="*" />
-        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
 
-        <!-- Left: Form panel -->
-        <Border Grid.Column="0" Style="{StaticResource Card}" VerticalAlignment="Top">
-            <StackPanel>
-                <TextBlock Text="{Binding IsEditing, Converter={StaticResource IsEditingToTitleConverter}}"
-                           Style="{StaticResource H3}" Margin="0,0,0,16"/>
+        <!-- Top Header Navigation Bar -->
+        <Grid Grid.Row="0" Margin="0,0,0,20">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
 
-                <TextBlock Text="Category Name *" Style="{StaticResource LabelText}" Margin="0,0,0,6"/>
-                <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"
-                         Style="{StaticResource FormTextBox}" Margin="0,0,0,16"/>
+            <Button Grid.Column="0" Content="← Back to Products"
+                    Style="{StaticResource SecondaryButton}"
+                    Command="{Binding BackCommand}"
+                    Padding="14,8" Margin="0,0,16,0"
+                    VerticalAlignment="Center"/>
 
-                <TextBlock Text="Description" Style="{StaticResource LabelText}" Margin="0,0,0,6"/>
-                <TextBox Text="{Binding Description, UpdateSourceTrigger=PropertyChanged}"
-                         Style="{StaticResource FormTextBox}"
-                         Height="80" AcceptsReturn="True" TextWrapping="Wrap"
-                         Margin="0,0,0,16"/>
+            <TextBlock Grid.Column="1" Text="Product Category Management"
+                       Style="{StaticResource H2}" VerticalAlignment="Center"/>
 
-                <!-- Error -->
-                <Border Background="#FEF2F2" BorderBrush="{StaticResource DangerBrush}"
-                        BorderThickness="1" CornerRadius="6" Padding="10,8"
-                        Margin="0,0,0,12"
-                        Visibility="{Binding HasError, Converter={StaticResource BoolToVisibilityConverter}}">
-                    <TextBlock Text="{Binding ErrorMessage}" Foreground="{StaticResource DangerBrush}"
-                               FontSize="13" TextWrapping="Wrap"/>
-                </Border>
+            <Button Grid.Column="2" Content="+ Add Product"
+                    Style="{StaticResource PrimaryButton}"
+                    Command="{Binding AddProductCommand}"
+                    Padding="16,8"
+                    VerticalAlignment="Center"/>
+        </Grid>
 
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                    <Button Content="Cancel" Style="{StaticResource SecondaryButton}"
-                            Command="{Binding CancelCommand}" Margin="0,0,8,0"/>
-                    <Button Content="Save" Style="{StaticResource PrimaryButton}"
-                            Command="{Binding SaveCommand}"/>
+        <!-- Main Content (Left: Form, Right: Grid) -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="340" />
+                <ColumnDefinition Width="20" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <!-- Left: Form panel -->
+            <Border Grid.Column="0" Style="{StaticResource Card}" VerticalAlignment="Top">
+                <StackPanel>
+                    <TextBlock Text="{Binding IsEditing, Converter={StaticResource IsEditingToTitleConverter}}"
+                               Style="{StaticResource H3}" Margin="0,0,0,16"/>
+
+                    <TextBlock Text="Category Name *" Style="{StaticResource LabelText}" Margin="0,0,0,6"/>
+                    <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"
+                             Style="{StaticResource FormTextBox}" Margin="0,0,0,16"/>
+
+                    <TextBlock Text="Description" Style="{StaticResource LabelText}" Margin="0,0,0,6"/>
+                    <TextBox Text="{Binding Description, UpdateSourceTrigger=PropertyChanged}"
+                             Style="{StaticResource FormTextBox}"
+                             Height="80" AcceptsReturn="True" TextWrapping="Wrap"
+                             Margin="0,0,0,16"/>
+
+                    <!-- Success Message -->
+                    <Border Background="#F0FDF4" BorderBrush="{StaticResource SuccessBrush}"
+                            BorderThickness="1" CornerRadius="6" Padding="10,8"
+                            Margin="0,0,0,12"
+                            Visibility="{Binding HasSuccessMessage, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <TextBlock Text="{Binding SuccessMessage}" Foreground="{StaticResource SuccessBrush}"
+                                   FontSize="13" TextWrapping="Wrap"/>
+                    </Border>
+
+                    <!-- Error Message -->
+                    <Border Background="#FEF2F2" BorderBrush="{StaticResource DangerBrush}"
+                            BorderThickness="1" CornerRadius="6" Padding="10,8"
+                            Margin="0,0,0,12"
+                            Visibility="{Binding HasError, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <TextBlock Text="{Binding ErrorMessage}" Foreground="{StaticResource DangerBrush}"
+                                   FontSize="13" TextWrapping="Wrap"/>
+                    </Border>
+
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                        <Button Content="Clear" Style="{StaticResource SecondaryButton}"
+                                Command="{Binding CancelCommand}" Margin="0,0,8,0"/>
+                        <Button Content="{Binding SaveButtonText}" Style="{StaticResource PrimaryButton}"
+                                Command="{Binding SaveCommand}"/>
+                    </StackPanel>
                 </StackPanel>
-            </StackPanel>
-        </Border>
+            </Border>
 
-        <!-- Right: Category list -->
-        <Border Grid.Column="2" Style="{StaticResource Card}">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
-                </Grid.RowDefinitions>
+            <!-- Right: Category list -->
+            <Border Grid.Column="2" Style="{StaticResource Card}">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
 
-                <TextBlock Grid.Row="0" Text="All Categories"
-                           Style="{StaticResource H3}" Margin="0,0,0,16"/>
+                    <TextBlock Grid.Row="0" Text="All Categories"
+                               Style="{StaticResource H3}" Margin="0,0,0,16"/>
 
-                <DataGrid Grid.Row="1"
-                          ItemsSource="{Binding Categories}"
-                          SelectedItem="{Binding SelectedCategory}">
-                    <DataGrid.Columns>
-                        <DataGridTextColumn Header="Name"        Binding="{Binding Name}"         Width="*"/>
-                        <DataGridTextColumn Header="Products"    Binding="{Binding ProductCount}"  Width="80"/>
-                        <DataGridTextColumn Header="Status"      Binding="{Binding IsActive, Converter={StaticResource BoolToStatusConverter}}" Width="80"/>
-                        <DataGridTemplateColumn Header="Action"  Width="100">
-                            <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
-                                    <Button Content="{Binding IsActive, Converter={StaticResource BoolToToggleTextConverter}}"
-                                            Style="{StaticResource SecondaryButton}"
-                                            Padding="8,4"
-                                            Command="{Binding DataContext.ToggleActiveCommand, RelativeSource={RelativeSource AncestorType=Page}}"
-                                            CommandParameter="{Binding}"/>
-                                </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                        </DataGridTemplateColumn>
-                    </DataGrid.Columns>
-                </DataGrid>
-            </Grid>
-        </Border>
+                    <DataGrid Grid.Row="1"
+                              ItemsSource="{Binding Categories}"
+                              SelectedItem="{Binding SelectedCategory}">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Name"        Binding="{Binding Name}"         Width="*"/>
+                            <DataGridTextColumn Header="Products"    Binding="{Binding ProductCount}"  Width="90"/>
+                            <DataGridTextColumn Header="Status"      Binding="{Binding IsActive, Converter={StaticResource BoolToStatusConverter}}" Width="90"/>
+                            <DataGridTemplateColumn Header="Action"  Width="110">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Button Content="{Binding IsActive, Converter={StaticResource BoolToToggleTextConverter}}"
+                                                Style="{StaticResource SecondaryButton}"
+                                                Padding="8,4"
+                                                Command="{Binding DataContext.ToggleActiveCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                CommandParameter="{Binding}"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </Border>
+        </Grid>
     </Grid>
 </Page>

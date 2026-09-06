@@ -125,10 +125,11 @@ public partial class App : System.Windows.Application
                 Log.Information("Database initialised successfully.");
             }
 
-            // ── Show Login (inside its own DI scope) ─────────────
-            // Set ShutdownMode to OnExplicitShutdown so WPF does not shut down
-            // the application when LoginWindow closes.
+            // Prevent WPF from automatically terminating when LoginWindow closes.
+            // Set OnExplicitShutdown so the app stays alive after the dialog closes.
             ShutdownMode = ShutdownMode.OnExplicitShutdown;
+
+            // ── Show Login (inside its own DI scope) ─────────────
 
             bool loggedIn;
             using (var loginScope = _host.Services.CreateScope())
@@ -151,7 +152,7 @@ public partial class App : System.Windows.Application
             MainWindow = mainWindow;
             mainWindow.Show();
 
-            // Once MainWindow is active, switch ShutdownMode back so closing MainWindow terminates the app
+            // Once MainWindow is shown, switch ShutdownMode back so closing it terminates the app.
             ShutdownMode = ShutdownMode.OnMainWindowClose;
 
             base.OnStartup(e);
