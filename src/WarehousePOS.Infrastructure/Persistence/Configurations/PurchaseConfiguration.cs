@@ -22,6 +22,8 @@ public sealed class PurchaseItemConfiguration : IEntityTypeConfiguration<Purchas
     {
         builder.HasKey(i => i.Id);
         builder.Property(i => i.UnitCost).HasColumnType("decimal(18,2)");
+        builder.Property(i => i.RetailPrice).HasColumnType("decimal(18,2)");
+        builder.Property(i => i.WholesalePrice).HasColumnType("decimal(18,2)");
         builder.HasOne(i => i.Product).WithMany().HasForeignKey(i => i.ProductId).OnDelete(DeleteBehavior.Restrict);
     }
 }

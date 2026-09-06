@@ -10,6 +10,7 @@ using WarehousePOS.Desktop.Services;
 using WarehousePOS.Desktop.ViewModels.Auth;
 using WarehousePOS.Desktop.ViewModels.Expenses;
 using WarehousePOS.Desktop.ViewModels.Products;
+using WarehousePOS.Desktop.ViewModels.Purchasing;
 using WarehousePOS.Desktop.ViewModels.Reports;
 using WarehousePOS.Desktop.ViewModels.Sales;
 using WarehousePOS.Desktop.ViewModels.Settings;
@@ -17,6 +18,7 @@ using WarehousePOS.Desktop.ViewModels.Suppliers;
 using WarehousePOS.Desktop.Views.Auth;
 using WarehousePOS.Desktop.Views.Expenses;
 using WarehousePOS.Desktop.Views.Products;
+using WarehousePOS.Desktop.Views.Purchasing;
 using WarehousePOS.Desktop.Views.Reports;
 using WarehousePOS.Desktop.Views.Sales;
 using WarehousePOS.Desktop.Views.Settings;
@@ -77,6 +79,7 @@ public partial class App : System.Windows.Application
                     services.AddScoped<PosViewModel>();
                     services.AddScoped<ProductListViewModel>();
                     services.AddScoped<ProductFormViewModel>();
+                    services.AddScoped<PurchasingViewModel>();
                     services.AddScoped<CategoryManagementViewModel>();
                     services.AddScoped<SupplierListViewModel>();
                     services.AddScoped<SupplierFormViewModel>();
@@ -89,6 +92,7 @@ public partial class App : System.Windows.Application
                     // ── Views (Pages) ─────────────────────────────
                     services.AddScoped<PosView>();
                     services.AddScoped<ProductListView>();
+                    services.AddScoped<PurchasingView>();
                     services.AddScoped<CategoryManagementView>();
                     services.AddScoped<SupplierListView>();
                     services.AddScoped<CustomerListView>();
@@ -107,6 +111,7 @@ public partial class App : System.Windows.Application
             // ── Register navigation routes ────────────────────────
             NavigationService.Register<PosViewModel,                Views.Sales.PosView>();
             NavigationService.Register<ProductListViewModel,        Views.Products.ProductListView>();
+            NavigationService.Register<PurchasingViewModel,         Views.Purchasing.PurchasingView>();
             NavigationService.Register<CategoryManagementViewModel, Views.Products.CategoryManagementView>();
             NavigationService.Register<SupplierListViewModel,       Views.Suppliers.SupplierListView>();
             NavigationService.Register<CustomerListViewModel,       Views.Sales.CustomerListView>();

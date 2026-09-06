@@ -9,8 +9,11 @@ public sealed record PurchaseItemDto(
     string ProductName,
     string SKU,
     int Quantity,
+    int FreeQuantity,
     decimal UnitCost,
-    decimal TotalCost);
+    decimal TotalCost,
+    decimal RetailPrice = 0,
+    decimal WholesalePrice = 0);
 
 public sealed record PurchaseDto(
     int Id,
@@ -30,7 +33,13 @@ public sealed record CreatePurchaseRequest(
     string? Notes,
     IReadOnlyList<CreatePurchaseItemRequest> Items);
 
-public sealed record CreatePurchaseItemRequest(int ProductId, int Quantity, decimal UnitCost);
+public sealed record CreatePurchaseItemRequest(
+    int ProductId,
+    int Quantity,
+    decimal UnitCost,
+    int FreeQuantity = 0,
+    decimal RetailPrice = 0,
+    decimal WholesalePrice = 0);
 
 // ── Inventory DTOs ────────────────────────────────────────────────────────────
 

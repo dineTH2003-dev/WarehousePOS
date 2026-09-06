@@ -38,7 +38,7 @@ public sealed class PurchaseService(
         {
             var product = await productRepo.GetByIdAsync(item.ProductId, ct)
                 ?? throw new EntityNotFoundException(nameof(Product), item.ProductId);
-            purchase.AddItem(product.Id, item.Quantity, item.UnitCost);
+            purchase.AddItem(product.Id, item.Quantity, item.UnitCost, item.FreeQuantity, item.RetailPrice, item.WholesalePrice);
         }
 
         await purchaseRepo.AddAsync(purchase, ct);
@@ -69,11 +69,20 @@ public sealed class PurchaseService(
                     ?? throw new EntityNotFoundException(nameof(Product), item.ProductId);
 
                 var before = product.StockQuantity;
-                product.AddStock(item.Quantity);
+                var totalQuantityToAdd = item.Quantity + item.FreeQuantity;
+                product.AddStock(totalQuantityToAdd);
+
+                if (item.RetailPrice > 0 || item.WholesalePrice > 0)
+                {
+                    var retail = item.RetailPrice > 0 ? item.RetailPrice : product.RetailPrice;
+                    var wholesale = item.WholesalePrice > 0 ? item.WholesalePrice : product.WholesalePrice;
+                    product.UpdatePricing(retail, wholesale);
+                }
+
                 await productRepo.UpdateAsync(product, ct);
 
                 var movement = InventoryMovement.Create(
-                    product.Id, MovementType.PurchaseReceive, item.Quantity, before,
+                    product.Id, MovementType.PurchaseReceive, totalQuantityToAdd, before,
                     purchase.CreatedByUserId,
                     referenceId: purchase.Id.ToString(),
                     referenceType: "Purchase");
@@ -102,5 +111,6 @@ public sealed class PurchaseService(
         p.Items.Select(i => new PurchaseItemDto(
             i.ProductId, i.Product?.Name ?? string.Empty,
             i.Product?.SKU ?? string.Empty,
-            i.Quantity, i.UnitCost, i.TotalCost)).ToList());
+            i.Quantity, i.FreeQuantity, i.UnitCost, i.TotalCost,
+            i.RetailPrice, i.WholesalePrice)).ToList());
 }

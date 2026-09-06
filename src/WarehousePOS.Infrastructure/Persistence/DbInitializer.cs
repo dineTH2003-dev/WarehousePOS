@@ -29,6 +29,11 @@ public static class DbInitializer
                 await db.Database.EnsureDeletedAsync();
                 await db.Database.EnsureCreatedAsync();
             }
+            else
+            {
+                // Migrate any missing columns on existing SQLite tables
+                await EnsureColumnsExistAsync(db);
+            }
         }
 
         // Seed Admin user if no users exist
@@ -79,4 +84,44 @@ public static class DbInitializer
 
         await db.SaveChangesAsync();
     }
+
+    private static async Task EnsureColumnsExistAsync(AppDbContext db)
+    {
+        try
+        {
+            var supplierColumns = await db.Database
+                .SqlQueryRaw<string>("SELECT name FROM pragma_table_info('Suppliers')")
+                .ToListAsync();
+
+            if (!supplierColumns.Contains("ProvidedProducts", StringComparer.OrdinalIgnoreCase))
+            {
+                await db.Database.ExecuteSqlRawAsync("ALTER TABLE Suppliers ADD COLUMN ProvidedProducts TEXT NULL;");
+            }
+
+            var purchaseItemColumns = await db.Database
+                .SqlQueryRaw<string>("SELECT name FROM pragma_table_info('PurchaseItems')")
+                .ToListAsync();
+
+            if (purchaseItemColumns.Any())
+            {
+                if (!purchaseItemColumns.Contains("FreeQuantity", StringComparer.OrdinalIgnoreCase))
+                {
+                    await db.Database.ExecuteSqlRawAsync("ALTER TABLE PurchaseItems ADD COLUMN FreeQuantity INTEGER NOT NULL DEFAULT 0;");
+                }
+                if (!purchaseItemColumns.Contains("RetailPrice", StringComparer.OrdinalIgnoreCase))
+                {
+                    await db.Database.ExecuteSqlRawAsync("ALTER TABLE PurchaseItems ADD COLUMN RetailPrice TEXT NOT NULL DEFAULT '0';");
+                }
+                if (!purchaseItemColumns.Contains("WholesalePrice", StringComparer.OrdinalIgnoreCase))
+                {
+                    await db.Database.ExecuteSqlRawAsync("ALTER TABLE PurchaseItems ADD COLUMN WholesalePrice TEXT NOT NULL DEFAULT '0';");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error auto-migrating SQLite columns: {ex.Message}");
+        }
+    }
 }
+
