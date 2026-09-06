@@ -139,7 +139,7 @@
                         <TextBlock Text="Low-Stock Products" FontWeight="Bold" FontSize="14" Foreground="{StaticResource TextPrimaryBrush}"/>
                         <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
                             <TextBlock Text="{Binding LowStockCount}" FontWeight="SemiBold" Foreground="{StaticResource DangerBrush}"/>
-                            <TextBlock Text=" product(s) currently low on stock (Quantity ≤ 5)" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"/>
+                            <TextBlock Text=" product(s) currently low on stock" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"/>
                         </StackPanel>
                     </StackPanel>
                 </StackPanel>
