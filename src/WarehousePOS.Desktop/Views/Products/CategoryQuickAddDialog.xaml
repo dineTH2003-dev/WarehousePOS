@@ -1,0 +1,55 @@
+<Window x:Class="WarehousePOS.Desktop.Views.Products.CategoryQuickAddDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Add New Category"
+        Height="360" Width="440"
+        ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner"
+        Background="{StaticResource BackgroundBrush}">
+
+    <Border Style="{StaticResource Card}" Margin="20">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <TextBlock Grid.Row="0" Text="Add New Product Category" Style="{StaticResource H3}" Margin="0,0,0,16"/>
+
+            <StackPanel Grid.Row="1">
+                <TextBlock Text="Category Name *" Style="{StaticResource LabelText}" Margin="0,0,0,6"/>
+                <TextBox x:Name="TxtName" Style="{StaticResource FormTextBox}" Margin="0,0,0,14"/>
+
+                <TextBlock Text="Description" Style="{StaticResource LabelText}" Margin="0,0,0,6"/>
+                <TextBox x:Name="TxtDescription" Style="{StaticResource FormTextBox}"
+                         Height="64" AcceptsReturn="True" TextWrapping="Wrap" Margin="0,0,0,14"/>
+
+                <!-- Error Message -->
+                <Border x:Name="ErrorBorder" Background="#FEF2F2" BorderBrush="{StaticResource DangerBrush}"
+                        BorderThickness="1" CornerRadius="6" Padding="8,6" Margin="0,0,0,8" Visibility="Collapsed">
+                    <TextBlock x:Name="TxtError" Foreground="{StaticResource DangerBrush}" FontSize="12" TextWrapping="Wrap"/>
+                </Border>
+            </StackPanel>
+
+            <Grid Grid.Row="2" Margin="0,12,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <Button Grid.Column="0" Content="Manage Page ⚙" Style="{StaticResource SecondaryButton}"
+                        Click="BtnOpenFullPage_Click" FontSize="11" Padding="8,4"
+                        ToolTip="Go to full Category Management page"/>
+
+                <StackPanel Grid.Column="2" Orientation="Horizontal">
+                    <Button Content="Cancel" Style="{StaticResource SecondaryButton}"
+                            Click="BtnCancel_Click" Margin="0,0,8,0"/>
+                    <Button Content="Save Category" Style="{StaticResource PrimaryButton}"
+                            Click="BtnSave_Click"/>
+                </StackPanel>
+            </Grid>
+        </Grid>
+    </Border>
+</Window>

@@ -18,9 +18,17 @@
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
             <TextBlock Text="Products" Style="{StaticResource H2}" VerticalAlignment="Center"/>
-            <Button Grid.Column="1" Content="+ Add Product"
-                    Style="{StaticResource PrimaryButton}"
-                    Command="{Binding AddCommand}"/>
+            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                <Button Content="🏷️ Manage Categories"
+                        Style="{StaticResource SecondaryButton}"
+                        Command="{Binding ManageCategoriesCommand}"
+                        Margin="0,0,10,0"
+                        Padding="12,8"/>
+                <Button Content="+ Add Product"
+                        Style="{StaticResource PrimaryButton}"
+                        Command="{Binding AddCommand}"
+                        Padding="16,8"/>
+            </StackPanel>
         </Grid>
 
         <!-- Filter bar -->
