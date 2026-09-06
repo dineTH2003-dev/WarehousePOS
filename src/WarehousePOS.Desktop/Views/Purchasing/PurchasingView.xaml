@@ -26,33 +26,89 @@
             </StackPanel>
         </Grid>
 
-        <!-- ── Supplier & Notes Section ─────────────────────── -->
+        <!-- ── Supplier & Payment Section ─────────────────────── -->
         <Border Grid.Row="1" Style="{StaticResource Card}" Margin="0,0,0,16" Padding="16,14">
             <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="300"/>
-                    <ColumnDefinition Width="16"/>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="12"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
 
-                <!-- Supplier Selection -->
-                <StackPanel Grid.Column="0">
-                    <TextBlock Text="Select Supplier *" Style="{StaticResource LabelText}" Margin="0,0,0,6"/>
-                    <ComboBox ItemsSource="{Binding Suppliers}"
-                              SelectedValuePath="Id"
-                              DisplayMemberPath="Name"
-                              SelectedValue="{Binding SelectedSupplierId}">
-                        <ComboBox.ToolTip>Choose the supplier providing these products</ComboBox.ToolTip>
-                    </ComboBox>
-                </StackPanel>
+                <!-- Row 0: Supplier & Purchase Notes -->
+                <Grid Grid.Row="0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="320"/>
+                        <ColumnDefinition Width="16"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
 
-                <!-- Purchase Notes -->
-                <StackPanel Grid.Column="2">
-                    <TextBlock Text="Purchase Order Notes / Invoice No." Style="{StaticResource LabelText}" Margin="0,0,0,6"/>
-                    <TextBox Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}"
-                             Style="{StaticResource FormTextBox}"
-                             ToolTip="Optional reference notes or supplier invoice number"/>
-                </StackPanel>
+                    <!-- Supplier Selection -->
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="Select Supplier *" Style="{StaticResource LabelText}" Margin="0,0,0,6"/>
+                        <ComboBox ItemsSource="{Binding Suppliers}"
+                                  SelectedValuePath="Id"
+                                  DisplayMemberPath="DisplayName"
+                                  SelectedValue="{Binding SelectedSupplierId}">
+                            <ComboBox.ToolTip>Choose the supplier providing these products (filters line item products)</ComboBox.ToolTip>
+                        </ComboBox>
+                    </StackPanel>
+
+                    <!-- Purchase Notes -->
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Text="Purchase Order Notes / Invoice No." Style="{StaticResource LabelText}" Margin="0,0,0,6"/>
+                        <TextBox Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}"
+                                 Style="{StaticResource FormTextBox}"
+                                 ToolTip="Optional reference notes or supplier invoice number"/>
+                    </StackPanel>
+                </Grid>
+
+                <!-- Row 2: Payment Method, Paid Amount, Remaining Balance, Payment Details -->
+                <Grid Grid.Row="2">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="160"/>
+                        <ColumnDefinition Width="12"/>
+                        <ColumnDefinition Width="140"/>
+                        <ColumnDefinition Width="12"/>
+                        <ColumnDefinition Width="150"/>
+                        <ColumnDefinition Width="12"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Payment Method -->
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="Payment Method *" Style="{StaticResource LabelText}" FontSize="11" Margin="0,0,0,4"/>
+                        <ComboBox ItemsSource="{Binding PaymentMethods}"
+                                  SelectedItem="{Binding SelectedPaymentMethod}">
+                            <ComboBox.ToolTip>Select payment method used for this transaction</ComboBox.ToolTip>
+                        </ComboBox>
+                    </StackPanel>
+
+                    <!-- Paid Amount -->
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Text="Paid Amount (Rs.) *" Style="{StaticResource LabelText}" FontSize="11" Margin="0,0,0,4"/>
+                        <TextBox Text="{Binding PaidAmountText, UpdateSourceTrigger=PropertyChanged}"
+                                 Style="{StaticResource FormTextBox}"
+                                 ToolTip="Amount paid for this transaction (defaults to Total Cost)"/>
+                    </StackPanel>
+
+                    <!-- Remaining Balance -->
+                    <StackPanel Grid.Column="4">
+                        <TextBlock Text="Remaining Balance" Style="{StaticResource LabelText}" FontSize="11" Margin="0,0,0,4"/>
+                        <Border Background="#FFFBEB" BorderBrush="#FCD34D" BorderThickness="1" CornerRadius="6" Padding="10,7">
+                            <TextBlock Text="{Binding RemainingBalance, StringFormat='Rs. {0:N2}'}"
+                                       FontWeight="Bold" Foreground="#B45309" FontSize="13" VerticalAlignment="Center"/>
+                        </Border>
+                    </StackPanel>
+
+                    <!-- Payment Details -->
+                    <StackPanel Grid.Column="6">
+                        <TextBlock Text="Payment Reference / Details" Style="{StaticResource LabelText}" FontSize="11" Margin="0,0,0,4"/>
+                        <TextBox Text="{Binding PaymentDetails, UpdateSourceTrigger=PropertyChanged}"
+                                 Style="{StaticResource FormTextBox}"
+                                 ToolTip="Optional cheque number, bank transaction ID, or payment notes"/>
+                    </StackPanel>
+                </Grid>
             </Grid>
         </Border>
 

@@ -20,6 +20,17 @@ public sealed class SupplierRepository(AppDbContext db) : ISupplierRepository
         await db.Suppliers.AnyAsync(
             s => s.Name.ToLower() == name.ToLower() && (excludeId == null || s.Id != excludeId), ct);
 
+    public async Task<bool> ExistsByNameAndContactAsync(string name, string? contactPerson, int? excludeId = null, CancellationToken ct = default)
+    {
+        var targetName = name.Trim().ToLower();
+        var targetContact = (contactPerson ?? string.Empty).Trim().ToLower();
+
+        return await db.Suppliers.AnyAsync(
+            s => s.Name.ToLower() == targetName &&
+                 (s.ContactPerson ?? string.Empty).ToLower() == targetContact &&
+                 (excludeId == null || s.Id != excludeId), ct);
+    }
+
     public async Task AddAsync(Supplier supplier, CancellationToken ct = default)
     {
         await db.Suppliers.AddAsync(supplier, ct);

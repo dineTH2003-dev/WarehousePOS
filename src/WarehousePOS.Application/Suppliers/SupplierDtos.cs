@@ -9,7 +9,10 @@ public sealed record SupplierDto(
     string? Address,
     decimal Balance,
     bool IsActive,
-    string? ProvidedProducts = null);
+    string? ProvidedProducts = null)
+{
+    public string DisplayName => string.IsNullOrWhiteSpace(ContactPerson) ? Name : $"{Name} ({ContactPerson})";
+}
 
 public sealed record CreateSupplierRequest(
     string Name,

@@ -40,6 +40,7 @@ public sealed record CreateProductRequest(
 public sealed record UpdateProductRequest(
     int Id,
     string Name,
+    string SKU,
     string? Barcode,
     string? Description,
     decimal RetailPrice,

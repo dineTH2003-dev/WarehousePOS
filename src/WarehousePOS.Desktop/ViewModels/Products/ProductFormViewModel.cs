@@ -163,7 +163,7 @@ public sealed class ProductFormViewModel : ViewModelBase
             var skuToCheck = SKU?.Trim();
             var nameToCheck = Name?.Trim();
 
-            if (!string.IsNullOrEmpty(skuToCheck) && !IsEditMode)
+            if (!string.IsNullOrEmpty(skuToCheck))
             {
                 var skuExists = await _productService.ExistsBySkuAsync(skuToCheck, _editingId, cts.Token);
                 if (skuExists)
@@ -213,15 +213,15 @@ public sealed class ProductFormViewModel : ViewModelBase
     private async Task SaveAsync()
     {
         ErrorMessage = string.Empty;
-        if (string.IsNullOrWhiteSpace(Name))    { ErrorMessage = "Name is required.";     return; }
-        if (!IsEditMode && string.IsNullOrWhiteSpace(_sku)) { ErrorMessage = "SKU is required."; return; }
+        if (string.IsNullOrWhiteSpace(Name)) { ErrorMessage = "Name is required."; return; }
+        if (string.IsNullOrWhiteSpace(_sku)) { ErrorMessage = "SKU is required.";  return; }
         if (!decimal.TryParse(RetailPriceText,    out var retail))    { ErrorMessage = "Invalid retail price.";    return; }
         if (!decimal.TryParse(WholesalePriceText, out var wholesale)) { ErrorMessage = "Invalid wholesale price."; return; }
         if (!TryParseStockQuantity(out var stockQuantity))
         { ErrorMessage = "Stock quantity must be a non-negative whole number."; return; }
         if (CategoryId == 0) { ErrorMessage = "Please select a category."; return; }
 
-        if (!IsEditMode && await _productService.ExistsBySkuAsync(_sku.Trim(), _editingId))
+        if (await _productService.ExistsBySkuAsync(_sku.Trim(), _editingId))
         {
             _isDuplicate = true;
             ErrorMessage = $"This SKU '{_sku.Trim()}' already exists.";
@@ -245,7 +245,8 @@ public sealed class ProductFormViewModel : ViewModelBase
             if (IsEditMode)
             {
                 await _productService.UpdateAsync(new UpdateProductRequest(
-                    _editingId!.Value, Name.Trim(), string.IsNullOrWhiteSpace(Barcode) ? null : Barcode.Trim(),
+                    _editingId!.Value, Name.Trim(), _sku.Trim(),
+                    string.IsNullOrWhiteSpace(Barcode) ? null : Barcode.Trim(),
                     string.IsNullOrWhiteSpace(Description) ? null : Description.Trim(),
                     retail, wholesale, CategoryId, ReorderLevel, stockQuantity));
             }

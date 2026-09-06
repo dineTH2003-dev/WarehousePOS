@@ -25,11 +25,10 @@
                     <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"
                              Style="{StaticResource FormTextBox}" Margin="0,0,0,14"/>
 
-                    <!-- SKU (read-only in edit mode) -->
+                    <!-- SKU -->
                     <TextBlock Text="SKU *" Style="{StaticResource LabelText}" Margin="0,0,0,6"/>
                     <TextBox Text="{Binding SKU, UpdateSourceTrigger=PropertyChanged}"
                              Style="{StaticResource FormTextBox}"
-                             IsEnabled="{Binding IsEditMode, Converter={StaticResource InvertBoolConverter}}"
                              Margin="0,0,0,14"/>
 
                     <!-- Barcode -->

@@ -25,13 +25,20 @@ public sealed record PurchaseDto(
     string? Notes,
     DateTime PurchaseDate,
     DateTime? ReceivedDate,
-    IReadOnlyList<PurchaseItemDto> Items);
+    IReadOnlyList<PurchaseItemDto> Items,
+    string PaymentMethod = "Cash",
+    decimal PaidAmount = 0,
+    decimal RemainingBalance = 0,
+    string? PaymentDetails = null);
 
 public sealed record CreatePurchaseRequest(
     int SupplierId,
     int CreatedByUserId,
     string? Notes,
-    IReadOnlyList<CreatePurchaseItemRequest> Items);
+    IReadOnlyList<CreatePurchaseItemRequest> Items,
+    string PaymentMethod = "Cash",
+    decimal PaidAmount = 0,
+    string? PaymentDetails = null);
 
 public sealed record CreatePurchaseItemRequest(
     int ProductId,

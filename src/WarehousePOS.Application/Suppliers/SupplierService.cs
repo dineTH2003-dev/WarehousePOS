@@ -21,8 +21,8 @@ public sealed class SupplierService(ISupplierRepository repo) : ISupplierService
     public async Task<SupplierDto> CreateAsync(CreateSupplierRequest req, CancellationToken ct = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(req.Name);
-        if (await repo.ExistsByNameAsync(req.Name, ct: ct))
-            throw new BusinessRuleViolationException("UniqueSupplier", $"Supplier '{req.Name}' already exists.");
+        if (await repo.ExistsByNameAndContactAsync(req.Name, req.ContactPerson, ct: ct))
+            throw new BusinessRuleViolationException("UniqueSupplier", $"Supplier '{req.Name}' with contact '{req.ContactPerson}' already exists.");
 
         var supplier = Supplier.Create(req.Name, req.ContactPerson, req.Phone, req.Email, req.Address, req.ProvidedProducts);
         await repo.AddAsync(supplier, ct);
@@ -34,8 +34,8 @@ public sealed class SupplierService(ISupplierRepository repo) : ISupplierService
         var supplier = await repo.GetByIdAsync(req.Id, ct)
             ?? throw new EntityNotFoundException(nameof(Supplier), req.Id);
 
-        if (await repo.ExistsByNameAsync(req.Name, req.Id, ct))
-            throw new BusinessRuleViolationException("UniqueSupplier", $"Supplier '{req.Name}' already exists.");
+        if (await repo.ExistsByNameAndContactAsync(req.Name, req.ContactPerson, req.Id, ct))
+            throw new BusinessRuleViolationException("UniqueSupplier", $"Supplier '{req.Name}' with contact '{req.ContactPerson}' already exists.");
 
         supplier.Update(req.Name, req.ContactPerson, req.Phone, req.Email, req.Address, req.ProvidedProducts);
         await repo.UpdateAsync(supplier, ct);
