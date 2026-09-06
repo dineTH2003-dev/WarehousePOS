@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using WarehousePOS.Application.Products;
+using WarehousePOS.Desktop.Services;
 using WarehousePOS.Desktop.ViewModels;
 
 namespace WarehousePOS.Desktop.ViewModels.Products;
@@ -8,6 +9,7 @@ public sealed class ProductFormViewModel : ViewModelBase
 {
     private readonly IProductService  _productService;
     private readonly ICategoryService _categoryService;
+    private readonly SessionContext   _session;
 
     private int? _editingId;
     private string _name        = string.Empty;
@@ -38,18 +40,43 @@ public sealed class ProductFormViewModel : ViewModelBase
     public bool   IsBusy            { get => _isBusy;             set => SetField(ref _isBusy, value); }
     public bool   IsEditMode        => _editingId.HasValue;
     public string Title             => IsEditMode ? "Edit Product" : "New Product";
+    public bool   IsAdmin           => _session.IsAdmin;
 
     public event Action? SaveCompleted;
+    public event Action? AddCategoryRequested;
+    public event Action? ManageCategoriesRequested;
 
-    public RelayCommand SaveCommand   { get; }
-    public RelayCommand CancelCommand { get; }
+    public RelayCommand SaveCommand             { get; }
+    public RelayCommand CancelCommand           { get; }
+    public RelayCommand AddCategoryCommand      { get; }
+    public RelayCommand ManageCategoriesCommand { get; }
 
-    public ProductFormViewModel(IProductService productService, ICategoryService categoryService)
+    public ProductFormViewModel(IProductService productService, ICategoryService categoryService, SessionContext session)
     {
         _productService  = productService;
         _categoryService = categoryService;
-        SaveCommand   = new RelayCommand(async () => await SaveAsync(), () => !IsBusy && IsStockQuantityValid());
-        CancelCommand = new RelayCommand(() => SaveCompleted?.Invoke());
+        _session         = session;
+
+        SaveCommand             = new RelayCommand(async () => await SaveAsync(), () => !IsBusy && IsStockQuantityValid());
+        CancelCommand           = new RelayCommand(() => SaveCompleted?.Invoke());
+        AddCategoryCommand      = new RelayCommand(() => AddCategoryRequested?.Invoke());
+        ManageCategoriesCommand = new RelayCommand(() => ManageCategoriesRequested?.Invoke());
+    }
+
+    public async Task RefreshCategoriesAsync(int? selectCategoryId = null)
+    {
+        var cats = await _categoryService.GetActiveAsync();
+        Categories.Clear();
+        foreach (var c in cats) Categories.Add(c);
+
+        if (selectCategoryId.HasValue && Categories.Any(c => c.Id == selectCategoryId.Value))
+        {
+            CategoryId = selectCategoryId.Value;
+        }
+        else if (CategoryId == 0 && Categories.Count > 0)
+        {
+            CategoryId = Categories[0].Id;
+        }
     }
 
     public async Task LoadAsync(ProductDto? existing = null)

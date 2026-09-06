@@ -1,13 +1,18 @@
 using System.Collections.ObjectModel;
 using WarehousePOS.Application.Products;
+using WarehousePOS.Desktop.Services;
 using WarehousePOS.Desktop.ViewModels;
 
 namespace WarehousePOS.Desktop.ViewModels.Products;
 
 public sealed class ProductListViewModel : ViewModelBase
 {
-    private readonly IProductService _productService;
-    private readonly ICategoryService _categoryService;
+    private readonly IProductService   _productService;
+    private readonly ICategoryService  _categoryService;
+    private readonly INavigationService _nav;
+    private readonly SessionContext    _session;
+
+    public static bool PendingOpenAddProduct { get; set; }
 
     private ObservableCollection<ProductDto> _products = [];
     private ObservableCollection<CategoryDto> _categories = [];
@@ -43,22 +48,33 @@ public sealed class ProductListViewModel : ViewModelBase
         set { SetField(ref _showInactive, value); _ = ApplyFilterAsync(); }
     }
 
+    public bool IsAdmin => _session.IsAdmin;
+
     // Raised to tell the view to open the form
     public event Action<ProductDto?>? EditRequested;
 
-    public RelayCommand AddCommand     { get; }
-    public RelayCommand<ProductDto> EditCommand    { get; }
+    public RelayCommand AddCommand              { get; }
+    public RelayCommand<ProductDto> EditCommand { get; }
     public RelayCommand<ProductDto> ToggleActiveCommand { get; }
-    public RelayCommand RefreshCommand { get; }
+    public RelayCommand RefreshCommand          { get; }
+    public RelayCommand ManageCategoriesCommand { get; }
 
-    public ProductListViewModel(IProductService productService, ICategoryService categoryService)
+    public ProductListViewModel(
+        IProductService productService,
+        ICategoryService categoryService,
+        INavigationService nav,
+        SessionContext session)
     {
         _productService  = productService;
         _categoryService = categoryService;
-        AddCommand       = new RelayCommand(() => EditRequested?.Invoke(null));
-        EditCommand      = new RelayCommand<ProductDto>(dto => EditRequested?.Invoke(dto));
-        ToggleActiveCommand = new RelayCommand<ProductDto>(async dto => await ToggleActiveAsync(dto));
-        RefreshCommand   = new RelayCommand(async () => await LoadAsync());
+        _nav             = nav;
+        _session         = session;
+
+        AddCommand              = new RelayCommand(() => EditRequested?.Invoke(null));
+        EditCommand             = new RelayCommand<ProductDto>(dto => EditRequested?.Invoke(dto));
+        ToggleActiveCommand     = new RelayCommand<ProductDto>(async dto => await ToggleActiveAsync(dto));
+        RefreshCommand          = new RelayCommand(async () => await LoadAsync());
+        ManageCategoriesCommand = new RelayCommand(() => _nav.NavigateTo<CategoryManagementViewModel>());
     }
 
     public async Task LoadAsync()
