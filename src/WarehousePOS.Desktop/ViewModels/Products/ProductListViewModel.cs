@@ -20,6 +20,10 @@ public sealed class ProductListViewModel : ViewModelBase
     private string _searchText = string.Empty;
     private int? _filterCategoryId;
     private bool _showInactive;
+    private bool _showLowStockOnly;
+    private int _totalProductsCount;
+    private int _activeCategoriesCount;
+    private int _lowStockCount;
 
     public ObservableCollection<ProductDto> Products   { get => _products;   private set => SetField(ref _products, value); }
     public ObservableCollection<CategoryDto> Categories { get => _categories; private set => SetField(ref _categories, value); }
@@ -48,6 +52,16 @@ public sealed class ProductListViewModel : ViewModelBase
         set { SetField(ref _showInactive, value); _ = ApplyFilterAsync(); }
     }
 
+    public bool ShowLowStockOnly
+    {
+        get => _showLowStockOnly;
+        set { SetField(ref _showLowStockOnly, value); _ = ApplyFilterAsync(); }
+    }
+
+    public int TotalProductsCount    { get => _totalProductsCount;    private set => SetField(ref _totalProductsCount, value); }
+    public int ActiveCategoriesCount { get => _activeCategoriesCount; private set => SetField(ref _activeCategoriesCount, value); }
+    public int LowStockCount         { get => _lowStockCount;         private set => SetField(ref _lowStockCount, value); }
+
     public bool IsAdmin => _session.IsAdmin;
 
     // Raised to tell the view to open the form
@@ -58,6 +72,7 @@ public sealed class ProductListViewModel : ViewModelBase
     public RelayCommand<ProductDto> ToggleActiveCommand { get; }
     public RelayCommand RefreshCommand          { get; }
     public RelayCommand ManageCategoriesCommand { get; }
+    public RelayCommand ClearFiltersCommand     { get; }
 
     public ProductListViewModel(
         IProductService productService,
@@ -75,12 +90,17 @@ public sealed class ProductListViewModel : ViewModelBase
         ToggleActiveCommand     = new RelayCommand<ProductDto>(async dto => await ToggleActiveAsync(dto));
         RefreshCommand          = new RelayCommand(async () => await LoadAsync());
         ManageCategoriesCommand = new RelayCommand(() => _nav.NavigateTo<CategoryManagementViewModel>());
+        ClearFiltersCommand     = new RelayCommand(ClearFilters);
     }
 
     public async Task LoadAsync()
     {
         var cats = await _categoryService.GetActiveAsync();
-        Categories = new ObservableCollection<CategoryDto>(cats);
+        var catList = new List<CategoryDto> { new CategoryDto(0, "All Categories", null, true, 0) };
+        catList.AddRange(cats);
+        Categories = new ObservableCollection<CategoryDto>(catList);
+        ActiveCategoriesCount = cats.Count;
+
         await ApplyFilterAsync();
     }
 
@@ -90,15 +110,35 @@ public sealed class ProductListViewModel : ViewModelBase
 
         if (!string.IsNullOrWhiteSpace(SearchText))
             result = await _productService.SearchAsync(SearchText);
-        else if (FilterCategoryId.HasValue)
+        else if (FilterCategoryId.HasValue && FilterCategoryId.Value > 0)
             result = await _productService.GetByCategoryAsync(FilterCategoryId.Value);
         else
             result = await _productService.GetAllAsync();
 
+        var allProds = await _productService.GetAllAsync();
+        TotalProductsCount = allProds.Count(p => p.IsActive);
+        LowStockCount = allProds.Count(p => p.IsActive && p.IsLowStock);
+
         if (!ShowInactive)
             result = result.Where(p => p.IsActive).ToList();
 
+        if (ShowLowStockOnly)
+            result = result.Where(p => p.IsLowStock).ToList();
+
         Products = new ObservableCollection<ProductDto>(result);
+    }
+
+    private void ClearFilters()
+    {
+        _searchText = string.Empty;
+        _filterCategoryId = 0;
+        _showInactive = false;
+        _showLowStockOnly = false;
+        OnPropertyChanged(nameof(SearchText));
+        OnPropertyChanged(nameof(FilterCategoryId));
+        OnPropertyChanged(nameof(ShowInactive));
+        OnPropertyChanged(nameof(ShowLowStockOnly));
+        _ = ApplyFilterAsync();
     }
 
     private async Task ToggleActiveAsync(ProductDto? dto)
