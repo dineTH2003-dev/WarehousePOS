@@ -24,7 +24,7 @@ public sealed class SupplierService(ISupplierRepository repo) : ISupplierService
         if (await repo.ExistsByNameAsync(req.Name, ct: ct))
             throw new BusinessRuleViolationException("UniqueSupplier", $"Supplier '{req.Name}' already exists.");
 
-        var supplier = Supplier.Create(req.Name, req.ContactPerson, req.Phone, req.Email, req.Address);
+        var supplier = Supplier.Create(req.Name, req.ContactPerson, req.Phone, req.Email, req.Address, req.ProvidedProducts);
         await repo.AddAsync(supplier, ct);
         return Map(supplier);
     }
@@ -37,7 +37,7 @@ public sealed class SupplierService(ISupplierRepository repo) : ISupplierService
         if (await repo.ExistsByNameAsync(req.Name, req.Id, ct))
             throw new BusinessRuleViolationException("UniqueSupplier", $"Supplier '{req.Name}' already exists.");
 
-        supplier.Update(req.Name, req.ContactPerson, req.Phone, req.Email, req.Address);
+        supplier.Update(req.Name, req.ContactPerson, req.Phone, req.Email, req.Address, req.ProvidedProducts);
         await repo.UpdateAsync(supplier, ct);
         return Map(supplier);
     }
@@ -57,5 +57,5 @@ public sealed class SupplierService(ISupplierRepository repo) : ISupplierService
     }
 
     private static SupplierDto Map(Supplier s) =>
-        new(s.Id, s.Name, s.ContactPerson, s.Phone, s.Email, s.Address, s.Balance, s.IsActive);
+        new(s.Id, s.Name, s.ContactPerson, s.Phone, s.Email, s.Address, s.Balance, s.IsActive, s.ProvidedProducts);
 }
