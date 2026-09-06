@@ -5,6 +5,7 @@ using System.Windows.Navigation;
 using WarehousePOS.Desktop.Services;
 using WarehousePOS.Desktop.ViewModels.Expenses;
 using WarehousePOS.Desktop.ViewModels.Products;
+using WarehousePOS.Desktop.ViewModels.Purchasing;
 using WarehousePOS.Desktop.ViewModels.Reports;
 using WarehousePOS.Desktop.ViewModels.Sales;
 using WarehousePOS.Desktop.ViewModels.Settings;
@@ -60,6 +61,8 @@ public partial class MainWindow : Window
                 await posView.InitAsync();
             else if (e.Content is Views.Products.ProductListView productView)
                 await productView.InitAsync();
+            else if (e.Content is Views.Purchasing.PurchasingView purchasingView)
+                await purchasingView.InitAsync();
             else if (e.Content is Views.Products.CategoryManagementView catView)
                 await catView.InitAsync();
             else if (e.Content is Views.Suppliers.SupplierListView supplierView)
@@ -104,6 +107,9 @@ public partial class MainWindow : Window
 
     private void BtnProducts_Click(object sender, RoutedEventArgs e)
         => NavigateTo<ProductListViewModel>();
+
+    private void BtnPurchasing_Click(object sender, RoutedEventArgs e)
+        => NavigateTo<PurchasingViewModel>();
 
     private void BtnCategories_Click(object sender, RoutedEventArgs e)
         => NavigateTo<CategoryManagementViewModel>();

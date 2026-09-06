@@ -37,18 +37,20 @@ public sealed class Purchase : AggregateRoot
         };
     }
 
-    public void AddItem(int productId, int quantity, decimal unitCost)
+    public void AddItem(int productId, int quantity, decimal unitCost, int freeQuantity = 0, decimal retailPrice = 0, decimal wholesalePrice = 0)
     {
         if (Status != PurchaseStatus.Draft)
             throw new BusinessRuleViolationException("PurchaseNotDraft", "Items can only be added to Draft purchases.");
-        if (quantity <= 0) throw new ArgumentOutOfRangeException(nameof(quantity));
+        if (quantity < 0) throw new ArgumentOutOfRangeException(nameof(quantity));
+        if (freeQuantity < 0) throw new ArgumentOutOfRangeException(nameof(freeQuantity));
+        if (quantity + freeQuantity <= 0) throw new ArgumentException("Total quantity (paid + free) must be greater than zero.");
         if (unitCost < 0)  throw new ArgumentOutOfRangeException(nameof(unitCost));
 
         var existing = _items.FirstOrDefault(i => i.ProductId == productId);
         if (existing is not null)
             _items.Remove(existing);
 
-        _items.Add(PurchaseItem.Create(productId, quantity, unitCost));
+        _items.Add(PurchaseItem.Create(productId, quantity, unitCost, freeQuantity, retailPrice, wholesalePrice));
         SetUpdatedAt();
     }
 
@@ -93,15 +95,26 @@ public sealed class PurchaseItem
 {
     private PurchaseItem() { }
 
-    public int Id          { get; private set; }
-    public int PurchaseId  { get; private set; }
-    public int ProductId   { get; private set; }
-    public int Quantity    { get; private set; }
-    public decimal UnitCost { get; private set; }
-    public decimal TotalCost => Quantity * UnitCost;
+    public int Id             { get; private set; }
+    public int PurchaseId     { get; private set; }
+    public int ProductId      { get; private set; }
+    public int Quantity       { get; private set; }
+    public int FreeQuantity   { get; private set; }
+    public decimal UnitCost   { get; private set; }
+    public decimal RetailPrice { get; private set; }
+    public decimal WholesalePrice { get; private set; }
+    public decimal TotalCost  => Quantity * UnitCost;
 
-    public Product Product { get; private set; } = null!;
+    public Product Product    { get; private set; } = null!;
 
-    internal static PurchaseItem Create(int productId, int quantity, decimal unitCost) =>
-        new() { ProductId = productId, Quantity = quantity, UnitCost = unitCost };
+    internal static PurchaseItem Create(int productId, int quantity, decimal unitCost, int freeQuantity = 0, decimal retailPrice = 0, decimal wholesalePrice = 0) =>
+        new()
+        {
+            ProductId      = productId,
+            Quantity       = quantity,
+            UnitCost       = unitCost,
+            FreeQuantity   = freeQuantity,
+            RetailPrice    = retailPrice,
+            WholesalePrice = wholesalePrice
+        };
 }
