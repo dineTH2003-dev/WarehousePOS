@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Globalization;
 using WarehousePOS.Application.Products;
 using WarehousePOS.Application.Sales;
 using WarehousePOS.Desktop.Services;
@@ -58,6 +59,7 @@ public sealed class PosViewModel : ViewModelBase
     private CustomerDto? _selectedCustomer;
     private SaleType    _saleType       = SaleType.Retail;
     private decimal     _overallDiscount;
+    private string      _overallDiscountText = string.Empty;
     private decimal     _amountPaid;
     private string      _errorMessage   = string.Empty;
     private bool        _isBusy;
@@ -97,7 +99,36 @@ public sealed class PosViewModel : ViewModelBase
     public decimal OverallDiscount
     {
         get => _overallDiscount;
-        set { SetField(ref _overallDiscount, value); RecalculateTotals(); }
+        set
+        {
+            if (SetField(ref _overallDiscount, value))
+            {
+                _overallDiscountText = value == 0
+                    ? string.Empty
+                    : value.ToString(CultureInfo.CurrentCulture);
+                OnPropertyChanged(nameof(OverallDiscountText));
+                RecalculateTotals();
+            }
+        }
+    }
+
+    public string OverallDiscountText
+    {
+        get => _overallDiscountText;
+        set
+        {
+            if (!SetField(ref _overallDiscountText, value))
+                return;
+
+            if (string.IsNullOrEmpty(value))
+            {
+                OverallDiscount = 0;
+                return;
+            }
+
+            if (decimal.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out var discount))
+                OverallDiscount = discount;
+        }
     }
 
     public decimal AmountPaid
