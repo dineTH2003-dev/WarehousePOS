@@ -46,6 +46,10 @@ public sealed class ProductRepository(AppDbContext db) : IProductRepository
         await db.Products.AnyAsync(
             p => p.SKU == sku.ToUpperInvariant() && (excludeId == null || p.Id != excludeId), ct);
 
+    public async Task<bool> ExistsByNameAsync(string name, int? excludeId = null, CancellationToken ct = default) =>
+        await db.Products.AnyAsync(
+            p => p.Name.ToLower() == name.Trim().ToLower() && (excludeId == null || p.Id != excludeId), ct);
+
     public async Task AddAsync(Product product, CancellationToken ct = default)
     {
         await db.Products.AddAsync(product, ct);

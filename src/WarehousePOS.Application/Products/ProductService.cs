@@ -48,10 +48,25 @@ public sealed class ProductService(
         return p is null ? null : Map(p);
     }
 
+    public async Task<bool> ExistsBySkuAsync(string sku, int? excludeId = null, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(sku)) return false;
+        return await repo.ExistsBySkuAsync(sku.Trim(), excludeId, ct);
+    }
+
+    public async Task<bool> ExistsByNameAsync(string name, int? excludeId = null, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return false;
+        return await repo.ExistsByNameAsync(name.Trim(), excludeId, ct);
+    }
+
     public async Task<ProductDto> CreateAsync(CreateProductRequest request, CancellationToken ct = default)
     {
         if (await repo.ExistsBySkuAsync(request.SKU, ct: ct))
             throw new BusinessRuleViolationException("UniqueSKU", $"SKU '{request.SKU}' is already in use.");
+
+        if (await repo.ExistsByNameAsync(request.Name, ct: ct))
+            throw new BusinessRuleViolationException("UniqueName", $"Product '{request.Name}' already exists.");
 
         var category = await categoryRepo.GetByIdAsync(request.CategoryId, ct)
             ?? throw new EntityNotFoundException(nameof(Category), request.CategoryId);
@@ -74,6 +89,9 @@ public sealed class ProductService(
     {
         var product = await repo.GetByIdAsync(request.Id, ct)
             ?? throw new EntityNotFoundException(nameof(Product), request.Id);
+
+        if (await repo.ExistsByNameAsync(request.Name, request.Id, ct))
+            throw new BusinessRuleViolationException("UniqueName", $"Product '{request.Name}' already exists.");
 
         var category = await categoryRepo.GetByIdAsync(request.CategoryId, ct)
             ?? throw new EntityNotFoundException(nameof(Category), request.CategoryId);

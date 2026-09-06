@@ -118,7 +118,7 @@
                             Margin="0,0,8,0" Command="{Binding CancelCommand}"/>
                     <Button Content="Save Product" Style="{StaticResource PrimaryButton}"
                             Command="{Binding SaveCommand}"
-                            IsEnabled="{Binding IsBusy, Converter={StaticResource InvertBoolConverter}}"/>
+                            IsEnabled="{Binding CanSave}"/>
                 </StackPanel>
             </StackPanel>
         </Grid>
