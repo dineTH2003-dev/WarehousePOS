@@ -117,6 +117,26 @@ public static class DbInitializer
                     await db.Database.ExecuteSqlRawAsync("ALTER TABLE PurchaseItems ADD COLUMN WholesalePrice TEXT NOT NULL DEFAULT '0';");
                 }
             }
+
+            var purchaseColumns = await db.Database
+                .SqlQueryRaw<string>("SELECT name FROM pragma_table_info('Purchases')")
+                .ToListAsync();
+
+            if (purchaseColumns.Any())
+            {
+                if (!purchaseColumns.Contains("PaymentMethod", StringComparer.OrdinalIgnoreCase))
+                {
+                    await db.Database.ExecuteSqlRawAsync("ALTER TABLE Purchases ADD COLUMN PaymentMethod TEXT NOT NULL DEFAULT 'Cash';");
+                }
+                if (!purchaseColumns.Contains("PaidAmount", StringComparer.OrdinalIgnoreCase))
+                {
+                    await db.Database.ExecuteSqlRawAsync("ALTER TABLE Purchases ADD COLUMN PaidAmount TEXT NOT NULL DEFAULT '0';");
+                }
+                if (!purchaseColumns.Contains("PaymentDetails", StringComparer.OrdinalIgnoreCase))
+                {
+                    await db.Database.ExecuteSqlRawAsync("ALTER TABLE Purchases ADD COLUMN PaymentDetails TEXT NULL;");
+                }
+            }
         }
         catch (Exception ex)
         {

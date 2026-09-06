@@ -32,7 +32,7 @@ public sealed class PurchaseService(
         _ = await supplierRepo.GetByIdAsync(req.SupplierId, ct)
             ?? throw new EntityNotFoundException(nameof(Supplier), req.SupplierId);
 
-        var purchase = Purchase.Create(req.SupplierId, req.CreatedByUserId, req.Notes);
+        var purchase = Purchase.Create(req.SupplierId, req.CreatedByUserId, req.Notes, req.PaymentMethod, req.PaidAmount, req.PaymentDetails);
 
         foreach (var item in req.Items)
         {
@@ -89,6 +89,14 @@ public sealed class PurchaseService(
                 await movementRepo.AddAsync(movement, ct);
             }
 
+            // Update supplier balance with remaining unpaid purchase balance
+            var supplier = await supplierRepo.GetByIdAsync(purchase.SupplierId, ct);
+            if (supplier is not null && purchase.RemainingBalance > 0)
+            {
+                supplier.AddToBalance(purchase.RemainingBalance);
+                await supplierRepo.UpdateAsync(supplier, ct);
+            }
+
             await purchaseRepo.UpdateAsync(purchase, ct);
         }, ct);
 
@@ -112,5 +120,6 @@ public sealed class PurchaseService(
             i.ProductId, i.Product?.Name ?? string.Empty,
             i.Product?.SKU ?? string.Empty,
             i.Quantity, i.FreeQuantity, i.UnitCost, i.TotalCost,
-            i.RetailPrice, i.WholesalePrice)).ToList());
+            i.RetailPrice, i.WholesalePrice)).ToList(),
+        p.PaymentMethod, p.PaidAmount, p.RemainingBalance, p.PaymentDetails);
 }

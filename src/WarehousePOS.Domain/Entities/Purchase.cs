@@ -17,6 +17,9 @@ public sealed class Purchase : AggregateRoot
     public Supplier Supplier           { get; private set; } = null!;
     public PurchaseStatus Status        { get; private set; } = PurchaseStatus.Draft;
     public string? Notes               { get; private set; }
+    public string PaymentMethod        { get; private set; } = "Cash";
+    public decimal PaidAmount          { get; private set; }
+    public string? PaymentDetails      { get; private set; }
     public DateTime PurchaseDate       { get; private set; }
     public DateTime? ReceivedDate      { get; private set; }
     public int CreatedByUserId         { get; private set; }
@@ -24,8 +27,15 @@ public sealed class Purchase : AggregateRoot
     public IReadOnlyList<PurchaseItem> Items => _items;
 
     public decimal TotalAmount => _items.Sum(i => i.TotalCost);
+    public decimal RemainingBalance => Math.Max(0, TotalAmount - PaidAmount);
 
-    public static Purchase Create(int supplierId, int createdByUserId, string? notes = null)
+    public static Purchase Create(
+        int supplierId,
+        int createdByUserId,
+        string? notes = null,
+        string paymentMethod = "Cash",
+        decimal paidAmount = 0,
+        string? paymentDetails = null)
     {
         if (supplierId <= 0) throw new ArgumentOutOfRangeException(nameof(supplierId));
         return new Purchase
@@ -33,6 +43,9 @@ public sealed class Purchase : AggregateRoot
             SupplierId      = supplierId,
             CreatedByUserId = createdByUserId,
             Notes           = notes?.Trim(),
+            PaymentMethod   = string.IsNullOrWhiteSpace(paymentMethod) ? "Cash" : paymentMethod.Trim(),
+            PaidAmount      = paidAmount < 0 ? 0 : paidAmount,
+            PaymentDetails  = paymentDetails?.Trim(),
             PurchaseDate    = DateTime.UtcNow
         };
     }

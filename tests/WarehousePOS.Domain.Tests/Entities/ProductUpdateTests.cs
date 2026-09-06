@@ -9,9 +9,10 @@ public sealed class ProductUpdateTests
     public void UpdateDetails_ValidData_ShouldUpdateFields()
     {
         var product = Product.Create("Old Name", "SKU001", 100, 80, 1);
-        product.UpdateDetails("New Name", "1234567890", "New desc", 2, 10);
+        product.UpdateDetails("New Name", "SKU002", "1234567890", "New desc", 2, 10);
 
         product.Name.Should().Be("New Name");
+        product.SKU.Should().Be("SKU002");
         product.Barcode.Should().Be("1234567890");
         product.Description.Should().Be("New desc");
         product.CategoryId.Should().Be(2);
@@ -22,7 +23,7 @@ public sealed class ProductUpdateTests
     public void UpdateDetails_EmptyName_ShouldThrow()
     {
         var product = Product.Create("Test", "SKU001", 100, 80, 1);
-        Action act = () => product.UpdateDetails("", null, null, 1, 5);
+        Action act = () => product.UpdateDetails("", "SKU001", null, null, 1, 5);
         act.Should().Throw<ArgumentException>();
     }
 

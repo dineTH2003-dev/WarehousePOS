@@ -16,19 +16,31 @@ public sealed class PurchasingViewModel : ViewModelBase
     private readonly INavigationService _nav;
     private readonly SessionContext    _session;
 
+    private List<ProductDto> _allActiveProducts = [];
     private int? _selectedSupplierId;
     private string _notes = string.Empty;
+    private string _selectedPaymentMethod = "Cash";
+    private string _paidAmountText = "0.00";
+    private string _paymentDetails = string.Empty;
     private string _errorMessage = string.Empty;
     private bool _isBusy;
+    private bool _isPaidAmountUserModified;
 
     public ObservableCollection<SupplierDto> Suppliers          { get; } = [];
     public ObservableCollection<ProductDto>  AvailableProducts  { get; } = [];
     public ObservableCollection<PurchasingItemRowViewModel> LineItems { get; } = [];
+    public ObservableCollection<string> PaymentMethods         { get; } = ["Cash", "Cheque", "Bank Transfer", "Credit / Unpaid"];
 
     public int? SelectedSupplierId
     {
         get => _selectedSupplierId;
-        set => SetField(ref _selectedSupplierId, value);
+        set
+        {
+            if (SetField(ref _selectedSupplierId, value))
+            {
+                FilterProductsForSelectedSupplier();
+            }
+        }
     }
 
     public string Notes
@@ -36,6 +48,35 @@ public sealed class PurchasingViewModel : ViewModelBase
         get => _notes;
         set => SetField(ref _notes, value);
     }
+
+    public string SelectedPaymentMethod
+    {
+        get => _selectedPaymentMethod;
+        set => SetField(ref _selectedPaymentMethod, value);
+    }
+
+    public string PaidAmountText
+    {
+        get => _paidAmountText;
+        set
+        {
+            if (SetField(ref _paidAmountText, value))
+            {
+                _isPaidAmountUserModified = true;
+                OnPropertyChanged(nameof(PaidAmount));
+                OnPropertyChanged(nameof(RemainingBalance));
+            }
+        }
+    }
+
+    public string PaymentDetails
+    {
+        get => _paymentDetails;
+        set => SetField(ref _paymentDetails, value);
+    }
+
+    public decimal PaidAmount => decimal.TryParse(PaidAmountText, out var val) ? Math.Max(0, val) : 0;
+    public decimal RemainingBalance => Math.Max(0, TotalOrderCost - PaidAmount);
 
     public string ErrorMessage
     {
@@ -92,12 +133,15 @@ public sealed class PurchasingViewModel : ViewModelBase
         foreach (var s in suppliers) Suppliers.Add(s);
 
         var products = await _productService.GetAllAsync();
-        AvailableProducts.Clear();
-        foreach (var p in products.Where(p => p.IsActive)) AvailableProducts.Add(p);
+        _allActiveProducts = products.Where(p => p.IsActive).ToList();
 
         if (SelectedSupplierId == null && Suppliers.Count > 0)
         {
             SelectedSupplierId = Suppliers[0].Id;
+        }
+        else
+        {
+            FilterProductsForSelectedSupplier();
         }
 
         if (LineItems.Count == 0 && AvailableProducts.Count > 0)
@@ -106,6 +150,47 @@ public sealed class PurchasingViewModel : ViewModelBase
         }
 
         UpdateOrderSummary();
+    }
+
+    private void FilterProductsForSelectedSupplier()
+    {
+        var selectedSupplier = Suppliers.FirstOrDefault(s => s.Id == SelectedSupplierId);
+        AvailableProducts.Clear();
+
+        if (selectedSupplier is not null && !string.IsNullOrWhiteSpace(selectedSupplier.ProvidedProducts))
+        {
+            var tokens = selectedSupplier.ProvidedProducts
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+            var matchedProducts = _allActiveProducts
+                .Where(p => tokens.Any(t => t.Equals(p.Name, StringComparison.OrdinalIgnoreCase) ||
+                                            t.Equals(p.SKU, StringComparison.OrdinalIgnoreCase)))
+                .ToList();
+
+            if (matchedProducts.Any())
+            {
+                foreach (var p in matchedProducts) AvailableProducts.Add(p);
+            }
+            else
+            {
+                foreach (var p in _allActiveProducts) AvailableProducts.Add(p);
+            }
+        }
+        else
+        {
+            foreach (var p in _allActiveProducts) AvailableProducts.Add(p);
+        }
+
+        foreach (var item in LineItems)
+        {
+            if (item.Product is null || !AvailableProducts.Any(p => p.Id == item.Product.Id))
+            {
+                if (AvailableProducts.Count > 0)
+                {
+                    item.Product = AvailableProducts[0];
+                }
+            }
+        }
     }
 
     public void AddLineItem()
@@ -124,6 +209,9 @@ public sealed class PurchasingViewModel : ViewModelBase
 
     public void AddNewlyCreatedProduct(ProductDto newProduct)
     {
+        if (!_allActiveProducts.Any(p => p.Id == newProduct.Id))
+            _allActiveProducts.Add(newProduct);
+
         if (!AvailableProducts.Any(p => p.Id == newProduct.Id))
             AvailableProducts.Add(newProduct);
 
@@ -150,12 +238,24 @@ public sealed class PurchasingViewModel : ViewModelBase
         OnPropertyChanged(nameof(TotalPaidQuantity));
         OnPropertyChanged(nameof(TotalFreeQuantity));
         OnPropertyChanged(nameof(TotalItemsCount));
+
+        if (!_isPaidAmountUserModified)
+        {
+            _paidAmountText = TotalOrderCost.ToString("F2");
+            OnPropertyChanged(nameof(PaidAmountText));
+        }
+
+        OnPropertyChanged(nameof(PaidAmount));
+        OnPropertyChanged(nameof(RemainingBalance));
     }
 
     private void ResetOrder()
     {
         LineItems.Clear();
         Notes = string.Empty;
+        PaymentDetails = string.Empty;
+        SelectedPaymentMethod = "Cash";
+        _isPaidAmountUserModified = false;
         ErrorMessage = string.Empty;
         if (AvailableProducts.Count > 0)
         {
@@ -204,7 +304,10 @@ public sealed class PurchasingViewModel : ViewModelBase
                 SelectedSupplierId.Value,
                 currentUserId,
                 string.IsNullOrWhiteSpace(Notes) ? null : Notes.Trim(),
-                itemRequests);
+                itemRequests,
+                SelectedPaymentMethod,
+                PaidAmount,
+                string.IsNullOrWhiteSpace(PaymentDetails) ? null : PaymentDetails.Trim());
 
             var createdPurchase = await _purchaseService.CreateAsync(createReq);
             await _purchaseService.ConfirmAsync(createdPurchase.Id);
