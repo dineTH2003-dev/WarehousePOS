@@ -14,6 +14,7 @@ public sealed class Supplier : AggregateRoot
     public string? Phone         { get; private set; }
     public string? Email         { get; private set; }
     public string? Address       { get; private set; }
+    public string? ProvidedProducts { get; private set; }
     public decimal Balance       { get; private set; }   // positive = we owe supplier
     public bool IsActive         { get; private set; } = true;
 
@@ -22,29 +23,38 @@ public sealed class Supplier : AggregateRoot
         string? contactPerson = null,
         string? phone = null,
         string? email = null,
-        string? address = null)
+        string? address = null,
+        string? providedProducts = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         ValidateContactInformation(phone, email);
         return new Supplier
         {
-            Name          = name.Trim(),
-            ContactPerson = contactPerson?.Trim(),
-            Phone         = phone?.Trim(),
-            Email         = email?.Trim(),
-            Address       = address?.Trim()
+            Name             = name.Trim(),
+            ContactPerson    = contactPerson?.Trim(),
+            Phone            = phone?.Trim(),
+            Email            = email?.Trim(),
+            Address          = address?.Trim(),
+            ProvidedProducts = providedProducts?.Trim()
         };
     }
 
-    public void Update(string name, string? contactPerson, string? phone, string? email, string? address)
+    public void Update(
+        string name,
+        string? contactPerson,
+        string? phone,
+        string? email,
+        string? address,
+        string? providedProducts = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         ValidateContactInformation(phone, email);
-        Name          = name.Trim();
-        ContactPerson = contactPerson?.Trim();
-        Phone         = phone?.Trim();
-        Email         = email?.Trim();
-        Address       = address?.Trim();
+        Name             = name.Trim();
+        ContactPerson    = contactPerson?.Trim();
+        Phone            = phone?.Trim();
+        Email            = email?.Trim();
+        Address          = address?.Trim();
+        ProvidedProducts = providedProducts?.Trim();
         SetUpdatedAt();
     }
 
