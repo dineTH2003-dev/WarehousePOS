@@ -136,4 +136,21 @@ public sealed class ProductTests
 
         product.IsLowStock.Should().BeFalse();
     }
+
+    [Fact]
+    public void Create_WithWarrantyPeriod_ShouldSetWarrantyFields()
+    {
+        var product = Product.Create("Test", "SKU001", 100, 80, 1, warrantyYears: 2, warrantyMonths: 6, warrantyDays: 15);
+
+        product.WarrantyYears.Should().Be(2);
+        product.WarrantyMonths.Should().Be(6);
+        product.WarrantyDays.Should().Be(15);
+    }
+
+    [Fact]
+    public void Create_WithNegativeWarranty_ShouldThrow()
+    {
+        Action act = () => Product.Create("Test", "SKU001", 100, 80, 1, warrantyYears: -1);
+        act.Should().Throw<ArgumentOutOfRangeException>();
+    }
 }

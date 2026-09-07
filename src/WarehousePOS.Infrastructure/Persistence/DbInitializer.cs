@@ -146,6 +146,26 @@ public static class DbInitializer
             {
                 await db.Database.ExecuteSqlRawAsync("ALTER TABLE Customers ADD COLUMN DiscountRate TEXT NOT NULL DEFAULT '0';");
             }
+
+            var productColumns = await db.Database
+                .SqlQueryRaw<string>("SELECT name FROM pragma_table_info('Products')")
+                .ToListAsync();
+
+            if (productColumns.Any())
+            {
+                if (!productColumns.Contains("WarrantyYears", StringComparer.OrdinalIgnoreCase))
+                {
+                    await db.Database.ExecuteSqlRawAsync("ALTER TABLE Products ADD COLUMN WarrantyYears INTEGER NOT NULL DEFAULT 0;");
+                }
+                if (!productColumns.Contains("WarrantyMonths", StringComparer.OrdinalIgnoreCase))
+                {
+                    await db.Database.ExecuteSqlRawAsync("ALTER TABLE Products ADD COLUMN WarrantyMonths INTEGER NOT NULL DEFAULT 0;");
+                }
+                if (!productColumns.Contains("WarrantyDays", StringComparer.OrdinalIgnoreCase))
+                {
+                    await db.Database.ExecuteSqlRawAsync("ALTER TABLE Products ADD COLUMN WarrantyDays INTEGER NOT NULL DEFAULT 0;");
+                }
+            }
         }
         catch (Exception ex)
         {
