@@ -69,6 +69,8 @@ public partial class MainWindow : Window
                 await supplierView.InitAsync();
             else if (e.Content is Views.Sales.CustomerListView customerView)
                 await customerView.InitAsync();
+            else if (e.Content is Views.Sales.CustomerPurchasedItemsView purchasedView)
+                await purchasedView.InitAsync();
             else if (e.Content is Views.Reports.ReportsView reportsView)
                 await reportsView.InitAsync();
             else if (e.Content is Views.Expenses.ExpenseListView expenseView)

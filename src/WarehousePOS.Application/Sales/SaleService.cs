@@ -27,6 +27,12 @@ public sealed class SaleService(
         return sales.Select(Map).ToList();
     }
 
+    public async Task<IReadOnlyList<SaleDto>> GetByCustomerAsync(int customerId, CancellationToken ct = default)
+    {
+        var sales = await saleRepo.GetByCustomerAsync(customerId, ct);
+        return sales.Select(Map).ToList();
+    }
+
     public async Task<SaleDto?> GetByIdAsync(int id, CancellationToken ct = default)
     {
         var sale = await saleRepo.GetByIdAsync(id, ct);
@@ -149,5 +155,8 @@ public sealed class SaleService(
             i.Quantity,
             i.UnitPrice,
             i.Discount,
-            i.LineTotal)).ToList());
+            i.LineTotal,
+            i.Product?.WarrantyYears ?? 0,
+            i.Product?.WarrantyMonths ?? 0,
+            i.Product?.WarrantyDays ?? 0)).ToList());
 }
