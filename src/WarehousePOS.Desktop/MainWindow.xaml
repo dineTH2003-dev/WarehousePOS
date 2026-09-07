@@ -90,10 +90,10 @@
                             Content="📦  Products"
                             Style="{StaticResource NavButton}"
                             Click="BtnProducts_Click"/>
-                    <Button x:Name="BtnCategories"
-                            Content="🏷️  Categories"
+                    <Button x:Name="BtnPurchasing"
+                            Content="🛒  Purchasing"
                             Style="{StaticResource NavButton}"
-                            Click="BtnCategories_Click"/>
+                            Click="BtnPurchasing_Click"/>
                     <Button x:Name="BtnSuppliers"
                             Content="🚚  Suppliers"
                             Style="{StaticResource NavButton}"

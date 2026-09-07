@@ -1,6 +1,7 @@
 <Page x:Class="WarehousePOS.Desktop.Views.Sales.PosView"
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:behaviors="clr-namespace:WarehousePOS.Desktop.Behaviors"
       Title="Point of Sale"
       Background="{StaticResource BackgroundBrush}">
 
@@ -121,7 +122,8 @@
 
                     <Grid Margin="0,0,0,6">
                         <TextBlock Text="Discount (Rs.):" FontSize="14" Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center"/>
-                        <TextBox Text="{Binding OverallDiscount, UpdateSourceTrigger=PropertyChanged}" Width="100" HorizontalAlignment="Right" Style="{StaticResource FormTextBox}"/>
+                        <TextBox Text="{Binding OverallDiscountText, UpdateSourceTrigger=PropertyChanged}" Width="100" HorizontalAlignment="Right" Style="{StaticResource FormTextBox}"
+                                 behaviors:IntegerOnlyBehavior.IsEnabled="True"/>
                     </Grid>
 
                     <Grid Margin="0,0,0,10">
@@ -131,7 +133,8 @@
 
                     <Grid Margin="0,0,0,10">
                         <TextBlock Text="Amount Paid (Rs.):" FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                        <TextBox Text="{Binding AmountPaid, UpdateSourceTrigger=PropertyChanged}" Width="130" HorizontalAlignment="Right" Style="{StaticResource FormTextBox}" FontSize="16" FontWeight="Bold"/>
+                        <TextBox Text="{Binding AmountPaid, UpdateSourceTrigger=PropertyChanged}" Width="130" HorizontalAlignment="Right" Style="{StaticResource FormTextBox}" FontSize="16" FontWeight="Bold"
+                                 behaviors:IntegerOnlyBehavior.IsEnabled="True"/>
                     </Grid>
 
                     <Grid Margin="0,0,0,14">

@@ -10,7 +10,7 @@ public sealed class SupplierConfiguration : IEntityTypeConfiguration<Supplier>
     {
         builder.HasKey(s => s.Id);
         builder.Property(s => s.Name).IsRequired().HasMaxLength(200);
-        builder.HasIndex(s => s.Name).IsUnique();
+        builder.HasIndex(s => new { s.Name, s.ContactPerson });
         builder.Property(s => s.ContactPerson).HasMaxLength(150);
         builder.Property(s => s.Phone).HasMaxLength(30);
         builder.Property(s => s.Email).HasMaxLength(150);

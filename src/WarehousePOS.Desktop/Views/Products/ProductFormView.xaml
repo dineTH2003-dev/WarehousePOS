@@ -25,11 +25,10 @@
                     <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"
                              Style="{StaticResource FormTextBox}" Margin="0,0,0,14"/>
 
-                    <!-- SKU (read-only in edit mode) -->
+                    <!-- SKU -->
                     <TextBlock Text="SKU *" Style="{StaticResource LabelText}" Margin="0,0,0,6"/>
                     <TextBox Text="{Binding SKU, UpdateSourceTrigger=PropertyChanged}"
                              Style="{StaticResource FormTextBox}"
-                             IsEnabled="{Binding IsEditMode, Converter={StaticResource InvertBoolConverter}}"
                              Margin="0,0,0,14"/>
 
                     <!-- Barcode -->
@@ -67,31 +66,6 @@
                                 ToolTip="Go to Category Management page"/>
                     </Grid>
 
-                    <!-- Prices -->
-                    <Grid Margin="0,0,0,14">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="12"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <StackPanel Grid.Column="0">
-                            <TextBlock Text="Retail Price (Rs.) *" Style="{StaticResource LabelText}" Margin="0,0,0,6"/>
-                            <TextBox Text="{Binding RetailPriceText, UpdateSourceTrigger=PropertyChanged}"
-                                     Style="{StaticResource FormTextBox}"/>
-                        </StackPanel>
-                        <StackPanel Grid.Column="2">
-                            <TextBlock Text="Wholesale Price (Rs.) *" Style="{StaticResource LabelText}" Margin="0,0,0,6"/>
-                            <TextBox Text="{Binding WholesalePriceText, UpdateSourceTrigger=PropertyChanged}"
-                                     Style="{StaticResource FormTextBox}"/>
-                        </StackPanel>
-                    </Grid>
-
-                    <!-- Stock quantity -->
-                    <TextBlock Text="Stock Quantity" Style="{StaticResource LabelText}" Margin="0,0,0,6"/>
-                    <TextBox Text="{Binding StockQuantityText, UpdateSourceTrigger=PropertyChanged}"
-                             behaviors:IntegerOnlyBehavior.IsEnabled="True"
-                             Style="{StaticResource FormTextBox}" Margin="0,0,0,14"/>
-
                     <!-- Reorder level -->
                     <TextBlock Text="Reorder Level" Style="{StaticResource LabelText}" Margin="0,0,0,6"/>
                     <TextBox Text="{Binding ReorderLevel, UpdateSourceTrigger=PropertyChanged}"
@@ -118,7 +92,7 @@
                             Margin="0,0,8,0" Command="{Binding CancelCommand}"/>
                     <Button Content="Save Product" Style="{StaticResource PrimaryButton}"
                             Command="{Binding SaveCommand}"
-                            IsEnabled="{Binding IsBusy, Converter={StaticResource InvertBoolConverter}}"/>
+                            IsEnabled="{Binding CanSave}"/>
                 </StackPanel>
             </StackPanel>
         </Grid>

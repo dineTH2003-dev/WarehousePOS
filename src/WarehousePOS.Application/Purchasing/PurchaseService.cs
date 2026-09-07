@@ -32,13 +32,13 @@ public sealed class PurchaseService(
         _ = await supplierRepo.GetByIdAsync(req.SupplierId, ct)
             ?? throw new EntityNotFoundException(nameof(Supplier), req.SupplierId);
 
-        var purchase = Purchase.Create(req.SupplierId, req.CreatedByUserId, req.Notes);
+        var purchase = Purchase.Create(req.SupplierId, req.CreatedByUserId, req.Notes, req.PaymentMethod, req.PaidAmount, req.PaymentDetails);
 
         foreach (var item in req.Items)
         {
             var product = await productRepo.GetByIdAsync(item.ProductId, ct)
                 ?? throw new EntityNotFoundException(nameof(Product), item.ProductId);
-            purchase.AddItem(product.Id, item.Quantity, item.UnitCost);
+            purchase.AddItem(product.Id, item.Quantity, item.UnitCost, item.FreeQuantity, item.RetailPrice, item.WholesalePrice);
         }
 
         await purchaseRepo.AddAsync(purchase, ct);
@@ -69,15 +69,32 @@ public sealed class PurchaseService(
                     ?? throw new EntityNotFoundException(nameof(Product), item.ProductId);
 
                 var before = product.StockQuantity;
-                product.AddStock(item.Quantity);
+                var totalQuantityToAdd = item.Quantity + item.FreeQuantity;
+                product.AddStock(totalQuantityToAdd);
+
+                if (item.RetailPrice > 0 || item.WholesalePrice > 0)
+                {
+                    var retail = item.RetailPrice > 0 ? item.RetailPrice : product.RetailPrice;
+                    var wholesale = item.WholesalePrice > 0 ? item.WholesalePrice : product.WholesalePrice;
+                    product.UpdatePricing(retail, wholesale);
+                }
+
                 await productRepo.UpdateAsync(product, ct);
 
                 var movement = InventoryMovement.Create(
-                    product.Id, MovementType.PurchaseReceive, item.Quantity, before,
+                    product.Id, MovementType.PurchaseReceive, totalQuantityToAdd, before,
                     purchase.CreatedByUserId,
                     referenceId: purchase.Id.ToString(),
                     referenceType: "Purchase");
                 await movementRepo.AddAsync(movement, ct);
+            }
+
+            // Update supplier balance with remaining unpaid purchase balance
+            var supplier = await supplierRepo.GetByIdAsync(purchase.SupplierId, ct);
+            if (supplier is not null && purchase.RemainingBalance > 0)
+            {
+                supplier.AddToBalance(purchase.RemainingBalance);
+                await supplierRepo.UpdateAsync(supplier, ct);
             }
 
             await purchaseRepo.UpdateAsync(purchase, ct);
@@ -102,5 +119,7 @@ public sealed class PurchaseService(
         p.Items.Select(i => new PurchaseItemDto(
             i.ProductId, i.Product?.Name ?? string.Empty,
             i.Product?.SKU ?? string.Empty,
-            i.Quantity, i.UnitCost, i.TotalCost)).ToList());
+            i.Quantity, i.FreeQuantity, i.UnitCost, i.TotalCost,
+            i.RetailPrice, i.WholesalePrice)).ToList(),
+        p.PaymentMethod, p.PaidAmount, p.RemainingBalance, p.PaymentDetails);
 }

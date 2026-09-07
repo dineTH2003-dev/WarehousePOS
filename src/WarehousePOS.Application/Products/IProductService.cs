@@ -10,6 +10,8 @@ public interface IProductService
     Task<ProductDto?> GetByBarcodeAsync(string barcode, CancellationToken ct = default);
     Task<ProductDto> CreateAsync(CreateProductRequest request, CancellationToken ct = default);
     Task<ProductDto> UpdateAsync(UpdateProductRequest request, CancellationToken ct = default);
+    Task<bool> ExistsBySkuAsync(string sku, int? excludeId = null, CancellationToken ct = default);
+    Task<bool> ExistsByNameAsync(string name, int? excludeId = null, CancellationToken ct = default);
     Task DeactivateAsync(int id, CancellationToken ct = default);
     Task ActivateAsync(int id, CancellationToken ct = default);
 }

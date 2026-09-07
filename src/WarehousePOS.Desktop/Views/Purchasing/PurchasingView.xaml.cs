@@ -1,19 +1,19 @@
-using System.Windows;
+using System.Windows.Controls;
 using WarehousePOS.Application.Products;
 using WarehousePOS.Desktop.ViewModels.Products;
-using WarehousePOS.Desktop.ViewModels.Suppliers;
+using WarehousePOS.Desktop.ViewModels.Purchasing;
 using WarehousePOS.Desktop.Views.Products;
 
-namespace WarehousePOS.Desktop.Views.Suppliers;
+namespace WarehousePOS.Desktop.Views.Purchasing;
 
-public partial class SupplierFormView : Window
+public partial class PurchasingView : Page
 {
-    private readonly SupplierFormViewModel _vm;
+    private readonly PurchasingViewModel _vm;
     private readonly ProductFormViewModel _productFormVm;
     private readonly ICategoryService _categoryService;
 
-    public SupplierFormView(
-        SupplierFormViewModel vm,
+    public PurchasingView(
+        PurchasingViewModel vm,
         ProductFormViewModel productFormVm,
         ICategoryService categoryService)
     {
@@ -23,28 +23,22 @@ public partial class SupplierFormView : Window
         _categoryService = categoryService;
         DataContext = vm;
 
-        vm.SaveCompleted += OnSaveCompleted;
         vm.CreateNewProductRequested += OnCreateNewProductRequested;
-
-        Closed += (_, _) =>
-        {
-            vm.SaveCompleted -= OnSaveCompleted;
-            vm.CreateNewProductRequested -= OnCreateNewProductRequested;
-        };
     }
 
-    private void OnSaveCompleted()
+    public async Task InitAsync()
     {
-        DialogResult = true;
+        await _vm.LoadAsync();
     }
 
     private async void OnCreateNewProductRequested()
     {
         await _productFormVm.LoadAsync(null);
-        var productDialog = new ProductFormView(_productFormVm, _categoryService) { Owner = this };
+        var window = System.Windows.Window.GetWindow(this);
+        var productDialog = new ProductFormView(_productFormVm, _categoryService) { Owner = window };
+
         if (productDialog.ShowDialog() == true)
         {
-            // Create a ProductDto from saved details
             var newProduct = new ProductDto(
                 0,
                 _productFormVm.Name,

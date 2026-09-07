@@ -10,6 +10,7 @@ public sealed class ProductService(
     IProductRepository repo,
     ICategoryRepository categoryRepo,
     IInventoryMovementRepository movementRepo,
+    ISupplierRepository supplierRepo,
     ILogger<ProductService> logger) : IProductService
 {
     public async Task<IReadOnlyList<ProductDto>> GetAllAsync(CancellationToken ct = default)
@@ -48,10 +49,25 @@ public sealed class ProductService(
         return p is null ? null : Map(p);
     }
 
+    public async Task<bool> ExistsBySkuAsync(string sku, int? excludeId = null, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(sku)) return false;
+        return await repo.ExistsBySkuAsync(sku.Trim(), excludeId, ct);
+    }
+
+    public async Task<bool> ExistsByNameAsync(string name, int? excludeId = null, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return false;
+        return await repo.ExistsByNameAsync(name.Trim(), excludeId, ct);
+    }
+
     public async Task<ProductDto> CreateAsync(CreateProductRequest request, CancellationToken ct = default)
     {
         if (await repo.ExistsBySkuAsync(request.SKU, ct: ct))
             throw new BusinessRuleViolationException("UniqueSKU", $"SKU '{request.SKU}' is already in use.");
+
+        if (await repo.ExistsByNameAsync(request.Name, ct: ct))
+            throw new BusinessRuleViolationException("UniqueName", $"Product '{request.Name}' already exists.");
 
         var category = await categoryRepo.GetByIdAsync(request.CategoryId, ct)
             ?? throw new EntityNotFoundException(nameof(Category), request.CategoryId);
@@ -75,11 +91,19 @@ public sealed class ProductService(
         var product = await repo.GetByIdAsync(request.Id, ct)
             ?? throw new EntityNotFoundException(nameof(Product), request.Id);
 
+        if (await repo.ExistsBySkuAsync(request.SKU, request.Id, ct))
+            throw new BusinessRuleViolationException("UniqueSKU", $"SKU '{request.SKU}' is already in use.");
+
+        if (await repo.ExistsByNameAsync(request.Name, request.Id, ct))
+            throw new BusinessRuleViolationException("UniqueName", $"Product '{request.Name}' already exists.");
+
         var category = await categoryRepo.GetByIdAsync(request.CategoryId, ct)
             ?? throw new EntityNotFoundException(nameof(Category), request.CategoryId);
 
-        // Reflect name/description/category changes via a dedicated update method
-        product.UpdateDetails(request.Name, request.Barcode, request.Description, request.CategoryId, request.ReorderLevel);
+        var oldName = product.Name;
+
+        // Reflect name/sku/description/category changes via dedicated update method
+        product.UpdateDetails(request.Name, request.SKU, request.Barcode, request.Description, request.CategoryId, request.ReorderLevel);
         product.UpdatePricing(request.RetailPrice, request.WholesalePrice);
 
         var stockBefore = product.StockQuantity;
@@ -89,6 +113,22 @@ public sealed class ProductService(
             product.DeductStock(stockBefore - request.StockQuantity);
 
         await repo.UpdateAsync(product, ct);
+
+        // Update ProvidedProducts string across all suppliers if product name changed
+        if (!string.Equals(oldName, request.Name, StringComparison.OrdinalIgnoreCase))
+        {
+            var suppliers = await supplierRepo.GetAllAsync(ct);
+            foreach (var s in suppliers.Where(s => !string.IsNullOrWhiteSpace(s.ProvidedProducts)))
+            {
+                if (s.ProvidedProducts!.Contains(oldName, StringComparison.OrdinalIgnoreCase))
+                {
+                    var updatedProvided = s.ProvidedProducts.Replace(oldName, request.Name, StringComparison.OrdinalIgnoreCase);
+                    s.Update(s.Name, s.ContactPerson, s.Phone, s.Email, s.Address, updatedProvided);
+                    await supplierRepo.UpdateAsync(s, ct);
+                }
+            }
+        }
+
         if (request.StockQuantity != stockBefore)
             await movementRepo.AddAsync(InventoryMovement.Create(
                 product.Id,

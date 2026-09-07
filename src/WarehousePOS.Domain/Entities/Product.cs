@@ -72,13 +72,15 @@ public sealed class Product : AggregateRoot
         SetUpdatedAt();
     }
 
-    public void UpdateDetails(string name, string? barcode, string? description, int categoryId, int reorderLevel)
+    public void UpdateDetails(string name, string sku, string? barcode, string? description, int categoryId, int reorderLevel)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
+        ArgumentException.ThrowIfNullOrWhiteSpace(sku);
         if (reorderLevel < 0)
             throw new ArgumentOutOfRangeException(nameof(reorderLevel));
 
         Name = name.Trim();
+        SKU = sku.Trim().ToUpperInvariant();
         Barcode = barcode?.Trim();
         Description = description?.Trim();
         CategoryId = categoryId;

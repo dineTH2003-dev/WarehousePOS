@@ -1,0 +1,300 @@
+<Page x:Class="WarehousePOS.Desktop.Views.Purchasing.PurchasingView"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:behaviors="clr-namespace:WarehousePOS.Desktop.Behaviors"
+      Title="Purchasing"
+      Background="{StaticResource BackgroundBrush}">
+
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- ── Top Header ─────────────────────────────────────── -->
+        <Grid Grid.Row="0" Margin="0,0,0,16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <StackPanel Grid.Column="0">
+                <TextBlock Text="Purchasing &amp; Stock Inbound" Style="{StaticResource H2}" VerticalAlignment="Center"/>
+                <TextBlock Text="Create purchase orders, receive supplier stock, record free items, and update product catalog prices"
+                           Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" Margin="0,2,0,0"/>
+            </StackPanel>
+        </Grid>
+
+        <!-- ── Supplier & Payment Section ─────────────────────── -->
+        <Border Grid.Row="1" Style="{StaticResource Card}" Margin="0,0,0,16" Padding="16,14">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="12"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!-- Row 0: Supplier & Purchase Notes -->
+                <Grid Grid.Row="0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="320"/>
+                        <ColumnDefinition Width="16"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Supplier Selection -->
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="Select Supplier *" Style="{StaticResource LabelText}" Margin="0,0,0,6"/>
+                        <ComboBox ItemsSource="{Binding Suppliers}"
+                                  SelectedValuePath="Id"
+                                  DisplayMemberPath="DisplayName"
+                                  SelectedValue="{Binding SelectedSupplierId}">
+                            <ComboBox.ToolTip>Choose the supplier providing these products (filters line item products)</ComboBox.ToolTip>
+                        </ComboBox>
+                    </StackPanel>
+
+                    <!-- Purchase Notes -->
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Text="Purchase Order Notes / Invoice No." Style="{StaticResource LabelText}" Margin="0,0,0,6"/>
+                        <TextBox Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}"
+                                 Style="{StaticResource FormTextBox}"
+                                 ToolTip="Optional reference notes or supplier invoice number"/>
+                    </StackPanel>
+                </Grid>
+
+                <!-- Row 2: Payment Method, Paid Amount, Remaining Balance, Payment Details -->
+                <Grid Grid.Row="2">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="160"/>
+                        <ColumnDefinition Width="12"/>
+                        <ColumnDefinition Width="140"/>
+                        <ColumnDefinition Width="12"/>
+                        <ColumnDefinition Width="150"/>
+                        <ColumnDefinition Width="12"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Payment Method -->
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="Payment Method *" Style="{StaticResource LabelText}" FontSize="11" Margin="0,0,0,4"/>
+                        <ComboBox ItemsSource="{Binding PaymentMethods}"
+                                  SelectedItem="{Binding SelectedPaymentMethod}">
+                            <ComboBox.ToolTip>Select payment method used for this transaction</ComboBox.ToolTip>
+                        </ComboBox>
+                    </StackPanel>
+
+                    <!-- Paid Amount -->
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Text="Paid Amount (Rs.) *" Style="{StaticResource LabelText}" FontSize="11" Margin="0,0,0,4"/>
+                        <TextBox Text="{Binding PaidAmountText, UpdateSourceTrigger=PropertyChanged}"
+                                 Style="{StaticResource FormTextBox}"
+                                 ToolTip="Amount paid for this transaction (defaults to Total Cost)"/>
+                    </StackPanel>
+
+                    <!-- Remaining Balance -->
+                    <StackPanel Grid.Column="4">
+                        <TextBlock Text="Remaining Balance" Style="{StaticResource LabelText}" FontSize="11" Margin="0,0,0,4"/>
+                        <Border Background="#FFFBEB" BorderBrush="#FCD34D" BorderThickness="1" CornerRadius="6" Padding="10,7">
+                            <TextBlock Text="{Binding RemainingBalance, StringFormat='Rs. {0:N2}'}"
+                                       FontWeight="Bold" Foreground="#B45309" FontSize="13" VerticalAlignment="Center"/>
+                        </Border>
+                    </StackPanel>
+
+                    <!-- Payment Details -->
+                    <StackPanel Grid.Column="6">
+                        <TextBlock Text="Payment Reference / Details" Style="{StaticResource LabelText}" FontSize="11" Margin="0,0,0,4"/>
+                        <TextBox Text="{Binding PaymentDetails, UpdateSourceTrigger=PropertyChanged}"
+                                 Style="{StaticResource FormTextBox}"
+                                 ToolTip="Optional cheque number, bank transaction ID, or payment notes"/>
+                    </StackPanel>
+                </Grid>
+            </Grid>
+        </Border>
+
+        <!-- ── Line Items Section ───────────────────────────── -->
+        <Border Grid.Row="2" Style="{StaticResource Card}" Padding="16">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <!-- Line items bar header -->
+                <Grid Grid.Row="0" Margin="0,0,0,12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="Purchase Line Items" FontWeight="Bold" FontSize="15" Foreground="{StaticResource TextPrimaryBrush}"/>
+                        <TextBlock Text="{Binding TotalItemsCount, StringFormat=' ({0} items)'}"
+                                   Foreground="{StaticResource TextSecondaryBrush}" FontSize="13" VerticalAlignment="Center"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="1" Orientation="Horizontal">
+                        <Button Content="✨ Create New Product"
+                                Style="{StaticResource SecondaryButton}"
+                                Command="{Binding CreateNewProductCommand}"
+                                Margin="0,0,8,0" Padding="10,6" FontSize="12"
+                                ToolTip="Create a brand new product in the catalog and add to this purchase"/>
+
+                        <Button Content="+ Add Product Row"
+                                Style="{StaticResource PrimaryButton}"
+                                Command="{Binding AddLineItemCommand}"
+                                Padding="12,6" FontSize="12"
+                                ToolTip="Add another product row to this purchase order"/>
+                    </StackPanel>
+                </Grid>
+
+                <!-- Line Items Table -->
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+                    <ItemsControl ItemsSource="{Binding LineItems}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Background="White" BorderBrush="#E2E8F0" BorderThickness="1" CornerRadius="8" Padding="12,10" Margin="0,0,0,10">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="2*"/>
+                                            <ColumnDefinition Width="8"/>
+                                            <ColumnDefinition Width="80"/>
+                                            <ColumnDefinition Width="8"/>
+                                            <ColumnDefinition Width="80"/>
+                                            <ColumnDefinition Width="8"/>
+                                            <ColumnDefinition Width="110"/>
+                                            <ColumnDefinition Width="8"/>
+                                            <ColumnDefinition Width="110"/>
+                                            <ColumnDefinition Width="8"/>
+                                            <ColumnDefinition Width="110"/>
+                                            <ColumnDefinition Width="8"/>
+                                            <ColumnDefinition Width="110"/>
+                                            <ColumnDefinition Width="8"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <!-- Product Selection -->
+                                        <StackPanel Grid.Column="0">
+                                            <TextBlock Text="Product *" Style="{StaticResource LabelText}" FontSize="11" Margin="0,0,0,4"/>
+                                            <ComboBox ItemsSource="{Binding DataContext.AvailableProducts, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                      SelectedItem="{Binding Product}"
+                                                      DisplayMemberPath="Name">
+                                                <ComboBox.ToolTip>Select product to purchase</ComboBox.ToolTip>
+                                            </ComboBox>
+                                        </StackPanel>
+
+                                        <!-- Paid Quantity -->
+                                        <StackPanel Grid.Column="2">
+                                            <TextBlock Text="Paid Qty *" Style="{StaticResource LabelText}" FontSize="11" Margin="0,0,0,4"/>
+                                            <TextBox Text="{Binding Quantity, UpdateSourceTrigger=PropertyChanged}"
+                                                     behaviors:IntegerOnlyBehavior.IsEnabled="True"
+                                                     Style="{StaticResource FormTextBox}"
+                                                     ToolTip="Number of purchased/paid units"/>
+                                        </StackPanel>
+
+                                        <!-- Free Quantity -->
+                                        <StackPanel Grid.Column="4">
+                                            <TextBlock Text="Free Qty" Style="{StaticResource LabelText}" FontSize="11" Margin="0,0,0,4"/>
+                                            <TextBox Text="{Binding FreeQuantity, UpdateSourceTrigger=PropertyChanged}"
+                                                     behaviors:IntegerOnlyBehavior.IsEnabled="True"
+                                                     Style="{StaticResource FormTextBox}"
+                                                     ToolTip="Bonus or free units provided by supplier (excluded from cost)"/>
+                                        </StackPanel>
+
+                                        <!-- Unit Cost -->
+                                        <StackPanel Grid.Column="6">
+                                            <TextBlock Text="Unit Cost (Rs.)" Style="{StaticResource LabelText}" FontSize="11" Margin="0,0,0,4"/>
+                                            <TextBox Text="{Binding UnitCostText, UpdateSourceTrigger=PropertyChanged}"
+                                                     Style="{StaticResource FormTextBox}"
+                                                     ToolTip="Cost per paid unit (auto-calculates Total Cost)"/>
+                                        </StackPanel>
+
+                                        <!-- Total Cost -->
+                                        <StackPanel Grid.Column="8">
+                                            <TextBlock Text="Total Cost (Rs.)" Style="{StaticResource LabelText}" FontSize="11" Margin="0,0,0,4"/>
+                                            <TextBox Text="{Binding TotalCostText, UpdateSourceTrigger=PropertyChanged}"
+                                                     Style="{StaticResource FormTextBox}"
+                                                     ToolTip="Total purchase cost for this product (auto-calculates Unit Cost)"/>
+                                        </StackPanel>
+
+                                        <!-- Retail Price -->
+                                        <StackPanel Grid.Column="10">
+                                            <TextBlock Text="Retail Price (Rs.)" Style="{StaticResource LabelText}" FontSize="11" Margin="0,0,0,4"/>
+                                            <TextBox Text="{Binding RetailPriceText, UpdateSourceTrigger=PropertyChanged}"
+                                                     Style="{StaticResource FormTextBox}"
+                                                     ToolTip="Update selling retail price for this product"/>
+                                        </StackPanel>
+
+                                        <!-- Wholesale Price -->
+                                        <StackPanel Grid.Column="12">
+                                            <TextBlock Text="Wholesale Price" Style="{StaticResource LabelText}" FontSize="11" Margin="0,0,0,4"/>
+                                            <TextBox Text="{Binding WholesalePriceText, UpdateSourceTrigger=PropertyChanged}"
+                                                     Style="{StaticResource FormTextBox}"
+                                                     ToolTip="Update selling wholesale price for this product"/>
+                                        </StackPanel>
+
+                                        <!-- Delete Button -->
+                                        <Button Grid.Column="14" Content="✕"
+                                                Style="{StaticResource SecondaryButton}"
+                                                Command="{Binding RemoveCommand}"
+                                                VerticalAlignment="Bottom" Padding="10,6" Margin="0,0,0,1" FontSize="12"
+                                                ToolTip="Remove this item from purchase order"/>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </Grid>
+        </Border>
+
+        <!-- ── Order Summary & Actions Footer ────────────────── -->
+        <Border Grid.Row="3" Style="{StaticResource Card}" Margin="0,16,0,0" Padding="16,14">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Order Totals summary -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Border Background="#EFF6FF" CornerRadius="8" Padding="12,8" Margin="0,0,16,0">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Total Cost: " FontSize="14" Foreground="{StaticResource TextSecondaryBrush}"/>
+                            <TextBlock Text="{Binding TotalOrderCost, StringFormat='Rs. {0:N2}'}" FontWeight="Bold" FontSize="16" Foreground="{StaticResource PrimaryBrush}"/>
+                        </StackPanel>
+                    </Border>
+
+                    <StackPanel VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Paid Items: " FontSize="12" Foreground="{StaticResource TextSecondaryBrush}"/>
+                            <TextBlock Text="{Binding TotalPaidQuantity}" FontWeight="SemiBold" FontSize="12" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,12,0"/>
+
+                            <TextBlock Text="Free Items: " FontSize="12" Foreground="{StaticResource TextSecondaryBrush}"/>
+                            <TextBlock Text="{Binding TotalFreeQuantity}" FontWeight="SemiBold" FontSize="12" Foreground="{StaticResource SuccessBrush}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- Footer buttons & Error display -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Border Background="#FEF2F2" BorderBrush="{StaticResource DangerBrush}"
+                            BorderThickness="1" CornerRadius="6" Padding="10,6" Margin="0,0,12,0"
+                            Visibility="{Binding HasError, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <TextBlock Text="{Binding ErrorMessage}" Foreground="{StaticResource DangerBrush}" FontSize="12" VerticalAlignment="Center"/>
+                    </Border>
+
+                    <Button Content="Reset Order"
+                            Style="{StaticResource SecondaryButton}"
+                            Command="{Binding ResetOrderCommand}"
+                            Margin="0,0,10,0" Padding="14,8"/>
+
+                    <Button Content="Save &amp; Receive Stock 📦"
+                            Style="{StaticResource PrimaryButton}"
+                            Command="{Binding SaveAndReceiveCommand}"
+                            Padding="18,8"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</Page>

@@ -23,11 +23,35 @@ public sealed class ProductFormViewModel : ViewModelBase
     private int    _reorderLevel = 5;
     private string _errorMessage = string.Empty;
     private bool   _isBusy;
+    private bool   _isDuplicate;
+    private CancellationTokenSource? _validationCts;
 
     public ObservableCollection<CategoryDto> Categories { get; } = [];
 
-    public string Name              { get => _name;              set => SetField(ref _name, value); }
-    public string SKU               { get => _sku;               set => SetField(ref _sku, value); }
+    public string Name
+    {
+        get => _name;
+        set
+        {
+            if (SetField(ref _name, value))
+            {
+                _ = ValidateUniquenessAsync();
+            }
+        }
+    }
+
+    public string SKU
+    {
+        get => _sku;
+        set
+        {
+            if (SetField(ref _sku, value))
+            {
+                _ = ValidateUniquenessAsync();
+            }
+        }
+    }
+
     public string Barcode           { get => _barcode;           set => SetField(ref _barcode, value); }
     public string Description       { get => _description;       set => SetField(ref _description, value); }
     public string RetailPriceText   { get => _retailPriceText;   set => SetField(ref _retailPriceText, value); }
@@ -37,10 +61,11 @@ public sealed class ProductFormViewModel : ViewModelBase
     public int    ReorderLevel      { get => _reorderLevel;       set => SetField(ref _reorderLevel, value); }
     public string ErrorMessage      { get => _errorMessage;       set { SetField(ref _errorMessage, value); OnPropertyChanged(nameof(HasError)); } }
     public bool   HasError          => !string.IsNullOrEmpty(ErrorMessage);
-    public bool   IsBusy            { get => _isBusy;             set => SetField(ref _isBusy, value); }
+    public bool   IsBusy            { get => _isBusy;             set { SetField(ref _isBusy, value); SaveCommand.RaiseCanExecuteChanged(); OnPropertyChanged(nameof(CanSave)); } }
     public bool   IsEditMode        => _editingId.HasValue;
     public string Title             => IsEditMode ? "Edit Product" : "New Product";
     public bool   IsAdmin           => _session.IsAdmin;
+    public bool   CanSave           => !IsBusy && IsStockQuantityValid() && !_isDuplicate;
 
     public event Action? SaveCompleted;
     public event Action? AddCategoryRequested;
@@ -57,7 +82,7 @@ public sealed class ProductFormViewModel : ViewModelBase
         _categoryService = categoryService;
         _session         = session;
 
-        SaveCommand             = new RelayCommand(async () => await SaveAsync(), () => !IsBusy && IsStockQuantityValid());
+        SaveCommand             = new RelayCommand(async () => await SaveAsync(), () => CanSave);
         CancelCommand           = new RelayCommand(() => SaveCompleted?.Invoke());
         AddCategoryCommand      = new RelayCommand(() => AddCategoryRequested?.Invoke());
         ManageCategoriesCommand = new RelayCommand(() => ManageCategoriesRequested?.Invoke());
@@ -81,6 +106,9 @@ public sealed class ProductFormViewModel : ViewModelBase
 
     public async Task LoadAsync(ProductDto? existing = null)
     {
+        _validationCts?.Cancel();
+        _isDuplicate = false;
+
         var cats = await _categoryService.GetActiveAsync();
         Categories.Clear();
         foreach (var c in cats) Categories.Add(c);
@@ -88,21 +116,22 @@ public sealed class ProductFormViewModel : ViewModelBase
         if (existing is not null)
         {
             _editingId         = existing.Id;
-            Name               = existing.Name;
+            _name              = existing.Name;
             _sku               = existing.SKU;   // SKU is not editable after creation
             Barcode            = existing.Barcode ?? string.Empty;
             Description        = existing.Description ?? string.Empty;
             RetailPriceText    = existing.RetailPrice.ToString("F2");
             WholesalePriceText = existing.WholesalePrice.ToString("F2");
-            StockQuantityText = existing.StockQuantity.ToString();
+            StockQuantityText  = existing.StockQuantity.ToString();
             CategoryId         = existing.CategoryId;
             ReorderLevel       = existing.ReorderLevel;
+            ErrorMessage       = string.Empty;
         }
         else
         {
             _editingId = null;
-            Name = string.Empty;
-            SKU = string.Empty;
+            _name = string.Empty;
+            _sku = string.Empty;
             Barcode = string.Empty;
             Description = string.Empty;
             RetailPriceText = "0.00";
@@ -113,20 +142,102 @@ public sealed class ProductFormViewModel : ViewModelBase
             ErrorMessage = string.Empty;
         }
 
+        OnPropertyChanged(nameof(Name));
+        OnPropertyChanged(nameof(SKU));
         OnPropertyChanged(nameof(IsEditMode));
         OnPropertyChanged(nameof(Title));
+        OnPropertyChanged(nameof(CanSave));
+        SaveCommand.RaiseCanExecuteChanged();
+    }
+
+    private async Task ValidateUniquenessAsync()
+    {
+        _validationCts?.Cancel();
+        var cts = new CancellationTokenSource();
+        _validationCts = cts;
+
+        try
+        {
+            await Task.Delay(150, cts.Token);
+
+            var skuToCheck = SKU?.Trim();
+            var nameToCheck = Name?.Trim();
+
+            if (!string.IsNullOrEmpty(skuToCheck))
+            {
+                var skuExists = await _productService.ExistsBySkuAsync(skuToCheck, _editingId, cts.Token);
+                if (skuExists)
+                {
+                    _isDuplicate = true;
+                    ErrorMessage = $"This SKU '{skuToCheck}' already exists.";
+                    SaveCommand.RaiseCanExecuteChanged();
+                    OnPropertyChanged(nameof(CanSave));
+                    return;
+                }
+            }
+
+            if (!string.IsNullOrEmpty(nameToCheck))
+            {
+                var nameExists = await _productService.ExistsByNameAsync(nameToCheck, _editingId, cts.Token);
+                if (nameExists)
+                {
+                    _isDuplicate = true;
+                    ErrorMessage = "This product already exists.";
+                    SaveCommand.RaiseCanExecuteChanged();
+                    OnPropertyChanged(nameof(CanSave));
+                    return;
+                }
+            }
+
+            if (_isDuplicate)
+            {
+                _isDuplicate = false;
+                if (ErrorMessage.StartsWith("This SKU") || ErrorMessage == "This product already exists.")
+                {
+                    ErrorMessage = string.Empty;
+                }
+                SaveCommand.RaiseCanExecuteChanged();
+                OnPropertyChanged(nameof(CanSave));
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Newer keystroke arrived
+        }
+        catch
+        {
+            // Ignore transient query errors during typing
+        }
     }
 
     private async Task SaveAsync()
     {
         ErrorMessage = string.Empty;
-        if (string.IsNullOrWhiteSpace(Name))    { ErrorMessage = "Name is required.";     return; }
-        if (!IsEditMode && string.IsNullOrWhiteSpace(_sku)) { ErrorMessage = "SKU is required."; return; }
+        if (string.IsNullOrWhiteSpace(Name)) { ErrorMessage = "Name is required."; return; }
+        if (string.IsNullOrWhiteSpace(_sku)) { ErrorMessage = "SKU is required.";  return; }
         if (!decimal.TryParse(RetailPriceText,    out var retail))    { ErrorMessage = "Invalid retail price.";    return; }
         if (!decimal.TryParse(WholesalePriceText, out var wholesale)) { ErrorMessage = "Invalid wholesale price."; return; }
         if (!TryParseStockQuantity(out var stockQuantity))
         { ErrorMessage = "Stock quantity must be a non-negative whole number."; return; }
         if (CategoryId == 0) { ErrorMessage = "Please select a category."; return; }
+
+        if (await _productService.ExistsBySkuAsync(_sku.Trim(), _editingId))
+        {
+            _isDuplicate = true;
+            ErrorMessage = $"This SKU '{_sku.Trim()}' already exists.";
+            SaveCommand.RaiseCanExecuteChanged();
+            OnPropertyChanged(nameof(CanSave));
+            return;
+        }
+
+        if (await _productService.ExistsByNameAsync(Name.Trim(), _editingId))
+        {
+            _isDuplicate = true;
+            ErrorMessage = "This product already exists.";
+            SaveCommand.RaiseCanExecuteChanged();
+            OnPropertyChanged(nameof(CanSave));
+            return;
+        }
 
         IsBusy = true;
         try
@@ -134,16 +245,17 @@ public sealed class ProductFormViewModel : ViewModelBase
             if (IsEditMode)
             {
                 await _productService.UpdateAsync(new UpdateProductRequest(
-                    _editingId!.Value, Name, string.IsNullOrWhiteSpace(Barcode) ? null : Barcode,
-                    string.IsNullOrWhiteSpace(Description) ? null : Description,
+                    _editingId!.Value, Name.Trim(), _sku.Trim(),
+                    string.IsNullOrWhiteSpace(Barcode) ? null : Barcode.Trim(),
+                    string.IsNullOrWhiteSpace(Description) ? null : Description.Trim(),
                     retail, wholesale, CategoryId, ReorderLevel, stockQuantity));
             }
             else
             {
                 await _productService.CreateAsync(new CreateProductRequest(
-                    Name, _sku.Trim(),
-                    string.IsNullOrWhiteSpace(Barcode) ? null : Barcode,
-                    string.IsNullOrWhiteSpace(Description) ? null : Description,
+                    Name.Trim(), _sku.Trim(),
+                    string.IsNullOrWhiteSpace(Barcode) ? null : Barcode.Trim(),
+                    string.IsNullOrWhiteSpace(Description) ? null : Description.Trim(),
                     retail, wholesale, CategoryId, ReorderLevel, stockQuantity));
             }
             SaveCompleted?.Invoke();
@@ -160,6 +272,7 @@ public sealed class ProductFormViewModel : ViewModelBase
             ErrorMessage = string.Empty;
 
         SaveCommand.RaiseCanExecuteChanged();
+        OnPropertyChanged(nameof(CanSave));
     }
 
     private bool IsStockQuantityValid() =>

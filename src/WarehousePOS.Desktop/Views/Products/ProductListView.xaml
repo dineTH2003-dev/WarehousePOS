@@ -9,6 +9,7 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
         <!-- Header row -->
@@ -17,13 +18,17 @@
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
-            <TextBlock Text="Products" Style="{StaticResource H2}" VerticalAlignment="Center"/>
-            <StackPanel Grid.Column="1" Orientation="Horizontal">
+            <StackPanel Grid.Column="0">
+                <TextBlock Text="Product Catalog" Style="{StaticResource H2}" VerticalAlignment="Center"/>
+                <TextBlock Text="Manage products, categories, pricing, and stock levels"
+                           Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" Margin="0,2,0,0"/>
+            </StackPanel>
+            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                 <Button Content="🏷️ Manage Categories"
                         Style="{StaticResource SecondaryButton}"
                         Command="{Binding ManageCategoriesCommand}"
                         Margin="0,0,10,0"
-                        Padding="12,8"/>
+                        Padding="14,8"/>
                 <Button Content="+ Add Product"
                         Style="{StaticResource PrimaryButton}"
                         Command="{Binding AddCommand}"
@@ -33,27 +38,54 @@
 
         <!-- Filter bar -->
         <Border Grid.Row="1" Style="{StaticResource Card}" Margin="0,0,0,16" Padding="16,12">
-            <StackPanel Orientation="Horizontal">
-                <TextBox Width="280"
-                         Style="{StaticResource FormTextBox}"
-                         Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                         Margin="0,0,12,0">
-                    <TextBox.ToolTip>Search by name, SKU or barcode</TextBox.ToolTip>
-                </TextBox>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
 
-                <ComboBox Width="200"
-                          Margin="0,0,12,0"
-                          SelectedValuePath="Id"
-                          DisplayMemberPath="Name"
-                          SelectedValue="{Binding FilterCategoryId}"
-                          ItemsSource="{Binding Categories}">
-                    <ComboBox.ToolTip>Filter by category</ComboBox.ToolTip>
-                </ComboBox>
+                <!-- Search Input with Icon -->
+                <StackPanel Grid.Column="0" Margin="0,0,16,0">
+                    <TextBlock Text="Search Products" Style="{StaticResource LabelText}" Margin="0,0,0,4"/>
+                    <Grid Width="280">
+                        <TextBox Style="{StaticResource FormTextBox}"
+                                 Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                                 Padding="28,8,8,8">
+                            <TextBox.ToolTip>Search by name, SKU or barcode</TextBox.ToolTip>
+                        </TextBox>
+                        <TextBlock Text="🔍" FontSize="12" Foreground="#94A3B8"
+                                   VerticalAlignment="Center" Margin="8,0,0,0" IsHitTestVisible="False"/>
+                    </Grid>
+                </StackPanel>
 
-                <CheckBox Content="Show Inactive"
-                          IsChecked="{Binding ShowInactive}"
-                          VerticalAlignment="Center"/>
-            </StackPanel>
+                <!-- Category Filter -->
+                <StackPanel Grid.Column="1" Margin="0,0,20,0">
+                    <TextBlock Text="Category" Style="{StaticResource LabelText}" Margin="0,0,0,4"/>
+                    <ComboBox Width="200"
+                              SelectedValuePath="Id"
+                              DisplayMemberPath="Name"
+                              SelectedValue="{Binding FilterCategoryId}"
+                              ItemsSource="{Binding Categories}">
+                        <ComboBox.ToolTip>Filter by product category</ComboBox.ToolTip>
+                    </ComboBox>
+                </StackPanel>
+
+                <!-- Modern Switch Toggle for Inactive Products -->
+                <StackPanel Grid.Column="2" VerticalAlignment="Bottom" Margin="0,0,16,6" HorizontalAlignment="Left">
+                    <CheckBox Content="Show Inactive Products"
+                              Style="{StaticResource ModernSwitch}"
+                              IsChecked="{Binding ShowInactive}"
+                              ToolTip="Toggle visibility of deactivated products"/>
+                </StackPanel>
+
+                <!-- Reset Filters Button -->
+                <Button Grid.Column="3" Content="Reset Filters"
+                        Style="{StaticResource SecondaryButton}"
+                        Command="{Binding ClearFiltersCommand}"
+                        VerticalAlignment="Bottom" Margin="0,0,0,2" Padding="10,6" FontSize="12"/>
+            </Grid>
         </Border>
 
         <!-- Product grid -->
@@ -61,13 +93,13 @@
             <DataGrid ItemsSource="{Binding Products}"
                       SelectedItem="{Binding SelectedProduct}">
                 <DataGrid.Columns>
-                    <DataGridTextColumn Header="SKU"             Binding="{Binding SKU}"           Width="120"/>
+                    <DataGridTextColumn Header="SKU"             Binding="{Binding SKU}"           Width="130"/>
                     <DataGridTextColumn Header="Name"            Binding="{Binding Name}"           Width="*"/>
-                    <DataGridTextColumn Header="Category"        Binding="{Binding CategoryName}"   Width="130"/>
-                    <DataGridTextColumn Header="Retail (Rs.)"    Binding="{Binding RetailPrice, StringFormat=N2}"    Width="110"/>
-                    <DataGridTextColumn Header="Wholesale (Rs.)" Binding="{Binding WholesalePrice, StringFormat=N2}" Width="120"/>
-                    <DataGridTextColumn Header="Stock"           Binding="{Binding StockQuantity}"  Width="70"/>
-                    <DataGridTextColumn Header="Status"          Binding="{Binding IsActive, Converter={StaticResource BoolToStatusConverter}}" Width="80"/>
+                    <DataGridTextColumn Header="Category"        Binding="{Binding CategoryName}"   Width="140"/>
+                    <DataGridTextColumn Header="Retail (Rs.)"    Binding="{Binding RetailPrice, StringFormat=N2}"    Width="120"/>
+                    <DataGridTextColumn Header="Wholesale (Rs.)" Binding="{Binding WholesalePrice, StringFormat=N2}" Width="130"/>
+                    <DataGridTextColumn Header="Stock"           Binding="{Binding StockQuantity}"  Width="80"/>
+                    <DataGridTextColumn Header="Status"          Binding="{Binding IsActive, Converter={StaticResource BoolToStatusConverter}}" Width="90"/>
                     <DataGridTemplateColumn Header="Actions"     Width="160">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
@@ -88,6 +120,37 @@
                     </DataGridTemplateColumn>
                 </DataGrid.Columns>
             </DataGrid>
+        </Border>
+
+        <!-- Low-Stock Products Menu (Pinned below the list) -->
+        <Border Grid.Row="3" Style="{StaticResource Card}" Margin="0,16,0,0" Padding="16,12">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Border Width="36" Height="36" CornerRadius="8" Background="#FEF2F2" Margin="0,0,12,0">
+                        <TextBlock Text="⚠️" FontSize="18" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="Low-Stock Products" FontWeight="Bold" FontSize="14" Foreground="{StaticResource TextPrimaryBrush}"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
+                            <TextBlock Text="{Binding LowStockCount}" FontWeight="SemiBold" Foreground="{StaticResource DangerBrush}"/>
+                            <TextBlock Text=" product(s) currently low on stock" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"/>
+                        </StackPanel>
+                    </StackPanel>
+                </StackPanel>
+
+                <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                    <CheckBox Content="Show Low-Stock Only"
+                              Style="{StaticResource ModernSwitch}"
+                              IsChecked="{Binding ShowLowStockOnly}"
+                              ToolTip="Filter table to display only products with low stock levels"/>
+                </StackPanel>
+            </Grid>
         </Border>
     </Grid>
 </Page>
