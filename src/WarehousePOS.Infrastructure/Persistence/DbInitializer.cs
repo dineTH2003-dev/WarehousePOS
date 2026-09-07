@@ -137,6 +137,15 @@ public static class DbInitializer
                     await db.Database.ExecuteSqlRawAsync("ALTER TABLE Purchases ADD COLUMN PaymentDetails TEXT NULL;");
                 }
             }
+
+            var customerColumns = await db.Database
+                .SqlQueryRaw<string>("SELECT name FROM pragma_table_info('Customers')")
+                .ToListAsync();
+
+            if (customerColumns.Any() && !customerColumns.Contains("DiscountRate", StringComparer.OrdinalIgnoreCase))
+            {
+                await db.Database.ExecuteSqlRawAsync("ALTER TABLE Customers ADD COLUMN DiscountRate TEXT NOT NULL DEFAULT '0';");
+            }
         }
         catch (Exception ex)
         {

@@ -25,6 +25,10 @@ public sealed class CustomerConfiguration : IEntityTypeConfiguration<Customer>
 
         builder.Property(c => c.Type)
                .HasConversion<int>();
+
+        builder.Property(c => c.DiscountRate)
+               .HasColumnType("decimal(18,2)")
+               .HasDefaultValue(0m);
     }
 }
 

@@ -27,7 +27,7 @@ public sealed class CustomerService(
     public async Task<CustomerDto> CreateAsync(CreateCustomerRequest req, CancellationToken ct = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(req.Name);
-        var customer = Customer.Create(req.Name, req.Type, req.Phone, req.Email, req.Address);
+        var customer = Customer.Create(req.Name, req.Type, req.Phone, req.Email, req.Address, req.DiscountRate);
         await repo.AddAsync(customer, ct);
         logger.LogInformation("Customer created: {Name} ({Type})", customer.Name, customer.Type);
         return Map(customer);
@@ -38,7 +38,7 @@ public sealed class CustomerService(
         var customer = await repo.GetByIdAsync(req.Id, ct)
             ?? throw new EntityNotFoundException(nameof(Customer), req.Id);
 
-        customer.Update(req.Name, req.Type, req.Phone, req.Email, req.Address);
+        customer.Update(req.Name, req.Type, req.Phone, req.Email, req.Address, req.DiscountRate);
         await repo.UpdateAsync(customer, ct);
         return Map(customer);
     }
@@ -60,5 +60,5 @@ public sealed class CustomerService(
     }
 
     private static CustomerDto Map(Customer c) =>
-        new(c.Id, c.Name, c.Type, c.Type.ToString(), c.Phone, c.Email, c.Address, c.IsActive);
+        new(c.Id, c.Name, c.Type, c.Type.ToString(), c.Phone, c.Email, c.Address, c.DiscountRate, c.IsActive);
 }
