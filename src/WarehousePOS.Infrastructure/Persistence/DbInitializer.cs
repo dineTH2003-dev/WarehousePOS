@@ -116,6 +116,19 @@ public static class DbInitializer
                 {
                     await db.Database.ExecuteSqlRawAsync("ALTER TABLE PurchaseItems ADD COLUMN WholesalePrice TEXT NOT NULL DEFAULT '0';");
                 }
+                if (!purchaseItemColumns.Contains("ClaimedQuantityReceived", StringComparer.OrdinalIgnoreCase))
+                {
+                    await db.Database.ExecuteSqlRawAsync("ALTER TABLE PurchaseItems ADD COLUMN ClaimedQuantityReceived INTEGER NOT NULL DEFAULT 0;");
+                }
+            }
+
+            var saleItemColumns = await db.Database
+                .SqlQueryRaw<string>("SELECT name FROM pragma_table_info('SaleItems')")
+                .ToListAsync();
+
+            if (saleItemColumns.Any() && !saleItemColumns.Contains("ClaimedQuantity", StringComparer.OrdinalIgnoreCase))
+            {
+                await db.Database.ExecuteSqlRawAsync("ALTER TABLE SaleItems ADD COLUMN ClaimedQuantity INTEGER NOT NULL DEFAULT 0;");
             }
 
             var purchaseColumns = await db.Database
@@ -135,6 +148,39 @@ public static class DbInitializer
                 if (!purchaseColumns.Contains("PaymentDetails", StringComparer.OrdinalIgnoreCase))
                 {
                     await db.Database.ExecuteSqlRawAsync("ALTER TABLE Purchases ADD COLUMN PaymentDetails TEXT NULL;");
+                }
+            }
+
+            var customerColumns = await db.Database
+                .SqlQueryRaw<string>("SELECT name FROM pragma_table_info('Customers')")
+                .ToListAsync();
+
+            if (customerColumns.Any() && !customerColumns.Contains("DiscountRate", StringComparer.OrdinalIgnoreCase))
+            {
+                await db.Database.ExecuteSqlRawAsync("ALTER TABLE Customers ADD COLUMN DiscountRate TEXT NOT NULL DEFAULT '0';");
+            }
+
+            var productColumns = await db.Database
+                .SqlQueryRaw<string>("SELECT name FROM pragma_table_info('Products')")
+                .ToListAsync();
+
+            if (productColumns.Any())
+            {
+                if (!productColumns.Contains("WarrantyYears", StringComparer.OrdinalIgnoreCase))
+                {
+                    await db.Database.ExecuteSqlRawAsync("ALTER TABLE Products ADD COLUMN WarrantyYears INTEGER NOT NULL DEFAULT 0;");
+                }
+                if (!productColumns.Contains("WarrantyMonths", StringComparer.OrdinalIgnoreCase))
+                {
+                    await db.Database.ExecuteSqlRawAsync("ALTER TABLE Products ADD COLUMN WarrantyMonths INTEGER NOT NULL DEFAULT 0;");
+                }
+                if (!productColumns.Contains("WarrantyDays", StringComparer.OrdinalIgnoreCase))
+                {
+                    await db.Database.ExecuteSqlRawAsync("ALTER TABLE Products ADD COLUMN WarrantyDays INTEGER NOT NULL DEFAULT 0;");
+                }
+                if (!productColumns.Contains("ClaimedQuantity", StringComparer.OrdinalIgnoreCase))
+                {
+                    await db.Database.ExecuteSqlRawAsync("ALTER TABLE Products ADD COLUMN ClaimedQuantity INTEGER NOT NULL DEFAULT 0;");
                 }
             }
         }

@@ -57,6 +57,7 @@ public sealed class PosViewModel : ViewModelBase
 
     private string      _searchQuery    = string.Empty;
     private CustomerDto? _selectedCustomer;
+    private bool _isDiscountManuallyOverridden;
     private SaleType    _saleType       = SaleType.Retail;
     private decimal     _overallDiscount;
     private string      _overallDiscountText = string.Empty;
@@ -80,9 +81,19 @@ public sealed class PosViewModel : ViewModelBase
         get => _selectedCustomer;
         set
         {
-            SetField(ref _selectedCustomer, value);
-            if (value is not null)
-                SaleType = value.Type; // Auto-set SaleType based on customer preference
+            if (SetField(ref _selectedCustomer, value))
+            {
+                _isDiscountManuallyOverridden = false;
+                if (value is not null)
+                {
+                    SaleType = value.Type; // Auto-set SaleType based on customer preference
+                    ApplyCustomerDiscountRate();
+                }
+                else
+                {
+                    OverallDiscount = 0;
+                }
+            }
         }
     }
 
@@ -122,12 +133,16 @@ public sealed class PosViewModel : ViewModelBase
 
             if (string.IsNullOrEmpty(value))
             {
+                _isDiscountManuallyOverridden = true;
                 OverallDiscount = 0;
                 return;
             }
 
             if (decimal.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out var discount))
+            {
+                _isDiscountManuallyOverridden = true;
                 OverallDiscount = discount;
+            }
         }
     }
 
@@ -243,10 +258,27 @@ public sealed class PosViewModel : ViewModelBase
 
     private void RecalculateTotals()
     {
+        if (!_isDiscountManuallyOverridden && SelectedCustomer is not null && SelectedCustomer.DiscountRate > 0m)
+        {
+            ApplyCustomerDiscountRate();
+        }
+
         OnPropertyChanged(nameof(SubTotal));
         OnPropertyChanged(nameof(TotalAmount));
         OnPropertyChanged(nameof(ChangeAmount));
         ProcessSaleCommand.RaiseCanExecuteChanged();
+    }
+
+    private void ApplyCustomerDiscountRate()
+    {
+        if (SelectedCustomer is not null && SelectedCustomer.DiscountRate > 0m)
+        {
+            var calculatedDiscount = Math.Round(SubTotal * (SelectedCustomer.DiscountRate / 100m), 2);
+            _overallDiscount = calculatedDiscount;
+            _overallDiscountText = calculatedDiscount == 0 ? string.Empty : calculatedDiscount.ToString(CultureInfo.CurrentCulture);
+            OnPropertyChanged(nameof(OverallDiscount));
+            OnPropertyChanged(nameof(OverallDiscountText));
+        }
     }
 
     private async Task ProcessSaleAsync()
@@ -302,6 +334,7 @@ public sealed class PosViewModel : ViewModelBase
     private void ClearCart()
     {
         _cartItems.Clear();
+        _isDiscountManuallyOverridden = false;
         OverallDiscount  = 0;
         AmountPaid       = 0;
         SelectedCustomer = null;

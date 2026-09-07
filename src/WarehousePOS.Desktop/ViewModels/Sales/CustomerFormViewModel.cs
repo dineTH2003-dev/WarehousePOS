@@ -15,14 +15,22 @@ public sealed class CustomerFormViewModel : ViewModelBase
     private string _phone        = string.Empty;
     private string _email        = string.Empty;
     private string _address      = string.Empty;
-    private string _errorMessage = string.Empty;
+    private string _discountRateText = "0";
+    private string _errorMessage     = string.Empty;
     private bool   _isBusy;
 
-    public string Name         { get => _name;         set { if (SetField(ref _name, value)) RefreshValidation(); } }
-    public SaleType Type       { get => _type;         set => SetField(ref _type, value); }
-    public string Phone        { get => _phone;        set { if (SetField(ref _phone, value)) RefreshValidation(); } }
-    public string Email        { get => _email;        set { if (SetField(ref _email, value)) RefreshValidation(); } }
-    public string Address      { get => _address;      set => SetField(ref _address, value); }
+    public string Name             { get => _name;             set { if (SetField(ref _name, value)) RefreshValidation(); } }
+    public SaleType Type           { get => _type;             set => SetField(ref _type, value); }
+    public string Phone            { get => _phone;            set { if (SetField(ref _phone, value)) RefreshValidation(); } }
+    public string Email            { get => _email;            set { if (SetField(ref _email, value)) RefreshValidation(); } }
+    public string Address          { get => _address;          set => SetField(ref _address, value); }
+    public string DiscountRateText { get => _discountRateText; set { if (SetField(ref _discountRateText, value)) RefreshValidation(); } }
+
+    public string? NameError         => string.IsNullOrWhiteSpace(Name) ? "Customer Name is required." : null;
+    public string? PhoneError        => ContactValidation.GetPhoneError(Phone);
+    public string? EmailError        => ContactValidation.GetEmailError(Email);
+    public string? DiscountRateError => GetDiscountRateValidationError();
+
     public string ErrorMessage { get => _errorMessage; set { SetField(ref _errorMessage, value); OnPropertyChanged(nameof(HasError)); } }
     public bool HasError       => !string.IsNullOrEmpty(ErrorMessage);
     public bool IsBusy         { get => _isBusy;       set => SetField(ref _isBusy, value); }
@@ -44,14 +52,16 @@ public sealed class CustomerFormViewModel : ViewModelBase
 
     public void Load(CustomerDto? dto = null)
     {
-        _editingId   = dto?.Id;
-        Name         = dto?.Name ?? string.Empty;
-        Type         = dto?.Type ?? SaleType.Retail;
-        Phone        = dto?.Phone ?? string.Empty;
-        Email        = dto?.Email ?? string.Empty;
-        Address      = dto?.Address ?? string.Empty;
-        ErrorMessage = string.Empty;
+        _editingId       = dto?.Id;
+        Name             = dto?.Name ?? string.Empty;
+        Type             = dto?.Type ?? SaleType.Retail;
+        Phone            = dto?.Phone ?? string.Empty;
+        Email            = dto?.Email ?? string.Empty;
+        Address          = dto?.Address ?? string.Empty;
+        DiscountRateText = dto?.DiscountRate.ToString("G29") ?? "0";
+        ErrorMessage     = string.Empty;
         OnPropertyChanged(nameof(Title));
+        RefreshValidation();
     }
 
     private async Task SaveAsync()
@@ -60,15 +70,17 @@ public sealed class CustomerFormViewModel : ViewModelBase
         var validationError = GetValidationError();
         if (validationError is not null) { ErrorMessage = validationError; return; }
 
+        var discountRate = decimal.TryParse(DiscountRateText, out var rate) ? rate : 0m;
+
         IsBusy = true;
         try
         {
             if (_editingId.HasValue)
                 await _service.UpdateAsync(new UpdateCustomerRequest(
-                    _editingId.Value, Name, Type, Null(Phone), Null(Email), Null(Address)));
+                    _editingId.Value, Name, Type, Null(Phone), Null(Email), Null(Address), discountRate));
             else
                 await _service.CreateAsync(new CreateCustomerRequest(
-                    Name, Type, Null(Phone), Null(Email), Null(Address)));
+                    Name, Type, Null(Phone), Null(Email), Null(Address), discountRate));
 
             SaveCompleted?.Invoke();
         }
@@ -80,6 +92,10 @@ public sealed class CustomerFormViewModel : ViewModelBase
 
     private void RefreshValidation()
     {
+        OnPropertyChanged(nameof(NameError));
+        OnPropertyChanged(nameof(PhoneError));
+        OnPropertyChanged(nameof(EmailError));
+        OnPropertyChanged(nameof(DiscountRateError));
         ErrorMessage = GetValidationError() ?? string.Empty;
         SaveCommand.RaiseCanExecuteChanged();
     }
@@ -88,6 +104,17 @@ public sealed class CustomerFormViewModel : ViewModelBase
     {
         if (string.IsNullOrWhiteSpace(Name))
             return "Name is required.";
-        return ContactValidation.GetPhoneError(Phone) ?? ContactValidation.GetEmailError(Email);
+        return ContactValidation.GetPhoneError(Phone) ?? ContactValidation.GetEmailError(Email) ?? DiscountRateError;
+    }
+
+    private string? GetDiscountRateValidationError()
+    {
+        if (string.IsNullOrWhiteSpace(DiscountRateText))
+            return null;
+
+        if (!decimal.TryParse(DiscountRateText, out var val) || val < 0m || val > 100m)
+            return "Discount rate must be between 0 and 100.";
+
+        return null;
     }
 }

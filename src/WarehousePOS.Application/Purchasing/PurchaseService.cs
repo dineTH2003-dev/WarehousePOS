@@ -38,7 +38,11 @@ public sealed class PurchaseService(
         {
             var product = await productRepo.GetByIdAsync(item.ProductId, ct)
                 ?? throw new EntityNotFoundException(nameof(Product), item.ProductId);
-            purchase.AddItem(product.Id, item.Quantity, item.UnitCost, item.FreeQuantity, item.RetailPrice, item.WholesalePrice);
+
+            if (item.ClaimedQuantityReceived > product.ClaimedQuantity)
+                throw new BusinessRuleViolationException("ExcessiveClaimFulfillment", $"Cannot receive {item.ClaimedQuantityReceived} claimed units for '{product.Name}' because only {product.ClaimedQuantity} claimed units are pending.");
+
+            purchase.AddItem(product.Id, item.Quantity, item.UnitCost, item.FreeQuantity, item.RetailPrice, item.WholesalePrice, item.ClaimedQuantityReceived);
         }
 
         await purchaseRepo.AddAsync(purchase, ct);
@@ -70,7 +74,12 @@ public sealed class PurchaseService(
 
                 var before = product.StockQuantity;
                 var totalQuantityToAdd = item.Quantity + item.FreeQuantity;
-                product.AddStock(totalQuantityToAdd);
+
+                if (totalQuantityToAdd > 0)
+                    product.AddStock(totalQuantityToAdd);
+
+                if (item.ClaimedQuantityReceived > 0)
+                    product.FulfillClaim(item.ClaimedQuantityReceived);
 
                 if (item.RetailPrice > 0 || item.WholesalePrice > 0)
                 {
@@ -81,8 +90,9 @@ public sealed class PurchaseService(
 
                 await productRepo.UpdateAsync(product, ct);
 
+                var totalMovementQty = totalQuantityToAdd + item.ClaimedQuantityReceived;
                 var movement = InventoryMovement.Create(
-                    product.Id, MovementType.PurchaseReceive, totalQuantityToAdd, before,
+                    product.Id, MovementType.PurchaseReceive, totalMovementQty, before,
                     purchase.CreatedByUserId,
                     referenceId: purchase.Id.ToString(),
                     referenceType: "Purchase");
@@ -120,6 +130,6 @@ public sealed class PurchaseService(
             i.ProductId, i.Product?.Name ?? string.Empty,
             i.Product?.SKU ?? string.Empty,
             i.Quantity, i.FreeQuantity, i.UnitCost, i.TotalCost,
-            i.RetailPrice, i.WholesalePrice)).ToList(),
+            i.RetailPrice, i.WholesalePrice, i.ClaimedQuantityReceived)).ToList(),
         p.PaymentMethod, p.PaidAmount, p.RemainingBalance, p.PaymentDetails);
 }

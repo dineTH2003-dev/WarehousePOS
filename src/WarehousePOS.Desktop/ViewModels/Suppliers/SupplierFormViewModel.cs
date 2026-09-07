@@ -32,6 +32,12 @@ public sealed class SupplierFormViewModel : ViewModelBase
     public string Phone         { get => _phone;         set { if (SetField(ref _phone, value)) RefreshValidation(); } }
     public string Email         { get => _email;         set { if (SetField(ref _email, value)) RefreshValidation(); } }
     public string Address       { get => _address;       set => SetField(ref _address, value); }
+
+    public string? NameError             => string.IsNullOrWhiteSpace(Name) ? "Supplier Name is required." : null;
+    public string? PhoneError            => ContactValidation.GetPhoneError(Phone);
+    public string? EmailError            => ContactValidation.GetEmailError(Email);
+    public string? ProvidedProductsError => ProvidedProducts.Count == 0 ? "At least one product is mandatory." : null;
+
     public string ErrorMessage  { get => _errorMessage;  set { SetField(ref _errorMessage, value); OnPropertyChanged(nameof(HasError)); } }
     public bool HasError        => !string.IsNullOrEmpty(ErrorMessage);
     public bool IsBusy          { get => _isBusy;        set => SetField(ref _isBusy, value); }
@@ -107,7 +113,7 @@ public sealed class SupplierFormViewModel : ViewModelBase
                 else
                 {
                     // Fallback for custom text product
-                    ProvidedProducts.Add(new ProductDto(0, token, token, null, null, 0, 0, 0, 5, true, false, 1, "General"));
+                    ProvidedProducts.Add(new ProductDto(0, token, token, null, null, 0, 0, 0, 5, 0, 0, 0, 0, true, false, 1, "General"));
                 }
             }
         }
@@ -184,6 +190,10 @@ public sealed class SupplierFormViewModel : ViewModelBase
 
     private void RefreshValidation()
     {
+        OnPropertyChanged(nameof(NameError));
+        OnPropertyChanged(nameof(PhoneError));
+        OnPropertyChanged(nameof(EmailError));
+        OnPropertyChanged(nameof(ProvidedProductsError));
         ErrorMessage = GetValidationError() ?? string.Empty;
         SaveCommand.RaiseCanExecuteChanged();
     }

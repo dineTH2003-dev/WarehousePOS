@@ -62,6 +62,22 @@ public sealed class CustomerTests
         c.Deactivate();
         c.IsActive.Should().BeFalse();
     }
+
+    [Theory]
+    [InlineData(-1)]
+    [InlineData(100.1)]
+    public void Create_InvalidDiscountRate_ShouldThrow(decimal rate)
+    {
+        var action = () => Customer.Create("Test", discountRate: rate);
+        action.Should().Throw<ArgumentOutOfRangeException>();
+    }
+
+    [Fact]
+    public void Create_ValidDiscountRate_ShouldSetDiscountRate()
+    {
+        var c = Customer.Create("Test", discountRate: 12.5m);
+        c.DiscountRate.Should().Be(12.5m);
+    }
 }
 
 public sealed class SaleTests
@@ -170,6 +186,33 @@ public sealed class SaleTests
         sale.Cancel();
 
         var action = () => sale.Cancel();
+        action.Should().Throw<BusinessRuleViolationException>();
+    }
+
+    [Fact]
+    public void SaleItem_RecordClaim_ValidQty_ShouldIncreaseClaimedQuantity()
+    {
+        var sale = Sale.Create(SaleType.Retail, createdByUserId: 1);
+        var product = CreateTestProduct(1, "Item", retail: 100, wholesale: 90);
+        sale.AddItem(product, quantity: 5, unitPrice: 100);
+
+        var item = sale.Items.First();
+        item.UnclaimedQuantity.Should().Be(5);
+
+        item.RecordClaim(2);
+        item.ClaimedQuantity.Should().Be(2);
+        item.UnclaimedQuantity.Should().Be(3);
+    }
+
+    [Fact]
+    public void SaleItem_RecordClaim_ExceedingUnclaimed_ShouldThrow()
+    {
+        var sale = Sale.Create(SaleType.Retail, createdByUserId: 1);
+        var product = CreateTestProduct(1, "Item", retail: 100, wholesale: 90);
+        sale.AddItem(product, quantity: 2, unitPrice: 100);
+
+        var item = sale.Items.First();
+        var action = () => item.RecordClaim(3);
         action.Should().Throw<BusinessRuleViolationException>();
     }
 }

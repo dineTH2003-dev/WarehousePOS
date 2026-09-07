@@ -116,10 +116,24 @@ public sealed class SaleItem
     public int ProductId    { get; private set; }
     public Product Product  { get; private set; } = null!;
     public int Quantity     { get; private set; }
+    public int ClaimedQuantity { get; private set; }
     public decimal UnitPrice { get; private set; }
     public decimal Discount  { get; private set; }
     public decimal LineTotal => (UnitPrice * Quantity) - Discount;
 
+    public int UnclaimedQuantity => Quantity - ClaimedQuantity;
+
     internal static SaleItem Create(int productId, int quantity, decimal unitPrice, decimal discount) =>
         new() { ProductId = productId, Quantity = quantity, UnitPrice = unitPrice, Discount = discount };
+
+    public void RecordClaim(int quantity)
+    {
+        if (quantity <= 0)
+            throw new ArgumentOutOfRangeException(nameof(quantity), "Claim quantity must be positive.");
+
+        if (ClaimedQuantity + quantity > Quantity)
+            throw new BusinessRuleViolationException("ExcessiveClaim", $"Cannot claim {quantity} units because only {UnclaimedQuantity} units remain unclaimed on this invoice line.");
+
+        ClaimedQuantity += quantity;
+    }
 }
