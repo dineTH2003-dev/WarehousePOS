@@ -162,6 +162,7 @@ public sealed class ProductService(
         p.Id, p.Name, p.SKU, p.Barcode, p.Description,
         p.RetailPrice, p.WholesalePrice, p.StockQuantity, p.ReorderLevel,
         p.WarrantyYears, p.WarrantyMonths, p.WarrantyDays,
+        p.ClaimedQuantity,
         p.IsActive, p.IsLowStock, p.CategoryId,
         p.Category?.Name ?? string.Empty);
 }
