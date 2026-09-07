@@ -52,6 +52,8 @@
                                   SelectedValue="{Binding SelectedSupplierId}">
                             <ComboBox.ToolTip>Choose the supplier providing these products (filters line item products)</ComboBox.ToolTip>
                         </ComboBox>
+                        <TextBlock Text="{Binding SupplierError}" Foreground="{StaticResource DangerBrush}" FontSize="11" Margin="0,4,0,0"
+                                   Visibility="{Binding SupplierError, Converter={StaticResource NullToVisibilityConverter}}" TextWrapping="Wrap"/>
                     </StackPanel>
 
                     <!-- Purchase Notes -->
@@ -88,8 +90,11 @@
                     <StackPanel Grid.Column="2">
                         <TextBlock Text="Paid Amount (Rs.) *" Style="{StaticResource LabelText}" FontSize="11" Margin="0,0,0,4"/>
                         <TextBox Text="{Binding PaidAmountText, UpdateSourceTrigger=PropertyChanged}"
+                                 behaviors:DecimalOnlyBehavior.IsEnabled="True"
                                  Style="{StaticResource FormTextBox}"
                                  ToolTip="Amount paid for this transaction (defaults to Total Cost)"/>
+                        <TextBlock Text="{Binding PaidAmountError}" Foreground="{StaticResource DangerBrush}" FontSize="11" Margin="0,2,0,0"
+                                   Visibility="{Binding PaidAmountError, Converter={StaticResource NullToVisibilityConverter}}" TextWrapping="Wrap"/>
                     </StackPanel>
 
                     <!-- Remaining Balance -->
@@ -181,6 +186,8 @@
                                                       DisplayMemberPath="Name">
                                                 <ComboBox.ToolTip>Select product to purchase</ComboBox.ToolTip>
                                             </ComboBox>
+                                            <TextBlock Text="{Binding ProductError}" Foreground="{StaticResource DangerBrush}" FontSize="10" Margin="0,2,0,0"
+                                                       Visibility="{Binding ProductError, Converter={StaticResource NullToVisibilityConverter}}" TextWrapping="Wrap"/>
                                         </StackPanel>
 
                                         <!-- Paid Quantity -->
@@ -190,6 +197,8 @@
                                                      behaviors:IntegerOnlyBehavior.IsEnabled="True"
                                                      Style="{StaticResource FormTextBox}"
                                                      ToolTip="Number of purchased/paid units"/>
+                                            <TextBlock Text="{Binding QuantityError}" Foreground="{StaticResource DangerBrush}" FontSize="10" Margin="0,2,0,0"
+                                                       Visibility="{Binding QuantityError, Converter={StaticResource NullToVisibilityConverter}}" TextWrapping="Wrap"/>
                                         </StackPanel>
 
                                         <!-- Free Quantity -->
@@ -205,6 +214,7 @@
                                         <StackPanel Grid.Column="6">
                                             <TextBlock Text="Unit Cost (Rs.)" Style="{StaticResource LabelText}" FontSize="11" Margin="0,0,0,4"/>
                                             <TextBox Text="{Binding UnitCostText, UpdateSourceTrigger=PropertyChanged}"
+                                                     behaviors:DecimalOnlyBehavior.IsEnabled="True"
                                                      Style="{StaticResource FormTextBox}"
                                                      ToolTip="Cost per paid unit (auto-calculates Total Cost)"/>
                                         </StackPanel>
@@ -213,6 +223,7 @@
                                         <StackPanel Grid.Column="8">
                                             <TextBlock Text="Total Cost (Rs.)" Style="{StaticResource LabelText}" FontSize="11" Margin="0,0,0,4"/>
                                             <TextBox Text="{Binding TotalCostText, UpdateSourceTrigger=PropertyChanged}"
+                                                     behaviors:DecimalOnlyBehavior.IsEnabled="True"
                                                      Style="{StaticResource FormTextBox}"
                                                      ToolTip="Total purchase cost for this product (auto-calculates Unit Cost)"/>
                                         </StackPanel>
@@ -221,6 +232,7 @@
                                         <StackPanel Grid.Column="10">
                                             <TextBlock Text="Retail Price (Rs.)" Style="{StaticResource LabelText}" FontSize="11" Margin="0,0,0,4"/>
                                             <TextBox Text="{Binding RetailPriceText, UpdateSourceTrigger=PropertyChanged}"
+                                                     behaviors:DecimalOnlyBehavior.IsEnabled="True"
                                                      Style="{StaticResource FormTextBox}"
                                                      ToolTip="Update selling retail price for this product"/>
                                         </StackPanel>
@@ -229,6 +241,7 @@
                                         <StackPanel Grid.Column="12">
                                             <TextBlock Text="Wholesale Price" Style="{StaticResource LabelText}" FontSize="11" Margin="0,0,0,4"/>
                                             <TextBox Text="{Binding WholesalePriceText, UpdateSourceTrigger=PropertyChanged}"
+                                                     behaviors:DecimalOnlyBehavior.IsEnabled="True"
                                                      Style="{StaticResource FormTextBox}"
                                                      ToolTip="Update selling wholesale price for this product"/>
                                         </StackPanel>

@@ -57,8 +57,15 @@ public sealed class ProductFormViewModel : ViewModelBase
     public string RetailPriceText   { get => _retailPriceText;   set => SetField(ref _retailPriceText, value); }
     public string WholesalePriceText{ get => _wholesalePriceText;set => SetField(ref _wholesalePriceText, value); }
     public string StockQuantityText { get => _stockQuantityText; set { if (SetField(ref _stockQuantityText, value)) RefreshStockValidation(); } }
-    public int    CategoryId        { get => _categoryId;         set => SetField(ref _categoryId, value); }
-    public int    ReorderLevel      { get => _reorderLevel;       set => SetField(ref _reorderLevel, value); }
+    public string CategoryIdText    { get => _categoryId.ToString(); }
+    public int    CategoryId        { get => _categoryId;         set { if (SetField(ref _categoryId, value)) OnPropertyChanged(nameof(CategoryError)); } }
+    public int    ReorderLevel      { get => _reorderLevel;       set { if (SetField(ref _reorderLevel, value)) OnPropertyChanged(nameof(ReorderLevelError)); } }
+
+    public string? NameError         => string.IsNullOrWhiteSpace(Name) ? "Product Name is required." : (_isDuplicate && ErrorMessage == "This product already exists." ? ErrorMessage : null);
+    public string? SkuError          => string.IsNullOrWhiteSpace(SKU) ? "SKU is required." : (_isDuplicate && ErrorMessage.StartsWith("This SKU") ? ErrorMessage : null);
+    public string? CategoryError     => CategoryId == 0 ? "Please select a category." : null;
+    public string? ReorderLevelError => ReorderLevel < 0 ? "Reorder level must be 0 or greater." : null;
+
     public string ErrorMessage      { get => _errorMessage;       set { SetField(ref _errorMessage, value); OnPropertyChanged(nameof(HasError)); } }
     public bool   HasError          => !string.IsNullOrEmpty(ErrorMessage);
     public bool   IsBusy            { get => _isBusy;             set { SetField(ref _isBusy, value); SaveCommand.RaiseCanExecuteChanged(); OnPropertyChanged(nameof(CanSave)); } }
@@ -170,6 +177,7 @@ public sealed class ProductFormViewModel : ViewModelBase
                 {
                     _isDuplicate = true;
                     ErrorMessage = $"This SKU '{skuToCheck}' already exists.";
+                    OnPropertyChanged(nameof(SkuError));
                     SaveCommand.RaiseCanExecuteChanged();
                     OnPropertyChanged(nameof(CanSave));
                     return;
@@ -183,6 +191,7 @@ public sealed class ProductFormViewModel : ViewModelBase
                 {
                     _isDuplicate = true;
                     ErrorMessage = "This product already exists.";
+                    OnPropertyChanged(nameof(NameError));
                     SaveCommand.RaiseCanExecuteChanged();
                     OnPropertyChanged(nameof(CanSave));
                     return;
@@ -196,6 +205,8 @@ public sealed class ProductFormViewModel : ViewModelBase
                 {
                     ErrorMessage = string.Empty;
                 }
+                OnPropertyChanged(nameof(NameError));
+                OnPropertyChanged(nameof(SkuError));
                 SaveCommand.RaiseCanExecuteChanged();
                 OnPropertyChanged(nameof(CanSave));
             }

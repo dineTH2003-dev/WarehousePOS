@@ -35,8 +35,11 @@ public sealed class CategoryManagementViewModel : ViewModelBase
         }
     }
 
-    public string Name           { get => _name;           set => SetField(ref _name, value); }
+    public string Name           { get => _name;           set { if (SetField(ref _name, value)) OnPropertyChanged(nameof(NameError)); } }
     public string Description    { get => _description;    set => SetField(ref _description, value); }
+
+    public string? NameError     => string.IsNullOrWhiteSpace(Name) ? "Category name is required." : null;
+
     public string ErrorMessage   { get => _errorMessage;   set { SetField(ref _errorMessage, value); OnPropertyChanged(nameof(HasError)); } }
     public string SuccessMessage { get => _successMessage; set { SetField(ref _successMessage, value); OnPropertyChanged(nameof(HasSuccessMessage)); } }
     public bool HasError          => !string.IsNullOrEmpty(ErrorMessage);

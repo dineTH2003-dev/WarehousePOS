@@ -22,7 +22,9 @@
                 <StackPanel>
                     <TextBlock Text="Customer Name *" Style="{StaticResource LabelText}" Margin="0,0,0,6"/>
                     <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"
-                             Style="{StaticResource FormTextBox}" Margin="0,0,0,14"/>
+                             Style="{StaticResource FormTextBox}" Margin="0,0,0,4"/>
+                    <TextBlock Text="{Binding NameError}" Foreground="{StaticResource DangerBrush}" FontSize="11" Margin="0,0,0,10"
+                               Visibility="{Binding NameError, Converter={StaticResource NullToVisibilityConverter}}" TextWrapping="Wrap"/>
 
                     <TextBlock Text="Customer Type *" Style="{StaticResource LabelText}" Margin="0,0,0,6"/>
                     <ComboBox ItemsSource="{Binding SaleTypes}"
@@ -33,11 +35,15 @@
                     <TextBox Text="{Binding Phone, UpdateSourceTrigger=PropertyChanged}"
                              behaviors:DigitsOnlyBehavior.IsEnabled="True"
                              MaxLength="10"
-                             Style="{StaticResource FormTextBox}" Margin="0,0,0,14"/>
+                             Style="{StaticResource FormTextBox}" Margin="0,0,0,4"/>
+                    <TextBlock Text="{Binding PhoneError}" Foreground="{StaticResource DangerBrush}" FontSize="11" Margin="0,0,0,10"
+                               Visibility="{Binding PhoneError, Converter={StaticResource NullToVisibilityConverter}}" TextWrapping="Wrap"/>
 
                     <TextBlock Text="Email" Style="{StaticResource LabelText}" Margin="0,0,0,6"/>
                     <TextBox Text="{Binding Email, UpdateSourceTrigger=PropertyChanged}"
-                             Style="{StaticResource FormTextBox}" Margin="0,0,0,14"/>
+                             Style="{StaticResource FormTextBox}" Margin="0,0,0,4"/>
+                    <TextBlock Text="{Binding EmailError}" Foreground="{StaticResource DangerBrush}" FontSize="11" Margin="0,0,0,10"
+                               Visibility="{Binding EmailError, Converter={StaticResource NullToVisibilityConverter}}" TextWrapping="Wrap"/>
 
                     <TextBlock Text="Address" Style="{StaticResource LabelText}" Margin="0,0,0,6"/>
                     <TextBox Text="{Binding Address, UpdateSourceTrigger=PropertyChanged}"
@@ -57,8 +63,7 @@
                     <Button Content="Cancel" Style="{StaticResource SecondaryButton}"
                             Margin="0,0,8,0" Command="{Binding CancelCommand}"/>
                     <Button Content="Save" Style="{StaticResource PrimaryButton}"
-                            Command="{Binding SaveCommand}"
-                            IsEnabled="{Binding IsBusy, Converter={StaticResource InvertBoolConverter}}"/>
+                            Command="{Binding SaveCommand}"/>
                 </StackPanel>
             </StackPanel>
         </Grid>

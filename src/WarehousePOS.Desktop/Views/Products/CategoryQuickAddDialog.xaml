@@ -20,7 +20,9 @@
             <StackPanel Grid.Row="1">
                 <!-- Category Name -->
                 <TextBlock Text="Category Name *" Style="{StaticResource LabelText}" Margin="0,0,0,6"/>
-                <TextBox x:Name="TxtName" Style="{StaticResource FormTextBox}" Margin="0,0,0,14"/>
+                <TextBox x:Name="TxtName" Style="{StaticResource FormTextBox}" TextChanged="TxtName_TextChanged" Margin="0,0,0,4"/>
+                <TextBlock x:Name="TxtNameInlineError" Foreground="{StaticResource DangerBrush}" FontSize="11" Margin="0,0,0,10"
+                           Visibility="Collapsed" TextWrapping="Wrap"/>
 
                 <!-- Description with Redirect Header -->
                 <Grid Margin="0,0,0,6">
