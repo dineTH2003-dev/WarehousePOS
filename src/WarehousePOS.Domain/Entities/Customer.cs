@@ -53,9 +53,12 @@ public sealed class Customer : AggregateRoot
 
     private static void ValidateContactInformation(string? phone, string? email)
     {
-        if (!string.IsNullOrWhiteSpace(phone) &&
-            (phone.Length > 10 || phone.Any(character => character is < '0' or > '9')))
-            throw new ArgumentException("Phone number must contain digits only and cannot exceed 10 digits.", nameof(phone));
+        if (!string.IsNullOrWhiteSpace(phone))
+        {
+            var trimmedPhone = phone.Trim();
+            if (trimmedPhone.Length != 10 || !trimmedPhone.StartsWith('0') || trimmedPhone.Any(character => character is < '0' or > '9'))
+                throw new ArgumentException("Phone number must consist of 10 digits starting with '0'.", nameof(phone));
+        }
 
         if (!string.IsNullOrWhiteSpace(email) && !IsValidEmail(email))
             throw new ArgumentException("Please enter a valid email address.", nameof(email));
