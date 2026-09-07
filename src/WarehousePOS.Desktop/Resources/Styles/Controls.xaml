@@ -103,9 +103,28 @@
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}"
                             CornerRadius="6">
-                        <ScrollViewer x:Name="PART_ContentHost"
-                                      Margin="{TemplateBinding Padding}"
-                                      VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
+                        <Grid>
+                            <ScrollViewer x:Name="PART_ContentHost"
+                                          Margin="{TemplateBinding Padding}"
+                                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
+                            <TextBlock Text="{TemplateBinding Tag}"
+                                       Foreground="{StaticResource TextMutedBrush}"
+                                       Margin="{TemplateBinding Padding}"
+                                       VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                       IsHitTestVisible="False"
+                                       FontSize="{TemplateBinding FontSize}">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Text, RelativeSource={RelativeSource TemplatedParent}}" Value="">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </Grid>
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsFocused" Value="True">
@@ -115,6 +134,39 @@
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
+    </Style>
+
+    <Style x:Key="SearchHoverCard" TargetType="Border">
+        <Setter Property="Background" Value="White" />
+        <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="8" />
+        <Setter Property="RenderTransformOrigin" Value="0.5,0.5" />
+        <Setter Property="RenderTransform">
+            <Setter.Value>
+                <ScaleTransform ScaleX="1.0" ScaleY="1.0" />
+            </Setter.Value>
+        </Setter>
+        <Setter Property="Effect">
+            <Setter.Value>
+                <DropShadowEffect BlurRadius="4" ShadowDepth="1" Opacity="0.05" Color="Black"/>
+            </Setter.Value>
+        </Setter>
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="BorderBrush" Value="{StaticResource PrimaryBrush}" />
+                <Setter Property="RenderTransform">
+                    <Setter.Value>
+                        <ScaleTransform ScaleX="1.02" ScaleY="1.02" />
+                    </Setter.Value>
+                </Setter>
+                <Setter Property="Effect">
+                    <Setter.Value>
+                        <DropShadowEffect BlurRadius="12" ShadowDepth="2" Opacity="0.15" Color="#2563EB"/>
+                    </Setter.Value>
+                </Setter>
+            </Trigger>
+        </Style.Triggers>
     </Style>
 
     <!-- ============================================================

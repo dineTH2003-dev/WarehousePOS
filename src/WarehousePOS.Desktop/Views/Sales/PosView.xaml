@@ -5,7 +5,7 @@
       Title="Point of Sale"
       Background="{StaticResource BackgroundBrush}">
 
-    <Grid Margin="24">
+    <Grid Margin="24" behaviors:ArrowNavigationBehavior.IsEnabled="True">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="5*"/>
             <ColumnDefinition Width="16"/>
@@ -23,14 +23,19 @@
             <TextBlock Grid.Row="0" Text="Point of Sale (Cash)" Style="{StaticResource H2}" Margin="0,0,0,16"/>
 
             <!-- Search box -->
-            <Border Grid.Row="1" Style="{StaticResource Card}" Margin="0,0,0,16" Padding="16,12">
+            <Border Grid.Row="1" Style="{StaticResource SearchHoverCard}" Margin="0,0,0,16" Padding="12,8">
                 <Grid>
                     <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
-                    <TextBox Style="{StaticResource FormTextBox}"
+                    <TextBlock Grid.Column="0" Text="product:" FontWeight="Bold" Foreground="{StaticResource PrimaryBrush}" VerticalAlignment="Center" Margin="0,0,8,0" FontSize="13"/>
+                    <TextBlock Grid.Column="1" Text="🔍" FontSize="14" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="{StaticResource TextSecondaryBrush}"/>
+                    <TextBox Grid.Column="2" Style="{StaticResource FormTextBox}"
                              Text="{Binding SearchQuery, UpdateSourceTrigger=PropertyChanged}"
-                             ToolTip="Scan barcode or type product name / SKU..."/>
+                             Tag="Enter product name, SKU or barcode..."
+                             ToolTip="Search products by name, SKU or barcode"/>
                 </Grid>
             </Border>
 
@@ -68,14 +73,39 @@
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <!-- Customer & Sale Type controls -->
+                <!-- Customer Selection with Search -->
                 <StackPanel Grid.Row="0" Margin="0,0,0,12">
                     <TextBlock Text="Customer" Style="{StaticResource LabelText}" Margin="0,0,0,4"/>
-                    <ComboBox ItemsSource="{Binding Customers}"
-                              SelectedValuePath="Id"
-                              DisplayMemberPath="Name"
+
+                    <Border Style="{StaticResource SearchHoverCard}" Margin="0,0,0,6" Padding="8,4">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="customer:" FontWeight="Bold" Foreground="{StaticResource PrimaryBrush}" VerticalAlignment="Center" Margin="0,0,6,0" FontSize="11"/>
+                            <TextBlock Grid.Column="1" Text="🔍" FontSize="12" VerticalAlignment="Center" Margin="0,0,6,0" Foreground="{StaticResource TextSecondaryBrush}"/>
+                            <TextBox Grid.Column="2" Style="{StaticResource FormTextBox}"
+                                     Text="{Binding CustomerSearchQuery, UpdateSourceTrigger=PropertyChanged}"
+                                     Tag="phone number or name"
+                                     Height="30" FontSize="12"
+                                     ToolTip="Search customer by phone number or name"/>
+                            <Button Grid.Column="3" Content="✕" Margin="4,0,0,0" Padding="6,2"
+                                    Style="{StaticResource SecondaryButton}" BorderThickness="0" Foreground="#EF4444" FontWeight="Bold"
+                                    Command="{Binding ClearCustomerSelectionCommand}"
+                                    Visibility="{Binding SelectedCustomer, Converter={StaticResource NullToVisibilityConverter}}"
+                                    ToolTip="Clear selected customer"/>
+                        </Grid>
+                    </Border>
+
+                    <ComboBox ItemsSource="{Binding FilteredCustomers}"
                               SelectedItem="{Binding SelectedCustomer}"
-                              Margin="0,0,0,10"/>
+                              DisplayMemberPath="DisplayName"
+                              Margin="0,0,0,10">
+                        <ComboBox.ToolTip>Select customer for this sale</ComboBox.ToolTip>
+                    </ComboBox>
 
                     <Grid>
                         <Grid.ColumnDefinitions>
@@ -92,19 +122,37 @@
                 </StackPanel>
 
                 <!-- Cart DataGrid -->
-                <DataGrid Grid.Row="1" ItemsSource="{Binding CartItems}" Margin="0,0,0,12">
+                <DataGrid Grid.Row="1" ItemsSource="{Binding CartItems}" Margin="0,0,0,12" HorizontalScrollBarVisibility="Disabled">
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="Item" Binding="{Binding Product.Name}" Width="*"/>
-                        <DataGridTextColumn Header="Qty" Binding="{Binding Quantity, UpdateSourceTrigger=PropertyChanged}" Width="50"/>
-                        <DataGridTextColumn Header="Price" Binding="{Binding UnitPrice, StringFormat=N2}" Width="75"/>
-                        <DataGridTextColumn Header="Total" Binding="{Binding LineTotal, StringFormat=N2}" Width="85"/>
-                        <DataGridTemplateColumn Width="40">
+
+                        <!-- Editable Qty Input Box -->
+                        <DataGridTemplateColumn Header="Qty" Width="60">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <Button Content="✕" Foreground="{StaticResource DangerBrush}"
-                                            Style="{StaticResource SecondaryButton}" Padding="4,2"
+                                    <TextBox Text="{Binding Quantity, UpdateSourceTrigger=PropertyChanged}"
+                                             behaviors:IntegerOnlyBehavior.IsEnabled="True"
+                                             Style="{StaticResource FormTextBox}"
+                                             Height="30" Padding="4,2"
+                                             HorizontalContentAlignment="Center"
+                                             ToolTip="Enter item quantity"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+
+                        <DataGridTextColumn Header="Price" Binding="{Binding UnitPrice, StringFormat=N2}" Width="80"/>
+                        <DataGridTextColumn Header="Total" Binding="{Binding LineTotal, StringFormat=N2}" Width="90"/>
+
+                        <!-- Clear Close / Delete Icon -->
+                        <DataGridTemplateColumn Width="40" Header="">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Button Content="✕" Foreground="#EF4444" FontWeight="Bold" FontSize="16"
+                                            Background="Transparent" BorderThickness="0"
+                                            Padding="0" HorizontalAlignment="Center" VerticalAlignment="Center"
                                             Command="{Binding DataContext.RemoveFromCartCommand, RelativeSource={RelativeSource AncestorType=Page}}"
-                                            CommandParameter="{Binding}"/>
+                                            CommandParameter="{Binding}"
+                                            ToolTip="Remove product from cart"/>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
@@ -138,8 +186,8 @@
                     </Grid>
 
                     <Grid Margin="0,0,0,14">
-                        <TextBlock Text="Change:" FontSize="16" FontWeight="Bold" Foreground="{StaticResource SuccessBrush}"/>
-                        <TextBlock Text="{Binding ChangeAmount, StringFormat=Rs. {0:N2}}" HorizontalAlignment="Right" FontSize="18" FontWeight="Bold" Foreground="{StaticResource SuccessBrush}"/>
+                        <TextBlock Text="{Binding BalanceLabel}" FontSize="16" FontWeight="Bold" Foreground="{Binding BalanceColor}"/>
+                        <TextBlock Text="{Binding BalanceDisplay}" HorizontalAlignment="Right" FontSize="18" FontWeight="Bold" Foreground="{Binding BalanceColor}"/>
                     </Grid>
 
                     <!-- Status messages -->

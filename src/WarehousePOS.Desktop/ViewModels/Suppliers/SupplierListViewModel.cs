@@ -10,6 +10,20 @@ public sealed class SupplierListViewModel : ViewModelBase
     private ObservableCollection<SupplierDto> _suppliers = [];
     private SupplierDto? _selectedSupplier;
     private bool _showInactive;
+    private List<SupplierDto> _allSuppliers = [];
+    private string _searchText = string.Empty;
+
+    public string SearchText
+    {
+        get => _searchText;
+        set
+        {
+            if (SetField(ref _searchText, value))
+            {
+                ApplyFilter();
+            }
+        }
+    }
 
     public ObservableCollection<SupplierDto> Suppliers
     {
@@ -50,7 +64,23 @@ public sealed class SupplierListViewModel : ViewModelBase
         var items = ShowInactive
             ? await _supplierService.GetAllAsync()
             : await _supplierService.GetActiveAsync();
-        Suppliers = new ObservableCollection<SupplierDto>(items);
+        _allSuppliers = items.ToList();
+        ApplyFilter();
+    }
+
+    private void ApplyFilter()
+    {
+        var filtered = _allSuppliers.AsEnumerable();
+        if (!string.IsNullOrWhiteSpace(SearchText))
+        {
+            var term = SearchText.Trim().ToLower();
+            filtered = filtered.Where(s =>
+                (s.Name != null && s.Name.ToLower().Contains(term)) ||
+                (s.ContactPerson != null && s.ContactPerson.ToLower().Contains(term)) ||
+                (s.Phone != null && s.Phone.ToLower().Contains(term)) ||
+                (s.ProvidedProducts != null && s.ProvidedProducts.ToLower().Contains(term)));
+        }
+        Suppliers = new ObservableCollection<SupplierDto>(filtered);
     }
 
     private async Task ToggleAsync(SupplierDto? dto)

@@ -5,7 +5,7 @@
       Title="Purchasing"
       Background="{StaticResource BackgroundBrush}">
 
-    <Grid Margin="24">
+    <Grid Margin="24" behaviors:ArrowNavigationBehavior.IsEnabled="True">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
@@ -232,6 +232,8 @@
                                                      behaviors:DecimalOnlyBehavior.IsEnabled="True"
                                                      Style="{StaticResource FormTextBox}"
                                                      ToolTip="Cost per paid unit (auto-calculates Total Cost)"/>
+                                            <TextBlock Text="{Binding UnitCostError}" Foreground="{StaticResource DangerBrush}" FontSize="10" Margin="0,2,0,0"
+                                                       Visibility="{Binding UnitCostError, Converter={StaticResource NullToVisibilityConverter}}" TextWrapping="Wrap"/>
                                         </StackPanel>
 
                                         <!-- Total Cost -->

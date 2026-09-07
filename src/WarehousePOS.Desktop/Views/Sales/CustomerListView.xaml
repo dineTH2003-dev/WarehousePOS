@@ -24,14 +24,20 @@
         </Grid>
 
         <!-- Filters -->
-        <Border Grid.Row="1" Style="{StaticResource Card}" Margin="0,0,0,16" Padding="16,12">
-            <StackPanel Orientation="Horizontal">
-                <TextBox Width="280"
-                         Style="{StaticResource FormTextBox}"
-                         Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}">
-                    <TextBox.ToolTip>Search by customer name or phone</TextBox.ToolTip>
-                </TextBox>
-            </StackPanel>
+        <Border Grid.Row="1" Style="{StaticResource SearchHoverCard}" Margin="0,0,0,16" Padding="12,8" HorizontalAlignment="Left" Width="360">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" Text="customer:" FontWeight="Bold" Foreground="{StaticResource PrimaryBrush}" VerticalAlignment="Center" Margin="0,0,8,0" FontSize="13"/>
+                <TextBlock Grid.Column="1" Text="🔍" FontSize="14" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="{StaticResource TextSecondaryBrush}"/>
+                <TextBox Grid.Column="2" Style="{StaticResource FormTextBox}"
+                         Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                         Tag="phone number or name"
+                         ToolTip="Search customer by name or phone number"/>
+            </Grid>
         </Border>
 
         <!-- Grid -->

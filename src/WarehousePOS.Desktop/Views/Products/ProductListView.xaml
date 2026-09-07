@@ -46,19 +46,22 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <!-- Search Input with Icon -->
-                <StackPanel Grid.Column="0" Margin="0,0,16,0">
-                    <TextBlock Text="Search Products" Style="{StaticResource LabelText}" Margin="0,0,0,4"/>
-                    <Grid Width="280">
-                        <TextBox Style="{StaticResource FormTextBox}"
+                <!-- Search Input with Hover Card & Prefix -->
+                <Border Grid.Column="0" Style="{StaticResource SearchHoverCard}" Width="320" Margin="0,0,16,0" Padding="10,6">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="product:" FontWeight="Bold" Foreground="{StaticResource PrimaryBrush}" VerticalAlignment="Center" Margin="0,0,6,0" FontSize="12"/>
+                        <TextBlock Grid.Column="1" Text="🔍" FontSize="13" VerticalAlignment="Center" Margin="0,0,6,0" Foreground="{StaticResource TextSecondaryBrush}"/>
+                        <TextBox Grid.Column="2" Style="{StaticResource FormTextBox}"
                                  Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                                 Padding="28,8,8,8">
-                            <TextBox.ToolTip>Search by name, SKU or barcode</TextBox.ToolTip>
-                        </TextBox>
-                        <TextBlock Text="🔍" FontSize="12" Foreground="#94A3B8"
-                                   VerticalAlignment="Center" Margin="8,0,0,0" IsHitTestVisible="False"/>
+                                 Tag="Enter SKU, name or barcode..."
+                                 ToolTip="Search product catalog by name, SKU or barcode"/>
                     </Grid>
-                </StackPanel>
+                </Border>
 
                 <!-- Category Filter -->
                 <StackPanel Grid.Column="1" Margin="0,0,20,0">

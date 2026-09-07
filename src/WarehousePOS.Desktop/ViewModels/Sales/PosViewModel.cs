@@ -19,7 +19,18 @@ public sealed class PosCartItem : ViewModelBase
     public int Quantity
     {
         get => _quantity;
-        set { SetField(ref _quantity, value); OnPropertyChanged(nameof(LineTotal)); }
+        set
+        {
+            if (value < 1) value = 1;
+            if (Product != null && value > Product.StockQuantity)
+            {
+                value = Product.StockQuantity;
+            }
+            if (SetField(ref _quantity, value))
+            {
+                OnPropertyChanged(nameof(LineTotal));
+            }
+        }
     }
 
     public decimal UnitPrice
@@ -53,9 +64,11 @@ public sealed class PosViewModel : ViewModelBase
 
     private ObservableCollection<ProductDto>  _searchResults = [];
     private ObservableCollection<CustomerDto> _customers     = [];
+    private ObservableCollection<CustomerDto> _filteredCustomers = [];
     private ObservableCollection<PosCartItem> _cartItems     = [];
 
-    private string      _searchQuery    = string.Empty;
+    private string      _searchQuery         = string.Empty;
+    private string      _customerSearchQuery = string.Empty;
     private CustomerDto? _selectedCustomer;
     private bool _isDiscountManuallyOverridden;
     private SaleType    _saleType       = SaleType.Retail;
@@ -68,12 +81,25 @@ public sealed class PosViewModel : ViewModelBase
 
     public ObservableCollection<ProductDto>  SearchResults => _searchResults;
     public ObservableCollection<CustomerDto> Customers     => _customers;
+    public ObservableCollection<CustomerDto> FilteredCustomers => _filteredCustomers;
     public ObservableCollection<PosCartItem> CartItems     => _cartItems;
 
     public string SearchQuery
     {
         get => _searchQuery;
         set { SetField(ref _searchQuery, value); _ = PerformSearchAsync(); }
+    }
+
+    public string CustomerSearchQuery
+    {
+        get => _customerSearchQuery;
+        set
+        {
+            if (SetField(ref _customerSearchQuery, value))
+            {
+                FilterCustomers();
+            }
+        }
     }
 
     public CustomerDto? SelectedCustomer
@@ -91,8 +117,12 @@ public sealed class PosViewModel : ViewModelBase
                 }
                 else
                 {
-                    OverallDiscount = 0;
+                    _overallDiscount = 0;
+                    _overallDiscountText = string.Empty;
+                    OnPropertyChanged(nameof(OverallDiscount));
+                    OnPropertyChanged(nameof(OverallDiscountText));
                 }
+                RecalculateTotals();
             }
         }
     }
@@ -116,7 +146,7 @@ public sealed class PosViewModel : ViewModelBase
             {
                 _overallDiscountText = value == 0
                     ? string.Empty
-                    : value.ToString(CultureInfo.CurrentCulture);
+                    : value.ToString("F2", CultureInfo.InvariantCulture);
                 OnPropertyChanged(nameof(OverallDiscountText));
                 RecalculateTotals();
             }
@@ -131,30 +161,42 @@ public sealed class PosViewModel : ViewModelBase
             if (!SetField(ref _overallDiscountText, value))
                 return;
 
-            if (string.IsNullOrEmpty(value))
+            _isDiscountManuallyOverridden = true;
+
+            if (string.IsNullOrWhiteSpace(value))
             {
-                _isDiscountManuallyOverridden = true;
-                OverallDiscount = 0;
-                return;
+                _overallDiscount = 0;
+            }
+            else if (decimal.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out var discount) ||
+                     decimal.TryParse(value, NumberStyles.Any, CultureInfo.CurrentCulture, out discount))
+            {
+                _overallDiscount = discount;
             }
 
-            if (decimal.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out var discount))
-            {
-                _isDiscountManuallyOverridden = true;
-                OverallDiscount = discount;
-            }
+            RecalculateTotals();
         }
     }
 
     public decimal AmountPaid
     {
         get => _amountPaid;
-        set { SetField(ref _amountPaid, value); OnPropertyChanged(nameof(ChangeAmount)); }
+        set
+        {
+            if (SetField(ref _amountPaid, value))
+            {
+                RecalculateTotals();
+            }
+        }
     }
 
     public decimal SubTotal    => _cartItems.Sum(i => i.LineTotal);
     public decimal TotalAmount => Math.Max(0, SubTotal - OverallDiscount);
     public decimal ChangeAmount=> Math.Max(0, AmountPaid - TotalAmount);
+    public bool IsDeficit      => AmountPaid < TotalAmount && _cartItems.Count > 0;
+    public decimal Balance     => AmountPaid - TotalAmount;
+    public string BalanceLabel => IsDeficit ? "Deficit:" : "Change:";
+    public string BalanceDisplay => IsDeficit ? $"-Rs. {Math.Abs(Balance):N2}" : $"Rs. {ChangeAmount:N2}";
+    public string BalanceColor => IsDeficit ? "#DC2626" : "#16A34A";
 
     public string ErrorMessage   { get => _errorMessage;   set { SetField(ref _errorMessage, value); OnPropertyChanged(nameof(HasError)); } }
     public bool HasError         => !string.IsNullOrEmpty(ErrorMessage);
@@ -166,6 +208,7 @@ public sealed class PosViewModel : ViewModelBase
     public RelayCommand<PosCartItem> RemoveFromCartCommand{ get; }
     public RelayCommand ProcessSaleCommand               { get; }
     public RelayCommand ClearCartCommand                 { get; }
+    public RelayCommand ClearCustomerSelectionCommand    { get; }
 
     public PosViewModel(
         IProductService productService,
@@ -178,10 +221,11 @@ public sealed class PosViewModel : ViewModelBase
         _saleService     = saleService;
         _sessionContext  = sessionContext;
 
-        AddToCartCommand      = new RelayCommand<ProductDto>(AddToCart);
-        RemoveFromCartCommand = new RelayCommand<PosCartItem>(RemoveFromCart);
-        ProcessSaleCommand    = new RelayCommand(async () => await ProcessSaleAsync(), () => !IsBusy && _cartItems.Count > 0);
-        ClearCartCommand      = new RelayCommand(ClearCart);
+        AddToCartCommand              = new RelayCommand<ProductDto>(AddToCart);
+        RemoveFromCartCommand         = new RelayCommand<PosCartItem>(RemoveFromCart);
+        ProcessSaleCommand            = new RelayCommand(async () => await ProcessSaleAsync(), () => !IsBusy && _cartItems.Count > 0 && !IsDeficit);
+        ClearCartCommand              = new RelayCommand(ClearCart);
+        ClearCustomerSelectionCommand = new RelayCommand(ClearCustomerSelection);
     }
 
     public async Task InitializeAsync()
@@ -189,8 +233,30 @@ public sealed class PosViewModel : ViewModelBase
         var custs = await _customerService.GetActiveAsync();
         _customers.Clear();
         foreach (var c in custs) _customers.Add(c);
+        FilterCustomers();
 
         await PerformSearchAsync();
+    }
+
+    private void FilterCustomers()
+    {
+        var query = CustomerSearchQuery?.Trim().ToLower() ?? string.Empty;
+        FilteredCustomers.Clear();
+
+        var matches = string.IsNullOrWhiteSpace(query)
+            ? _customers
+            : _customers.Where(c => c.Name.ToLower().Contains(query) || (c.Phone != null && c.Phone.Contains(query)));
+
+        foreach (var c in matches)
+        {
+            FilteredCustomers.Add(c);
+        }
+    }
+
+    private void ClearCustomerSelection()
+    {
+        CustomerSearchQuery = string.Empty;
+        SelectedCustomer = null;
     }
 
     private async Task PerformSearchAsync()
@@ -266,6 +332,11 @@ public sealed class PosViewModel : ViewModelBase
         OnPropertyChanged(nameof(SubTotal));
         OnPropertyChanged(nameof(TotalAmount));
         OnPropertyChanged(nameof(ChangeAmount));
+        OnPropertyChanged(nameof(IsDeficit));
+        OnPropertyChanged(nameof(Balance));
+        OnPropertyChanged(nameof(BalanceLabel));
+        OnPropertyChanged(nameof(BalanceDisplay));
+        OnPropertyChanged(nameof(BalanceColor));
         ProcessSaleCommand.RaiseCanExecuteChanged();
     }
 
@@ -275,7 +346,14 @@ public sealed class PosViewModel : ViewModelBase
         {
             var calculatedDiscount = Math.Round(SubTotal * (SelectedCustomer.DiscountRate / 100m), 2);
             _overallDiscount = calculatedDiscount;
-            _overallDiscountText = calculatedDiscount == 0 ? string.Empty : calculatedDiscount.ToString(CultureInfo.CurrentCulture);
+            _overallDiscountText = calculatedDiscount == 0 ? string.Empty : calculatedDiscount.ToString("F2", CultureInfo.InvariantCulture);
+            OnPropertyChanged(nameof(OverallDiscount));
+            OnPropertyChanged(nameof(OverallDiscountText));
+        }
+        else if (!_isDiscountManuallyOverridden)
+        {
+            _overallDiscount = 0;
+            _overallDiscountText = string.Empty;
             OnPropertyChanged(nameof(OverallDiscount));
             OnPropertyChanged(nameof(OverallDiscountText));
         }
