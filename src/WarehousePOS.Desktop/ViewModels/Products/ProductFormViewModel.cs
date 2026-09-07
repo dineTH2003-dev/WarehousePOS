@@ -19,6 +19,9 @@ public sealed class ProductFormViewModel : ViewModelBase
     private string _retailPriceText    = "0.00";
     private string _wholesalePriceText = "0.00";
     private string _stockQuantityText = "0";
+    private string _warrantyYearsText = "0";
+    private string _warrantyMonthsText = "0";
+    private string _warrantyDaysText = "0";
     private int    _categoryId;
     private int    _reorderLevel = 5;
     private string _errorMessage = string.Empty;
@@ -57,6 +60,9 @@ public sealed class ProductFormViewModel : ViewModelBase
     public string RetailPriceText   { get => _retailPriceText;   set => SetField(ref _retailPriceText, value); }
     public string WholesalePriceText{ get => _wholesalePriceText;set => SetField(ref _wholesalePriceText, value); }
     public string StockQuantityText { get => _stockQuantityText; set { if (SetField(ref _stockQuantityText, value)) RefreshStockValidation(); } }
+    public string WarrantyYearsText { get => _warrantyYearsText; set { if (SetField(ref _warrantyYearsText, value)) RefreshWarrantyValidation(); } }
+    public string WarrantyMonthsText{ get => _warrantyMonthsText;set { if (SetField(ref _warrantyMonthsText, value)) RefreshWarrantyValidation(); } }
+    public string WarrantyDaysText  { get => _warrantyDaysText;  set { if (SetField(ref _warrantyDaysText, value)) RefreshWarrantyValidation(); } }
     public string CategoryIdText    { get => _categoryId.ToString(); }
     public int    CategoryId        { get => _categoryId;         set { if (SetField(ref _categoryId, value)) OnPropertyChanged(nameof(CategoryError)); } }
     public int    ReorderLevel      { get => _reorderLevel;       set { if (SetField(ref _reorderLevel, value)) OnPropertyChanged(nameof(ReorderLevelError)); } }
@@ -65,6 +71,9 @@ public sealed class ProductFormViewModel : ViewModelBase
     public string? SkuError          => string.IsNullOrWhiteSpace(SKU) ? "SKU is required." : (_isDuplicate && ErrorMessage.StartsWith("This SKU") ? ErrorMessage : null);
     public string? CategoryError     => CategoryId == 0 ? "Please select a category." : null;
     public string? ReorderLevelError => ReorderLevel < 0 ? "Reorder level must be 0 or greater." : null;
+    public string? WarrantyYearsError=> !TryParseWarranty(WarrantyYearsText, out _) ? "Years must be 0 or greater." : null;
+    public string? WarrantyMonthsError=> !TryParseWarranty(WarrantyMonthsText, out _) ? "Months must be 0 or greater." : null;
+    public string? WarrantyDaysError => !TryParseWarranty(WarrantyDaysText, out _) ? "Days must be 0 or greater." : null;
 
     public string ErrorMessage      { get => _errorMessage;       set { SetField(ref _errorMessage, value); OnPropertyChanged(nameof(HasError)); } }
     public bool   HasError          => !string.IsNullOrEmpty(ErrorMessage);
@@ -72,7 +81,7 @@ public sealed class ProductFormViewModel : ViewModelBase
     public bool   IsEditMode        => _editingId.HasValue;
     public string Title             => IsEditMode ? "Edit Product" : "New Product";
     public bool   IsAdmin           => _session.IsAdmin;
-    public bool   CanSave           => !IsBusy && IsStockQuantityValid() && !_isDuplicate;
+    public bool   CanSave           => !IsBusy && IsStockQuantityValid() && IsWarrantyValid() && !_isDuplicate;
 
     public event Action? SaveCompleted;
     public event Action? AddCategoryRequested;
@@ -130,6 +139,9 @@ public sealed class ProductFormViewModel : ViewModelBase
             RetailPriceText    = existing.RetailPrice.ToString("F2");
             WholesalePriceText = existing.WholesalePrice.ToString("F2");
             StockQuantityText  = existing.StockQuantity.ToString();
+            WarrantyYearsText  = existing.WarrantyYears.ToString();
+            WarrantyMonthsText = existing.WarrantyMonths.ToString();
+            WarrantyDaysText   = existing.WarrantyDays.ToString();
             CategoryId         = existing.CategoryId;
             ReorderLevel       = existing.ReorderLevel;
             ErrorMessage       = string.Empty;
@@ -144,6 +156,9 @@ public sealed class ProductFormViewModel : ViewModelBase
             RetailPriceText = "0.00";
             WholesalePriceText = "0.00";
             StockQuantityText = "0";
+            WarrantyYearsText = "0";
+            WarrantyMonthsText = "0";
+            WarrantyDaysText = "0";
             CategoryId = cats.FirstOrDefault()?.Id ?? 0;
             ReorderLevel = 5;
             ErrorMessage = string.Empty;
@@ -230,6 +245,10 @@ public sealed class ProductFormViewModel : ViewModelBase
         if (!decimal.TryParse(WholesalePriceText, out var wholesale)) { ErrorMessage = "Invalid wholesale price."; return; }
         if (!TryParseStockQuantity(out var stockQuantity))
         { ErrorMessage = "Stock quantity must be a non-negative whole number."; return; }
+        if (!TryParseWarranty(WarrantyYearsText, out var wYears) ||
+            !TryParseWarranty(WarrantyMonthsText, out var wMonths) ||
+            !TryParseWarranty(WarrantyDaysText, out var wDays))
+        { ErrorMessage = "Warranty values must be non-negative whole numbers."; return; }
         if (CategoryId == 0) { ErrorMessage = "Please select a category."; return; }
 
         if (await _productService.ExistsBySkuAsync(_sku.Trim(), _editingId))
@@ -259,7 +278,8 @@ public sealed class ProductFormViewModel : ViewModelBase
                     _editingId!.Value, Name.Trim(), _sku.Trim(),
                     string.IsNullOrWhiteSpace(Barcode) ? null : Barcode.Trim(),
                     string.IsNullOrWhiteSpace(Description) ? null : Description.Trim(),
-                    retail, wholesale, CategoryId, ReorderLevel, stockQuantity));
+                    retail, wholesale, CategoryId, ReorderLevel, stockQuantity,
+                    wYears, wMonths, wDays));
             }
             else
             {
@@ -267,7 +287,8 @@ public sealed class ProductFormViewModel : ViewModelBase
                     Name.Trim(), _sku.Trim(),
                     string.IsNullOrWhiteSpace(Barcode) ? null : Barcode.Trim(),
                     string.IsNullOrWhiteSpace(Description) ? null : Description.Trim(),
-                    retail, wholesale, CategoryId, ReorderLevel, stockQuantity));
+                    retail, wholesale, CategoryId, ReorderLevel, stockQuantity,
+                    wYears, wMonths, wDays));
             }
             SaveCompleted?.Invoke();
         }
@@ -282,12 +303,37 @@ public sealed class ProductFormViewModel : ViewModelBase
         else if (ErrorMessage == "Stock quantity must be a non-negative whole number.")
             ErrorMessage = string.Empty;
 
+        RefreshSaveState();
+    }
+
+    private void RefreshWarrantyValidation()
+    {
+        OnPropertyChanged(nameof(WarrantyYearsError));
+        OnPropertyChanged(nameof(WarrantyMonthsError));
+        OnPropertyChanged(nameof(WarrantyDaysError));
+        RefreshSaveState();
+    }
+
+    private void RefreshSaveState()
+    {
         SaveCommand.RaiseCanExecuteChanged();
         OnPropertyChanged(nameof(CanSave));
     }
 
     private bool IsStockQuantityValid() =>
         TryParseStockQuantity(out _);
+
+    private bool IsWarrantyValid() =>
+        TryParseWarranty(WarrantyYearsText, out _) &&
+        TryParseWarranty(WarrantyMonthsText, out _) &&
+        TryParseWarranty(WarrantyDaysText, out _);
+
+    private static bool TryParseWarranty(string text, out int result)
+    {
+        result = 0;
+        if (string.IsNullOrWhiteSpace(text)) return false;
+        return text.All(c => c is >= '0' and <= '9') && int.TryParse(text, out result);
+    }
 
     private bool TryParseStockQuantity(out int stockQuantity)
     {

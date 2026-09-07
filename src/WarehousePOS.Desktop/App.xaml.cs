@@ -85,6 +85,7 @@ public partial class App : System.Windows.Application
                     services.AddScoped<SupplierFormViewModel>();
                     services.AddScoped<CustomerListViewModel>();
                     services.AddScoped<CustomerFormViewModel>();
+                    services.AddScoped<CustomerPurchasedItemsViewModel>();
                     services.AddScoped<ReportsViewModel>();
                     services.AddScoped<StoreSettingsViewModel>();
                     services.AddScoped<ExpenseListViewModel>();
@@ -96,6 +97,7 @@ public partial class App : System.Windows.Application
                     services.AddScoped<CategoryManagementView>();
                     services.AddScoped<SupplierListView>();
                     services.AddScoped<CustomerListView>();
+                    services.AddScoped<CustomerPurchasedItemsView>();
                     services.AddScoped<ReportsView>();
                     services.AddScoped<StoreSettingsView>();
                     services.AddScoped<ExpenseListView>();
@@ -109,15 +111,16 @@ public partial class App : System.Windows.Application
                 .Build();
 
             // ── Register navigation routes ────────────────────────
-            NavigationService.Register<PosViewModel,                Views.Sales.PosView>();
-            NavigationService.Register<ProductListViewModel,        Views.Products.ProductListView>();
-            NavigationService.Register<PurchasingViewModel,         Views.Purchasing.PurchasingView>();
-            NavigationService.Register<CategoryManagementViewModel, Views.Products.CategoryManagementView>();
-            NavigationService.Register<SupplierListViewModel,       Views.Suppliers.SupplierListView>();
-            NavigationService.Register<CustomerListViewModel,       Views.Sales.CustomerListView>();
-            NavigationService.Register<ReportsViewModel,            Views.Reports.ReportsView>();
-            NavigationService.Register<StoreSettingsViewModel,      Views.Settings.StoreSettingsView>();
-            NavigationService.Register<ExpenseListViewModel,        Views.Expenses.ExpenseListView>();
+            NavigationService.Register<PosViewModel,                        Views.Sales.PosView>();
+            NavigationService.Register<ProductListViewModel,                Views.Products.ProductListView>();
+            NavigationService.Register<PurchasingViewModel,                 Views.Purchasing.PurchasingView>();
+            NavigationService.Register<CategoryManagementViewModel,         Views.Products.CategoryManagementView>();
+            NavigationService.Register<SupplierListViewModel,               Views.Suppliers.SupplierListView>();
+            NavigationService.Register<CustomerListViewModel,               Views.Sales.CustomerListView>();
+            NavigationService.Register<CustomerPurchasedItemsViewModel,     Views.Sales.CustomerPurchasedItemsView>();
+            NavigationService.Register<ReportsViewModel,                    Views.Reports.ReportsView>();
+            NavigationService.Register<StoreSettingsViewModel,              Views.Settings.StoreSettingsView>();
+            NavigationService.Register<ExpenseListViewModel,                Views.Expenses.ExpenseListView>();
 
             await _host.StartAsync();
 

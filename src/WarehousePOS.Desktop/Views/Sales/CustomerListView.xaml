@@ -26,15 +26,11 @@
         <!-- Filters -->
         <Border Grid.Row="1" Style="{StaticResource Card}" Margin="0,0,0,16" Padding="16,12">
             <StackPanel Orientation="Horizontal">
-                <TextBox Width="260"
+                <TextBox Width="280"
                          Style="{StaticResource FormTextBox}"
-                         Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                         Margin="0,0,16,0">
+                         Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}">
                     <TextBox.ToolTip>Search by customer name or phone</TextBox.ToolTip>
                 </TextBox>
-                <CheckBox Content="Show Inactive" IsChecked="{Binding ShowInactive}" VerticalAlignment="Center"/>
-                <Button Content="Refresh" Style="{StaticResource SecondaryButton}"
-                        Margin="16,0,0,0" Command="{Binding RefreshCommand}"/>
             </StackPanel>
         </Border>
 
@@ -47,8 +43,7 @@
                     <DataGridTextColumn Header="Discount Rate" Binding="{Binding DiscountRate, StringFormat='{}{0:G29}%'}" Width="110"/>
                     <DataGridTextColumn Header="Phone"         Binding="{Binding Phone}"     Width="130"/>
                     <DataGridTextColumn Header="Email"         Binding="{Binding Email}"     Width="180"/>
-                    <DataGridTextColumn Header="Status"   Binding="{Binding IsActive, Converter={StaticResource BoolToStatusConverter}}" Width="80"/>
-                    <DataGridTemplateColumn Header="Actions" Width="160">
+                    <DataGridTemplateColumn Header="Actions" Width="170">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <StackPanel Orientation="Horizontal">
@@ -56,9 +51,9 @@
                                             Style="{StaticResource SecondaryButton}" Padding="8,4" Margin="0,0,6,0"
                                             Command="{Binding DataContext.EditCommand, RelativeSource={RelativeSource AncestorType=Page}}"
                                             CommandParameter="{Binding}"/>
-                                    <Button Content="{Binding IsActive, Converter={StaticResource BoolToToggleTextConverter}}"
-                                            Style="{StaticResource SecondaryButton}" Padding="8,4"
-                                            Command="{Binding DataContext.ToggleActiveCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                    <Button Content="Purchased"
+                                            Style="{StaticResource PrimaryButton}" Padding="10,4"
+                                            Command="{Binding DataContext.PurchasedCommand, RelativeSource={RelativeSource AncestorType=Page}}"
                                             CommandParameter="{Binding}"/>
                                 </StackPanel>
                             </DataTemplate>

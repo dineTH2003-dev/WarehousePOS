@@ -37,19 +37,22 @@ public sealed class CustomerListViewModel : ViewModelBase
     }
 
     public event Action<CustomerDto?>? EditRequested;
+    public event Action<CustomerDto>? PurchasedItemsRequested;
 
-    public RelayCommand AddCommand              { get; }
-    public RelayCommand<CustomerDto> EditCommand   { get; }
+    public RelayCommand AddCommand { get; }
+    public RelayCommand<CustomerDto> EditCommand { get; }
     public RelayCommand<CustomerDto> ToggleActiveCommand { get; }
-    public RelayCommand RefreshCommand          { get; }
+    public RelayCommand<CustomerDto> PurchasedCommand { get; }
+    public RelayCommand RefreshCommand { get; }
 
     public CustomerListViewModel(ICustomerService customerService)
     {
         _customerService = customerService;
-        AddCommand          = new RelayCommand(() => EditRequested?.Invoke(null));
-        EditCommand         = new RelayCommand<CustomerDto>(dto => EditRequested?.Invoke(dto));
+        AddCommand = new RelayCommand(() => EditRequested?.Invoke(null));
+        EditCommand = new RelayCommand<CustomerDto>(dto => EditRequested?.Invoke(dto));
         ToggleActiveCommand = new RelayCommand<CustomerDto>(async dto => await ToggleAsync(dto));
-        RefreshCommand      = new RelayCommand(async () => await LoadAsync());
+        PurchasedCommand = new RelayCommand<CustomerDto>(dto => { if (dto is not null) PurchasedItemsRequested?.Invoke(dto); });
+        RefreshCommand = new RelayCommand(async () => await LoadAsync());
     }
 
     public async Task LoadAsync()

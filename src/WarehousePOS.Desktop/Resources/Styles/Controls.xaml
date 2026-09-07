@@ -5,8 +5,9 @@
     <!-- ============================================================
          CONVERTERS (global instances)
          ============================================================ -->
-    <conv:BoolToVisibilityConverter  x:Key="BoolToVisibilityConverter" />
-    <conv:InvertBoolConverter        x:Key="InvertBoolConverter" />
+    <conv:BoolToVisibilityConverter        x:Key="BoolToVisibilityConverter" />
+    <conv:InverseBoolToVisibilityConverter x:Key="InverseBoolToVisibilityConverter" />
+    <conv:InvertBoolConverter              x:Key="InvertBoolConverter" />
     <conv:NullToVisibilityConverter  x:Key="NullToVisibilityConverter" />
     <conv:DecimalToCurrencyConverter x:Key="DecimalToCurrencyConverter" />
     <conv:UtcToLocalDateTimeConverter x:Key="UtcToLocalDateTimeConverter" />
