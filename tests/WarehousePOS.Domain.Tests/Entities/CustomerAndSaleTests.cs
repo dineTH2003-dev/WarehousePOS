@@ -188,4 +188,31 @@ public sealed class SaleTests
         var action = () => sale.Cancel();
         action.Should().Throw<BusinessRuleViolationException>();
     }
+
+    [Fact]
+    public void SaleItem_RecordClaim_ValidQty_ShouldIncreaseClaimedQuantity()
+    {
+        var sale = Sale.Create(SaleType.Retail, createdByUserId: 1);
+        var product = CreateTestProduct(1, "Item", retail: 100, wholesale: 90);
+        sale.AddItem(product, quantity: 5, unitPrice: 100);
+
+        var item = sale.Items.First();
+        item.UnclaimedQuantity.Should().Be(5);
+
+        item.RecordClaim(2);
+        item.ClaimedQuantity.Should().Be(2);
+        item.UnclaimedQuantity.Should().Be(3);
+    }
+
+    [Fact]
+    public void SaleItem_RecordClaim_ExceedingUnclaimed_ShouldThrow()
+    {
+        var sale = Sale.Create(SaleType.Retail, createdByUserId: 1);
+        var product = CreateTestProduct(1, "Item", retail: 100, wholesale: 90);
+        sale.AddItem(product, quantity: 2, unitPrice: 100);
+
+        var item = sale.Items.First();
+        var action = () => item.RecordClaim(3);
+        action.Should().Throw<BusinessRuleViolationException>();
+    }
 }

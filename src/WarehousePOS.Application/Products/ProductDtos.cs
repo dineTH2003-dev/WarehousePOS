@@ -23,10 +23,14 @@ public sealed record ProductDto(
     int WarrantyYears,
     int WarrantyMonths,
     int WarrantyDays,
+    int ClaimedQuantity,
     bool IsActive,
     bool IsLowStock,
     int CategoryId,
-    string CategoryName);
+    string CategoryName)
+{
+    public string ClaimedText => ClaimedQuantity > 0 ? $" ({ClaimedQuantity})" : string.Empty;
+};
 
 public sealed record CreateProductRequest(
     string Name,

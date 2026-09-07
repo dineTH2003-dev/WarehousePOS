@@ -8,6 +8,7 @@ public sealed class PurchasingItemRowViewModel : ViewModelBase
     private ProductDto? _product;
     private int _quantity = 1;
     private int _freeQuantity = 0;
+    private int _claimedQuantityReceived = 0;
     private string _unitCostText = "0.00";
     private string _totalCostText = "0.00";
     private string _retailPriceText = "0.00";
@@ -28,6 +29,9 @@ public sealed class PurchasingItemRowViewModel : ViewModelBase
                     RecalculateTotalCost();
                 }
                 OnPropertyChanged(nameof(ProductError));
+                OnPropertyChanged(nameof(HasPendingClaim));
+                OnPropertyChanged(nameof(ClaimedText));
+                OnPropertyChanged(nameof(ClaimedQtyError));
             }
         }
     }
@@ -47,8 +51,12 @@ public sealed class PurchasingItemRowViewModel : ViewModelBase
         }
     }
 
-    public string? ProductError  => Product == null ? "Product is required." : null;
-    public string? QuantityError => Quantity <= 0 ? "Qty must be > 0." : null;
+    public string? ProductError   => Product == null ? "Product is required." : null;
+    public string? QuantityError  => (Quantity <= 0 && FreeQuantity <= 0 && ClaimedQuantityReceived <= 0) ? "Qty must be > 0." : null;
+    public string? ClaimedQtyError => ClaimedQuantityReceived > (Product?.ClaimedQuantity ?? 0) ? $"Max claim: {Product?.ClaimedQuantity ?? 0}." : null;
+
+    public bool HasPendingClaim => Product != null && Product.ClaimedQuantity > 0;
+    public string ClaimedText => Product != null && Product.ClaimedQuantity > 0 ? $"Claimed Red: {Product.ClaimedQuantity}" : string.Empty;
 
     public int FreeQuantity
     {
@@ -59,11 +67,27 @@ public sealed class PurchasingItemRowViewModel : ViewModelBase
             if (SetField(ref _freeQuantity, value))
             {
                 OnPropertyChanged(nameof(TotalQuantity));
+                OnPropertyChanged(nameof(QuantityError));
             }
         }
     }
 
-    public int TotalQuantity => Quantity + FreeQuantity;
+    public int ClaimedQuantityReceived
+    {
+        get => _claimedQuantityReceived;
+        set
+        {
+            if (value < 0) value = 0;
+            if (SetField(ref _claimedQuantityReceived, value))
+            {
+                OnPropertyChanged(nameof(TotalQuantity));
+                OnPropertyChanged(nameof(QuantityError));
+                OnPropertyChanged(nameof(ClaimedQtyError));
+            }
+        }
+    }
+
+    public int TotalQuantity => Quantity + FreeQuantity + ClaimedQuantityReceived;
 
     public string UnitCostText
     {

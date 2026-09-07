@@ -21,6 +21,7 @@ public sealed class Product : AggregateRoot
     public int WarrantyYears { get; private set; }
     public int WarrantyMonths { get; private set; }
     public int WarrantyDays { get; private set; }
+    public int ClaimedQuantity { get; private set; }
     public bool IsActive { get; private set; } = true;
 
     public int CategoryId { get; private set; }
@@ -151,6 +152,28 @@ public sealed class Product : AggregateRoot
             throw new ArgumentOutOfRangeException(nameof(quantity), "Stock quantity cannot be negative.");
 
         StockQuantity = quantity;
+        SetUpdatedAt();
+    }
+
+    public void RecordWarrantyClaim(int quantity)
+    {
+        if (quantity <= 0)
+            throw new ArgumentOutOfRangeException(nameof(quantity), "Claim quantity must be positive.");
+
+        ClaimedQuantity += quantity;
+        SetUpdatedAt();
+    }
+
+    public void FulfillClaim(int quantity)
+    {
+        if (quantity <= 0)
+            throw new ArgumentOutOfRangeException(nameof(quantity), "Fulfill quantity must be positive.");
+
+        if (quantity > ClaimedQuantity)
+            throw new InvalidOperationException($"Cannot fulfill {quantity} claimed items because only {ClaimedQuantity} items are pending claim.");
+
+        ClaimedQuantity -= quantity;
+        StockQuantity += quantity;
         SetUpdatedAt();
     }
 

@@ -98,7 +98,20 @@
                     <DataGridTextColumn Header="Category"        Binding="{Binding CategoryName}"   Width="140"/>
                     <DataGridTextColumn Header="Retail (Rs.)"    Binding="{Binding RetailPrice, StringFormat=N2}"    Width="120"/>
                     <DataGridTextColumn Header="Wholesale (Rs.)" Binding="{Binding WholesalePrice, StringFormat=N2}" Width="130"/>
-                    <DataGridTextColumn Header="Stock"           Binding="{Binding StockQuantity}"  Width="80"/>
+                    <DataGridTemplateColumn Header="Stock" Width="130">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding StockQuantity}" FontWeight="SemiBold"/>
+                                    <TextBlock Text="{Binding ClaimedText}"
+                                               Foreground="{StaticResource DangerBrush}"
+                                               FontWeight="Bold" FontSize="11"
+                                               Visibility="{Binding ClaimedText, Converter={StaticResource NullToVisibilityConverter}}"
+                                               ToolTip="Pending warranty claim replacement quantity from supplier"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
                     <DataGridTextColumn Header="Status"          Binding="{Binding IsActive, Converter={StaticResource BoolToStatusConverter}}" Width="90"/>
                     <DataGridTemplateColumn Header="Actions"     Width="160">
                         <DataGridTemplateColumn.CellTemplate>

@@ -133,6 +133,63 @@ public sealed class SaleService(
         logger.LogInformation("Sale #{SaleId} cancelled and stock reverted.", sale.Id);
     }
 
+    public async Task ClaimWarrantyAsync(int saleId, int productId, int claimQuantity, int userId = 1, string? notes = null, CancellationToken ct = default)
+    {
+        if (claimQuantity <= 0)
+            throw new ArgumentOutOfRangeException(nameof(claimQuantity), "Claim quantity must be positive.");
+
+        var sale = await saleRepo.GetByIdAsync(saleId, ct)
+            ?? throw new EntityNotFoundException(nameof(Sale), saleId);
+
+        var saleItem = sale.Items.FirstOrDefault(i => i.ProductId == productId)
+            ?? throw new BusinessRuleViolationException("ItemNotFound", $"Product ID {productId} is not on invoice #{saleId}.");
+
+        var product = await productRepo.GetByIdAsync(productId, ct)
+            ?? throw new EntityNotFoundException(nameof(Product), productId);
+
+        // Calculate warranty expiration
+        var localSaleDate = sale.SaleDate.ToLocalTime();
+        var isWarrantyActive = false;
+
+        if (product.WarrantyYears > 0 || product.WarrantyMonths > 0 || product.WarrantyDays > 0)
+        {
+            var expiryDate = localSaleDate
+                .AddYears(product.WarrantyYears)
+                .AddMonths(product.WarrantyMonths)
+                .AddDays(product.WarrantyDays);
+
+            if (DateTime.Now <= expiryDate)
+                isWarrantyActive = true;
+        }
+
+        if (!isWarrantyActive)
+            throw new BusinessRuleViolationException("InactiveWarranty", $"Cannot claim warranty for product '{product.Name}' because warranty is not active or has expired.");
+
+        await unitOfWork.ExecuteInTransactionAsync(async () =>
+        {
+            // Record claim on SaleItem and Product
+            saleItem.RecordClaim(claimQuantity);
+            product.RecordWarrantyClaim(claimQuantity);
+
+            await productRepo.UpdateAsync(product, ct);
+            await saleRepo.UpdateAsync(sale, ct);
+
+            var movement = InventoryMovement.Create(
+                product.Id,
+                MovementType.Adjustment,
+                claimQuantity,
+                product.StockQuantity,
+                userId,
+                referenceId: sale.Id.ToString(),
+                referenceType: "WarrantyClaim",
+                notes: notes ?? $"Customer Warranty Claim for Invoice #{sale.Id}");
+
+            await movementRepo.AddAsync(movement, ct);
+        }, ct);
+
+        logger.LogInformation("Warranty claim recorded for Sale #{SaleId}, Product {SKU}, Qty: {Qty}", sale.Id, product.SKU, claimQuantity);
+    }
+
     private static SaleDto Map(Sale s) => new(
         s.Id,
         s.CustomerId,
@@ -158,5 +215,6 @@ public sealed class SaleService(
             i.LineTotal,
             i.Product?.WarrantyYears ?? 0,
             i.Product?.WarrantyMonths ?? 0,
-            i.Product?.WarrantyDays ?? 0)).ToList());
+            i.Product?.WarrantyDays ?? 0,
+            i.ClaimedQuantity)).ToList());
 }

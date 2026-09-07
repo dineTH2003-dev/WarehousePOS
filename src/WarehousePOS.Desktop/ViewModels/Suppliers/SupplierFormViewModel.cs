@@ -113,7 +113,7 @@ public sealed class SupplierFormViewModel : ViewModelBase
                 else
                 {
                     // Fallback for custom text product
-                    ProvidedProducts.Add(new ProductDto(0, token, token, null, null, 0, 0, 0, 5, 0, 0, 0, true, false, 1, "General"));
+                    ProvidedProducts.Add(new ProductDto(0, token, token, null, null, 0, 0, 0, 5, 0, 0, 0, 0, true, false, 1, "General"));
                 }
             }
         }

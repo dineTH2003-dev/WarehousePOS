@@ -44,7 +44,8 @@ public sealed record SaleItemDto(
     decimal LineTotal,
     int WarrantyYears = 0,
     int WarrantyMonths = 0,
-    int WarrantyDays = 0);
+    int WarrantyDays = 0,
+    int ClaimedQuantity = 0);
 
 public sealed record SaleDto(
     int Id,

@@ -58,6 +58,7 @@ public partial class SupplierFormView : Window
                 int.TryParse(_productFormVm.WarrantyYearsText, out var wy) ? wy : 0,
                 int.TryParse(_productFormVm.WarrantyMonthsText, out var wm) ? wm : 0,
                 int.TryParse(_productFormVm.WarrantyDaysText, out var wd) ? wd : 0,
+                0,
                 true,
                 false,
                 _productFormVm.CategoryId,

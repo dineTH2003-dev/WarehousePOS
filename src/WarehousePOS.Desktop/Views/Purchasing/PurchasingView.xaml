@@ -163,17 +163,19 @@
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="2*"/>
                                             <ColumnDefinition Width="8"/>
-                                            <ColumnDefinition Width="80"/>
+                                            <ColumnDefinition Width="75"/>
                                             <ColumnDefinition Width="8"/>
-                                            <ColumnDefinition Width="80"/>
+                                            <ColumnDefinition Width="75"/>
                                             <ColumnDefinition Width="8"/>
-                                            <ColumnDefinition Width="110"/>
+                                            <ColumnDefinition Width="90"/>
                                             <ColumnDefinition Width="8"/>
-                                            <ColumnDefinition Width="110"/>
+                                            <ColumnDefinition Width="100"/>
                                             <ColumnDefinition Width="8"/>
-                                            <ColumnDefinition Width="110"/>
+                                            <ColumnDefinition Width="100"/>
                                             <ColumnDefinition Width="8"/>
-                                            <ColumnDefinition Width="110"/>
+                                            <ColumnDefinition Width="100"/>
+                                            <ColumnDefinition Width="8"/>
+                                            <ColumnDefinition Width="100"/>
                                             <ColumnDefinition Width="8"/>
                                             <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
@@ -188,6 +190,8 @@
                                             </ComboBox>
                                             <TextBlock Text="{Binding ProductError}" Foreground="{StaticResource DangerBrush}" FontSize="10" Margin="0,2,0,0"
                                                        Visibility="{Binding ProductError, Converter={StaticResource NullToVisibilityConverter}}" TextWrapping="Wrap"/>
+                                            <TextBlock Text="{Binding ClaimedText}" Foreground="#EF4444" FontWeight="SemiBold" FontSize="10" Margin="0,2,0,0"
+                                                       Visibility="{Binding HasPendingClaim, Converter={StaticResource BoolToVisibilityConverter}}"/>
                                         </StackPanel>
 
                                         <!-- Paid Quantity -->
@@ -210,8 +214,19 @@
                                                      ToolTip="Bonus or free units provided by supplier (excluded from cost)"/>
                                         </StackPanel>
 
-                                        <!-- Unit Cost -->
+                                        <!-- Claimed Qty Received -->
                                         <StackPanel Grid.Column="6">
+                                            <TextBlock Text="Claimed Recv" Style="{StaticResource LabelText}" FontSize="11" Foreground="#EF4444" Margin="0,0,0,4"/>
+                                            <TextBox Text="{Binding ClaimedQuantityReceived, UpdateSourceTrigger=PropertyChanged}"
+                                                     behaviors:IntegerOnlyBehavior.IsEnabled="True"
+                                                     Style="{StaticResource FormTextBox}"
+                                                     ToolTip="Claimed warranty replacement stock received from supplier (reduces red claim quantity)"/>
+                                            <TextBlock Text="{Binding ClaimedQtyError}" Foreground="{StaticResource DangerBrush}" FontSize="10" Margin="0,2,0,0"
+                                                       Visibility="{Binding ClaimedQtyError, Converter={StaticResource NullToVisibilityConverter}}" TextWrapping="Wrap"/>
+                                        </StackPanel>
+
+                                        <!-- Unit Cost -->
+                                        <StackPanel Grid.Column="8">
                                             <TextBlock Text="Unit Cost (Rs.)" Style="{StaticResource LabelText}" FontSize="11" Margin="0,0,0,4"/>
                                             <TextBox Text="{Binding UnitCostText, UpdateSourceTrigger=PropertyChanged}"
                                                      behaviors:DecimalOnlyBehavior.IsEnabled="True"
@@ -220,7 +235,7 @@
                                         </StackPanel>
 
                                         <!-- Total Cost -->
-                                        <StackPanel Grid.Column="8">
+                                        <StackPanel Grid.Column="10">
                                             <TextBlock Text="Total Cost (Rs.)" Style="{StaticResource LabelText}" FontSize="11" Margin="0,0,0,4"/>
                                             <TextBox Text="{Binding TotalCostText, UpdateSourceTrigger=PropertyChanged}"
                                                      behaviors:DecimalOnlyBehavior.IsEnabled="True"
@@ -229,7 +244,7 @@
                                         </StackPanel>
 
                                         <!-- Retail Price -->
-                                        <StackPanel Grid.Column="10">
+                                        <StackPanel Grid.Column="12">
                                             <TextBlock Text="Retail Price (Rs.)" Style="{StaticResource LabelText}" FontSize="11" Margin="0,0,0,4"/>
                                             <TextBox Text="{Binding RetailPriceText, UpdateSourceTrigger=PropertyChanged}"
                                                      behaviors:DecimalOnlyBehavior.IsEnabled="True"
@@ -238,7 +253,7 @@
                                         </StackPanel>
 
                                         <!-- Wholesale Price -->
-                                        <StackPanel Grid.Column="12">
+                                        <StackPanel Grid.Column="14">
                                             <TextBlock Text="Wholesale Price" Style="{StaticResource LabelText}" FontSize="11" Margin="0,0,0,4"/>
                                             <TextBox Text="{Binding WholesalePriceText, UpdateSourceTrigger=PropertyChanged}"
                                                      behaviors:DecimalOnlyBehavior.IsEnabled="True"
@@ -247,7 +262,7 @@
                                         </StackPanel>
 
                                         <!-- Delete Button -->
-                                        <Button Grid.Column="14" Content="✕"
+                                        <Button Grid.Column="16" Content="✕"
                                                 Style="{StaticResource SecondaryButton}"
                                                 Command="{Binding RemoveCommand}"
                                                 VerticalAlignment="Bottom" Padding="10,6" Margin="0,0,0,1" FontSize="12"

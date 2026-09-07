@@ -6,17 +6,23 @@ namespace WarehousePOS.Desktop.ViewModels.Sales;
 
 public sealed record CustomerPurchasedItemDisplayModel(
     int SaleId,
+    int ProductId,
     string InvoiceNumber,
     string ProductName,
     string SKU,
     int Quantity,
+    int ClaimedQuantity,
     DateTime PurchaseDate,
     string PurchaseDateFormatted,
     string PurchaseTimeFormatted,
     string WarrantyPeriodText,
     string WarrantyExpiryText,
     string WarrantyStatus,
-    string WarrantyStatusColor);
+    string WarrantyStatusColor)
+{
+    public int UnclaimedQuantity => Math.Max(0, Quantity - ClaimedQuantity);
+    public bool CanClaim => WarrantyStatus == "Active" && UnclaimedQuantity > 0;
+}
 
 public sealed class CustomerPurchasedItemsViewModel : ViewModelBase
 {
@@ -56,13 +62,40 @@ public sealed class CustomerPurchasedItemsViewModel : ViewModelBase
     public bool HasNoItems => !IsBusy && PurchasedItems.Count == 0;
 
     public event Action? BackRequested;
+    public event Action<CustomerPurchasedItemDisplayModel>? ClaimRequested;
 
     public RelayCommand BackCommand { get; }
+    public RelayCommand<CustomerPurchasedItemDisplayModel> ClaimCommand { get; }
 
     public CustomerPurchasedItemsViewModel(ISaleService saleService)
     {
         _saleService = saleService;
         BackCommand = new RelayCommand(() => BackRequested?.Invoke());
+        ClaimCommand = new RelayCommand<CustomerPurchasedItemDisplayModel>(item =>
+        {
+            if (item is not null && item.CanClaim)
+                ClaimRequested?.Invoke(item);
+        });
+    }
+
+    public async Task ProcessClaimAsync(CustomerPurchasedItemDisplayModel item, int claimQuantity, string? notes = null)
+    {
+        try
+        {
+            IsBusy = true;
+            ErrorMessage = string.Empty;
+            await _saleService.ClaimWarrantyAsync(item.SaleId, item.ProductId, claimQuantity, notes: notes);
+            if (Customer is not null)
+                await LoadAsync(Customer);
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Failed to record warranty claim: {ex.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
     }
 
     public async Task LoadAsync(CustomerDto customer)
@@ -127,10 +160,12 @@ public sealed class CustomerPurchasedItemsViewModel : ViewModelBase
 
                     list.Add(new CustomerPurchasedItemDisplayModel(
                         sale.Id,
+                        item.ProductId,
                         $"INV-{sale.Id:D5}",
                         item.ProductName,
                         item.SKU,
                         item.Quantity,
+                        item.ClaimedQuantity,
                         localSaleDate,
                         saleDateStr,
                         saleTimeStr,
