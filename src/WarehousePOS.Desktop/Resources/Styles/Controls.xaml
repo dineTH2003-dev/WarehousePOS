@@ -213,6 +213,58 @@
         </Setter>
     </Style>
 
+    <Style x:Key="SearchIcon" TargetType="Path">
+        <Setter Property="Data" Value="M10.5,6.5 A4,4 0 1 1 2.5,6.5 A4,4 0 0 1 10.5,6.5 M10.5,10.5 L15.5,15.5" />
+        <Setter Property="Stroke" Value="{StaticResource TextMutedBrush}" />
+        <Setter Property="StrokeThickness" Value="1.8" />
+        <Setter Property="StrokeStartLineCap" Value="Round" />
+        <Setter Property="StrokeEndLineCap" Value="Round" />
+        <Setter Property="Width" Value="18" />
+        <Setter Property="Height" Value="18" />
+        <Setter Property="Stretch" Value="Uniform" />
+        <Setter Property="HorizontalAlignment" Value="Left" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="Margin" Value="15,0,0,0" />
+        <Setter Property="IsHitTestVisible" Value="False" />
+        <Setter Property="Panel.ZIndex" Value="1" />
+    </Style>
+
+    <Style x:Key="InactiveDataGridRow" TargetType="DataGridRow">
+        <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
+        <Setter Property="Background" Value="White" />
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding IsActive}" Value="False">
+                <Setter Property="Background" Value="#F3F4F6" />
+                <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}" />
+                <Setter Property="Opacity" Value="0.82" />
+                <Setter Property="FontStyle" Value="Italic" />
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style x:Key="StatusBadge" TargetType="Border">
+        <Setter Property="Background" Value="#DCFCE7" />
+        <Setter Property="CornerRadius" Value="10" />
+        <Setter Property="Padding" Value="8,3" />
+        <Setter Property="HorizontalAlignment" Value="Left" />
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding IsActive}" Value="False">
+                <Setter Property="Background" Value="#E5E7EB" />
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style x:Key="StatusBadgeText" TargetType="TextBlock">
+        <Setter Property="Foreground" Value="#166534" />
+        <Setter Property="FontSize" Value="11" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding IsActive}" Value="False">
+                <Setter Property="Foreground" Value="#4B5563" />
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
+
     <!-- ============================================================
          MODERN SWITCH CHECKBOX STYLE
          ============================================================ -->

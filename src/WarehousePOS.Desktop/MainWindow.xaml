@@ -55,7 +55,15 @@
 
                 <!-- App logo / title -->
                 <StackPanel DockPanel.Dock="Top" Margin="16,24,16,20">
-                    <TextBlock Text="📦" FontSize="28" HorizontalAlignment="Left"/>
+                    <Image Source="{StaticResource HappyProductsLogo}"
+                           Width="150"
+                           Height="54"
+                           Stretch="Uniform"
+                           HorizontalAlignment="Left"
+                           Margin="0,0,0,8"
+                           SnapsToDevicePixels="True"
+                           UseLayoutRounding="True"
+                           RenderOptions.BitmapScalingMode="HighQuality" />
                     <TextBlock Text="Warehouse POS"
                                Foreground="White"
                                FontSize="16"

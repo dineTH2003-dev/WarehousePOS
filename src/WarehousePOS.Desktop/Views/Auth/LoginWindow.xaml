@@ -34,7 +34,7 @@
                 <StackPanel>
 
                     <!-- Official Happy Products logo stored as a local resource. -->
-                    <Image Source="/WarehousePOS.Desktop;component/Resources/Images/happy-products-logo.png"
+                    <Image Source="{StaticResource HappyProductsLogo}"
                            Width="190"
                            Height="76"
                            Stretch="Uniform"
