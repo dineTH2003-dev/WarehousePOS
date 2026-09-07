@@ -9,7 +9,7 @@
         Background="{StaticResource BackgroundBrush}">
 
     <Border Style="{StaticResource Card}" Margin="24">
-        <Grid>
+        <Grid behaviors:ArrowNavigationBehavior.IsEnabled="True">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>

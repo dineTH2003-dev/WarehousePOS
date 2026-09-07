@@ -292,6 +292,12 @@ public sealed class PurchasingViewModel : ViewModelBase
             return;
         }
 
+        if (validItems.Any(i => i.Quantity > 0 && i.UnitCost <= 0))
+        {
+            ErrorMessage = "Unit cost must be entered for all paid purchase items.";
+            return;
+        }
+
         IsBusy = true;
         try
         {
