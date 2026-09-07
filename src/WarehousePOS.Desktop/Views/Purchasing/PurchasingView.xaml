@@ -232,8 +232,6 @@
                                                      behaviors:DecimalOnlyBehavior.IsEnabled="True"
                                                      Style="{StaticResource FormTextBox}"
                                                      ToolTip="Cost per paid unit (auto-calculates Total Cost)"/>
-                                            <TextBlock Text="{Binding UnitCostError}" Foreground="{StaticResource DangerBrush}" FontSize="10" Margin="0,2,0,0"
-                                                       Visibility="{Binding UnitCostError, Converter={StaticResource NullToVisibilityConverter}}" TextWrapping="Wrap"/>
                                         </StackPanel>
 
                                         <!-- Total Cost -->

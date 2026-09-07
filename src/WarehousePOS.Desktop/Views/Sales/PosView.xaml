@@ -30,7 +30,7 @@
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
-                    <TextBlock Grid.Column="0" Text="product:" FontWeight="Bold" Foreground="{StaticResource PrimaryBrush}" VerticalAlignment="Center" Margin="0,0,8,0" FontSize="13"/>
+                    <TextBlock Grid.Column="0" Text="Product:" FontWeight="Bold" Foreground="{StaticResource PrimaryBrush}" VerticalAlignment="Center" Margin="0,0,8,0" FontSize="13"/>
                     <TextBlock Grid.Column="1" Text="🔍" FontSize="14" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="{StaticResource TextSecondaryBrush}"/>
                     <TextBox Grid.Column="2" Style="{StaticResource FormTextBox}"
                              Text="{Binding SearchQuery, UpdateSourceTrigger=PropertyChanged}"
@@ -82,37 +82,46 @@
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <!-- Customer Selection with Search -->
+                <!-- Customer Selection with Unified Search Card -->
                 <StackPanel Grid.Row="0" Margin="0,0,0,12">
-                    <TextBlock Text="Customer" Style="{StaticResource LabelText}" Margin="0,0,0,4"/>
-
-                    <Border Style="{StaticResource SearchHoverCard}" Margin="0,0,0,6" Padding="8,4">
+                    <Border Style="{StaticResource SearchHoverCard}" Padding="12,10" Margin="0,0,0,10">
                         <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0" Text="customer:" FontWeight="Bold" Foreground="{StaticResource PrimaryBrush}" VerticalAlignment="Center" Margin="0,0,6,0" FontSize="11"/>
-                            <TextBlock Grid.Column="1" Text="🔍" FontSize="12" VerticalAlignment="Center" Margin="0,0,6,0" Foreground="{StaticResource TextSecondaryBrush}"/>
-                            <TextBox Grid.Column="2" Style="{StaticResource FormTextBox}"
-                                     Text="{Binding CustomerSearchQuery, UpdateSourceTrigger=PropertyChanged}"
-                                     Tag="phone number or name"
-                                     Height="30" FontSize="12"
-                                     ToolTip="Search customer by phone number or name"/>
-                            <Button Grid.Column="3" Content="✕" Margin="4,0,0,0" Padding="6,2"
-                                    Style="{StaticResource SecondaryButton}" BorderThickness="0" Foreground="#EF4444" FontWeight="Bold"
-                                    Command="{Binding ClearCustomerSelectionCommand}"
-                                    Visibility="{Binding SelectedCustomer, Converter={StaticResource NullToVisibilityConverter}}"
-                                    ToolTip="Clear selected customer"/>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="8"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <!-- Search Input Row -->
+                            <Grid Grid.Row="0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="Customer:" FontWeight="Bold" Foreground="{StaticResource PrimaryBrush}" VerticalAlignment="Center" Margin="0,0,6,0" FontSize="12"/>
+                                <TextBlock Grid.Column="1" Text="🔍" FontSize="13" VerticalAlignment="Center" Margin="0,0,6,0" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                <TextBox Grid.Column="2" Style="{StaticResource FormTextBox}"
+                                         Text="{Binding CustomerSearchQuery, UpdateSourceTrigger=PropertyChanged}"
+                                         Tag="Phone number or name"
+                                         Height="30" FontSize="12"
+                                         ToolTip="Search customer by phone number or name"/>
+                                <Button Grid.Column="3" Content="✕" Margin="4,0,0,0" Padding="6,2"
+                                        Style="{StaticResource SecondaryButton}" BorderThickness="0" Foreground="#EF4444" FontWeight="Bold"
+                                        Command="{Binding ClearCustomerSelectionCommand}"
+                                        Visibility="{Binding SelectedCustomer, Converter={StaticResource NullToVisibilityConverter}}"
+                                        ToolTip="Clear selected customer"/>
+                            </Grid>
+
+                            <!-- Filtered Customer Dropdown -->
+                            <ComboBox Grid.Row="2"
+                                      ItemsSource="{Binding FilteredCustomers}"
+                                      SelectedItem="{Binding SelectedCustomer}"
+                                      DisplayMemberPath="DisplayName"
+                                      Height="32" VerticalContentAlignment="Center"/>
                         </Grid>
                     </Border>
-
-                    <ComboBox ItemsSource="{Binding FilteredCustomers}"
-                              SelectedItem="{Binding SelectedCustomer}"
-                              DisplayMemberPath="DisplayName"
-                              Margin="0,0,0,10"/>
 
                     <Grid>
                         <Grid.ColumnDefinitions>
