@@ -62,6 +62,22 @@ public sealed class CustomerTests
         c.Deactivate();
         c.IsActive.Should().BeFalse();
     }
+
+    [Theory]
+    [InlineData(-1)]
+    [InlineData(100.1)]
+    public void Create_InvalidDiscountRate_ShouldThrow(decimal rate)
+    {
+        var action = () => Customer.Create("Test", discountRate: rate);
+        action.Should().Throw<ArgumentOutOfRangeException>();
+    }
+
+    [Fact]
+    public void Create_ValidDiscountRate_ShouldSetDiscountRate()
+    {
+        var c = Customer.Create("Test", discountRate: 12.5m);
+        c.DiscountRate.Should().Be(12.5m);
+    }
 }
 
 public sealed class SaleTests

@@ -12,6 +12,7 @@ public sealed record CustomerDto(
     string? Phone,
     string? Email,
     string? Address,
+    decimal DiscountRate,
     bool IsActive);
 
 public sealed record CreateCustomerRequest(
@@ -19,7 +20,8 @@ public sealed record CreateCustomerRequest(
     SaleType Type = SaleType.Retail,
     string? Phone = null,
     string? Email = null,
-    string? Address = null);
+    string? Address = null,
+    decimal DiscountRate = 0m);
 
 public sealed record UpdateCustomerRequest(
     int Id,
@@ -27,7 +29,8 @@ public sealed record UpdateCustomerRequest(
     SaleType Type,
     string? Phone = null,
     string? Email = null,
-    string? Address = null);
+    string? Address = null,
+    decimal DiscountRate = 0m);
 
 // ── Sale DTOs ─────────────────────────────────────────────────────────────────
 
