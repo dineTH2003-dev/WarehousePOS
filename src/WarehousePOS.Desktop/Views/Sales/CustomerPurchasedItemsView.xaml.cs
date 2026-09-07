@@ -1,3 +1,4 @@
+using System.Windows;
 using System.Windows.Controls;
 using WarehousePOS.Desktop.Services;
 using WarehousePOS.Desktop.ViewModels.Sales;
@@ -16,6 +17,7 @@ public partial class CustomerPurchasedItemsView : Page
         _nav = nav;
         DataContext = vm;
         vm.BackRequested += () => _nav.NavigateTo<CustomerListViewModel>();
+        vm.ClaimRequested += OnClaimRequested;
     }
 
     public async Task InitAsync()
@@ -25,6 +27,21 @@ public partial class CustomerPurchasedItemsView : Page
             var customer = CustomerPurchasedItemsViewModel.PendingCustomer;
             CustomerPurchasedItemsViewModel.PendingCustomer = null;
             await _vm.LoadAsync(customer);
+        }
+    }
+
+    private async void OnClaimRequested(CustomerPurchasedItemDisplayModel item)
+    {
+        if (!item.CanClaim) return;
+
+        var dialog = new WarrantyClaimDialog(item)
+        {
+            Owner = Window.GetWindow(this)
+        };
+
+        if (dialog.ShowDialog() == true)
+        {
+            await _vm.ProcessClaimAsync(item, dialog.ClaimQuantity, dialog.ClaimNotes);
         }
     }
 }

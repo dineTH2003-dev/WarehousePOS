@@ -301,7 +301,8 @@ public sealed class PurchasingViewModel : ViewModelBase
                 i.UnitCost,
                 i.FreeQuantity,
                 i.RetailPrice,
-                i.WholesalePrice)).ToList();
+                i.WholesalePrice,
+                i.ClaimedQuantityReceived)).ToList();
 
             var currentUserId = _session.IsLoggedIn ? _session.CurrentUser.UserId : 1;
 

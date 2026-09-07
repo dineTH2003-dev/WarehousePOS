@@ -101,6 +101,19 @@
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
+                        <DataGridTemplateColumn Header="Action" Width="100">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Button Content="Claim"
+                                            Style="{StaticResource DangerButton}"
+                                            Padding="10,4" FontSize="11"
+                                            IsEnabled="{Binding CanClaim}"
+                                            Command="{Binding DataContext.ClaimCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                            CommandParameter="{Binding}"
+                                            ToolTip="Submit a warranty liability claim for this purchased item"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
                     </DataGrid.Columns>
                 </DataGrid>
 
