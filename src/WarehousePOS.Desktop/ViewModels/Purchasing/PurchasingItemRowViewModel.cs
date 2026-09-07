@@ -19,11 +19,15 @@ public sealed class PurchasingItemRowViewModel : ViewModelBase
         get => _product;
         set
         {
-            if (SetField(ref _product, value) && value is not null)
+            if (SetField(ref _product, value))
             {
-                RetailPriceText = value.RetailPrice.ToString("F2");
-                WholesalePriceText = value.WholesalePrice.ToString("F2");
-                RecalculateTotalCost();
+                if (value is not null)
+                {
+                    RetailPriceText = value.RetailPrice.ToString("F2");
+                    WholesalePriceText = value.WholesalePrice.ToString("F2");
+                    RecalculateTotalCost();
+                }
+                OnPropertyChanged(nameof(ProductError));
             }
         }
     }
@@ -38,9 +42,13 @@ public sealed class PurchasingItemRowViewModel : ViewModelBase
             {
                 RecalculateTotalCost();
                 OnPropertyChanged(nameof(TotalQuantity));
+                OnPropertyChanged(nameof(QuantityError));
             }
         }
     }
+
+    public string? ProductError  => Product == null ? "Product is required." : null;
+    public string? QuantityError => Quantity <= 0 ? "Qty must be > 0." : null;
 
     public int FreeQuantity
     {

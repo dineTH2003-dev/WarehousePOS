@@ -17,6 +17,20 @@ public partial class CategoryQuickAddDialog : Window
         Loaded += (_, _) => TxtName.Focus();
     }
 
+    private void TxtName_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
+    {
+        if (string.IsNullOrWhiteSpace(TxtName.Text))
+        {
+            TxtNameInlineError.Text = "Category name is required.";
+            TxtNameInlineError.Visibility = Visibility.Visible;
+        }
+        else
+        {
+            TxtNameInlineError.Text = string.Empty;
+            TxtNameInlineError.Visibility = Visibility.Collapsed;
+        }
+    }
+
     private async void BtnSave_Click(object sender, RoutedEventArgs e)
     {
         var name = TxtName.Text.Trim();

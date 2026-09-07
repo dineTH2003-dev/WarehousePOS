@@ -23,13 +23,17 @@
                     <!-- Name -->
                     <TextBlock Text="Product Name *" Style="{StaticResource LabelText}" Margin="0,0,0,6"/>
                     <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"
-                             Style="{StaticResource FormTextBox}" Margin="0,0,0,14"/>
+                             Style="{StaticResource FormTextBox}" Margin="0,0,0,4"/>
+                    <TextBlock Text="{Binding NameError}" Foreground="{StaticResource DangerBrush}" FontSize="11" Margin="0,0,0,10"
+                               Visibility="{Binding NameError, Converter={StaticResource NullToVisibilityConverter}}" TextWrapping="Wrap"/>
 
                     <!-- SKU -->
                     <TextBlock Text="SKU *" Style="{StaticResource LabelText}" Margin="0,0,0,6"/>
                     <TextBox Text="{Binding SKU, UpdateSourceTrigger=PropertyChanged}"
                              Style="{StaticResource FormTextBox}"
-                             Margin="0,0,0,14"/>
+                             Margin="0,0,0,4"/>
+                    <TextBlock Text="{Binding SkuError}" Foreground="{StaticResource DangerBrush}" FontSize="11" Margin="0,0,0,10"
+                               Visibility="{Binding SkuError, Converter={StaticResource NullToVisibilityConverter}}" TextWrapping="Wrap"/>
 
                     <!-- Barcode -->
                     <TextBlock Text="Barcode" Style="{StaticResource LabelText}" Margin="0,0,0,6"/>
@@ -49,7 +53,7 @@
                                 Command="{Binding AddCategoryCommand}"
                                 ToolTip="Create a new category immediately"/>
                     </Grid>
-                    <Grid Margin="0,0,0,14">
+                    <Grid Margin="0,0,0,4">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
@@ -65,11 +69,16 @@
                                 Command="{Binding ManageCategoriesCommand}"
                                 ToolTip="Go to Category Management page"/>
                     </Grid>
+                    <TextBlock Text="{Binding CategoryError}" Foreground="{StaticResource DangerBrush}" FontSize="11" Margin="0,0,0,10"
+                               Visibility="{Binding CategoryError, Converter={StaticResource NullToVisibilityConverter}}" TextWrapping="Wrap"/>
 
                     <!-- Reorder level -->
                     <TextBlock Text="Reorder Level" Style="{StaticResource LabelText}" Margin="0,0,0,6"/>
                     <TextBox Text="{Binding ReorderLevel, UpdateSourceTrigger=PropertyChanged}"
-                             Style="{StaticResource FormTextBox}" Margin="0,0,0,14"/>
+                             behaviors:IntegerOnlyBehavior.IsEnabled="True"
+                             Style="{StaticResource FormTextBox}" Margin="0,0,0,4"/>
+                    <TextBlock Text="{Binding ReorderLevelError}" Foreground="{StaticResource DangerBrush}" FontSize="11" Margin="0,0,0,10"
+                               Visibility="{Binding ReorderLevelError, Converter={StaticResource NullToVisibilityConverter}}" TextWrapping="Wrap"/>
 
                     <!-- Description -->
                     <TextBlock Text="Description" Style="{StaticResource LabelText}" Margin="0,0,0,6"/>
