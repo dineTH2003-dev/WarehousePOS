@@ -15,6 +15,7 @@ using WarehousePOS.Desktop.ViewModels.Reports;
 using WarehousePOS.Desktop.ViewModels.Sales;
 using WarehousePOS.Desktop.ViewModels.Settings;
 using WarehousePOS.Desktop.ViewModels.Suppliers;
+using WarehousePOS.Desktop.ViewModels.Users;
 using WarehousePOS.Desktop.Views.Auth;
 using WarehousePOS.Desktop.Views.Expenses;
 using WarehousePOS.Desktop.Views.Products;
@@ -23,6 +24,7 @@ using WarehousePOS.Desktop.Views.Reports;
 using WarehousePOS.Desktop.Views.Sales;
 using WarehousePOS.Desktop.Views.Settings;
 using WarehousePOS.Desktop.Views.Suppliers;
+using WarehousePOS.Desktop.Views.Users;
 using WarehousePOS.Infrastructure;
 using WarehousePOS.Infrastructure.Persistence;
 
@@ -88,6 +90,7 @@ public partial class App : System.Windows.Application
                     services.AddScoped<ReportsViewModel>();
                     services.AddScoped<StoreSettingsViewModel>();
                     services.AddScoped<ExpenseListViewModel>();
+                    services.AddScoped<UserManagementViewModel>();
 
                     // ── Views (Pages) ─────────────────────────────
                     services.AddScoped<PosView>();
@@ -99,6 +102,7 @@ public partial class App : System.Windows.Application
                     services.AddScoped<ReportsView>();
                     services.AddScoped<StoreSettingsView>();
                     services.AddScoped<ExpenseListView>();
+                    services.AddScoped<UserManagementView>();
 
                     // ── Windows ───────────────────────────────────
                     // LoginWindow uses a dedicated scope (one-shot, disposed after login).
@@ -118,6 +122,10 @@ public partial class App : System.Windows.Application
             NavigationService.Register<ReportsViewModel,            Views.Reports.ReportsView>();
             NavigationService.Register<StoreSettingsViewModel,      Views.Settings.StoreSettingsView>();
             NavigationService.Register<ExpenseListViewModel,        Views.Expenses.ExpenseListView>();
+            NavigationService.Register<UserManagementViewModel,      Views.Users.UserManagementView>();
+            NavigationService.RegisterAdminOnly<ReportsViewModel>();
+            NavigationService.RegisterAdminOnly<ExpenseListViewModel>();
+            NavigationService.RegisterAdminOnly<UserManagementViewModel>();
 
             await _host.StartAsync();
 

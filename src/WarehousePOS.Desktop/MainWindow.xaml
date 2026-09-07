@@ -113,6 +113,10 @@
                             Content="💸  Expenses"
                             Style="{StaticResource NavButton}"
                             Click="BtnExpenses_Click"/>
+                            <Button x:Name="BtnUserManagement"
+                                Content="🔐  User Management"
+                                Style="{StaticResource NavButton}"
+                                Click="BtnUserManagement_Click"/>
 
                     <Separator Background="#2D3F55" Margin="16,8"/>
 
