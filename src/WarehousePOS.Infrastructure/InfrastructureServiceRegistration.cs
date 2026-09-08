@@ -43,6 +43,13 @@ public static class InfrastructureServiceRegistration
             new Backup.BackupService(databasePath, sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Backup.BackupService>>()));
         services.AddSingleton<ICloudBackupService, Backup.GoogleDriveBackupService>();
 
+        // Notifications (Brevo Email & WhatsApp)
+        services.AddHttpClient<Notifications.BrevoEmailService>();
+        services.AddHttpClient<Notifications.WhatsAppNotificationService>();
+        services.AddScoped<Application.Notifications.IEmailNotificationService>(sp => sp.GetRequiredService<Notifications.BrevoEmailService>());
+        services.AddScoped<Application.Notifications.IWhatsAppNotificationService>(sp => sp.GetRequiredService<Notifications.WhatsAppNotificationService>());
+        services.AddScoped<Application.Notifications.INotificationOrchestrator, Notifications.NotificationOrchestrator>();
+
         return services;
     }
 }

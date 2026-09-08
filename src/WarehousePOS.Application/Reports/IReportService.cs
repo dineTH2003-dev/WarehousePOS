@@ -6,4 +6,5 @@ public interface IReportService
     Task<IReadOnlyList<FastMovingItemDto>> GetFastMovingItemsAsync(int topCount = 10, CancellationToken ct = default);
     Task<StockValuationReportDto> GetStockValuationReportAsync(CancellationToken ct = default);
     Task<IReadOnlyList<SupplierBalanceReportDto>> GetSupplierBalanceReportAsync(CancellationToken ct = default);
+    Task<Notifications.MonthlyReportSummaryDto> GetMonthlyReportSummaryAsync(int year, int month, CancellationToken ct = default);
 }

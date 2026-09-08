@@ -60,4 +60,46 @@ public sealed class ReportService(
             .OrderByDescending(s => s.CurrentBalance)
             .ToList();
     }
+
+    public async Task<Notifications.MonthlyReportSummaryDto> GetMonthlyReportSummaryAsync(int year, int month, CancellationToken ct = default)
+    {
+        var start = new DateTime(year, month, 1, 0, 0, 0, DateTimeKind.Utc);
+        var end = start.AddMonths(1).AddTicks(-1);
+
+        var sales = await saleRepo.GetByDateRangeAsync(start, end, ct);
+        var activeSales = sales.Where(s => s.Status == SaleStatus.Completed).ToList();
+
+        var count = activeSales.Count;
+        var revenue = activeSales.Sum(s => s.SubTotal);
+        var discounts = activeSales.Sum(s => s.DiscountAmount);
+        var netSales = activeSales.Sum(s => s.TotalAmount);
+
+        var expenses = await expenseRepo.GetByDateRangeAsync(start, end, ct);
+        var totalExp = expenses.Sum(e => e.Amount);
+        var netProfit = netSales - totalExp;
+
+        var valuation = await GetStockValuationReportAsync(ct);
+        var topRaw = await saleRepo.GetTopSellingProductsAsync(10, ct);
+        var topSelling = topRaw
+            .Select(t => new Notifications.MonthlyTopProductDto(t.Name, t.Sku, t.QuantitySold, t.TotalSales))
+            .ToList();
+
+        string monthLabel = start.ToString("MMMM yyyy", System.Globalization.CultureInfo.InvariantCulture);
+
+        return new Notifications.MonthlyReportSummaryDto(
+            year,
+            month,
+            monthLabel,
+            count,
+            revenue,
+            discounts,
+            netSales,
+            totalExp,
+            netProfit,
+            valuation.TotalActiveProducts,
+            valuation.TotalQuantityInStock,
+            valuation.TotalCostValue,
+            valuation.TotalRetailValuation,
+            topSelling);
+    }
 }
