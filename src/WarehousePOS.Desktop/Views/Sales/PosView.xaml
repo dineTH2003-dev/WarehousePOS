@@ -118,7 +118,7 @@
                             <Border Background="White" BorderBrush="{StaticResource PrimaryBrush}" BorderThickness="1.5" CornerRadius="6"
                                     Margin="0,2,0,0" MaxHeight="200" Width="{Binding ActualWidth, ElementName=TxtCustomerSearch}">
                                 <Border.Effect>
-                                    <DropShadowEffect BlurRadius="12" ShadowDepth="3" Opacity="0.15" Color="#2563EB"/>
+                                    <DropShadowEffect BlurRadius="12" ShadowDepth="3" Opacity="0.15" Color="#0F7F4F"/>
                                 </Border.Effect>
                                 <ListBox ItemsSource="{Binding FilteredCustomers}"
                                          SelectedItem="{Binding SelectedCustomer}"

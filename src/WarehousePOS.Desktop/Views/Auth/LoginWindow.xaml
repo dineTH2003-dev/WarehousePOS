@@ -35,12 +35,15 @@
                 <StackPanel>
 
                     <!-- Official Happy Products logo stored as a local resource. -->
-                    <Image Source="{StaticResource HappyProductsLogo}"
-                           Width="190"
-                           Height="76"
-                           Stretch="Uniform"
-                           HorizontalAlignment="Center"
-                           Margin="0,0,0,18" />
+                    <Border MaxWidth="280"
+                            HorizontalAlignment="Center"
+                            Margin="0,0,0,18">
+                        <Image Source="{StaticResource HappyProductsLogo}"
+                               Stretch="Uniform"
+                               SnapsToDevicePixels="True"
+                               UseLayoutRounding="True"
+                               RenderOptions.BitmapScalingMode="HighQuality" />
+                    </Border>
 
                     <TextBlock Text="Warehouse POS"
                                Style="{StaticResource H2}"
