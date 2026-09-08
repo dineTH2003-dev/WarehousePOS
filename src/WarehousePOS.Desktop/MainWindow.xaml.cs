@@ -22,17 +22,13 @@ public partial class MainWindow : Window
 {
     private readonly INavigationService _nav;
     private readonly SessionContext _session;
-    private readonly IServiceScopeFactory _scopeFactory;
+    private readonly HashSet<object> _initializedPages = [];
 
-    // Tracks the current DI scope so it can be disposed when navigating away.
-    private IServiceScope? _currentPageScope;
-
-    public MainWindow(INavigationService nav, SessionContext session, IServiceScopeFactory scopeFactory)
+    public MainWindow(INavigationService nav, SessionContext session)
     {
         InitializeComponent();
         _nav = nav;
         _session = session;
-        _scopeFactory = scopeFactory;
 
         // Wire the navigation service to the Frame inside this window
         if (_nav is Services.NavigationService ns)
@@ -63,26 +59,61 @@ public partial class MainWindow : Window
     {
         try
         {
-            if (e.Content is Views.Sales.PosView posView)
-                await posView.InitAsync();
-            else if (e.Content is Views.Products.ProductListView productView)
-                await productView.InitAsync();
-            else if (e.Content is Views.Purchasing.PurchasingView purchasingView)
-                await purchasingView.InitAsync();
-            else if (e.Content is Views.Products.CategoryManagementView catView)
-                await catView.InitAsync();
-            else if (e.Content is Views.Suppliers.SupplierListView supplierView)
-                await supplierView.InitAsync();
-            else if (e.Content is Views.Sales.CustomerListView customerView)
-                await customerView.InitAsync();
-            else if (e.Content is Views.Sales.CustomerPurchasedItemsView purchasedView)
-                await purchasedView.InitAsync();
-            else if (e.Content is Views.Reports.ReportsView reportsView)
-                await reportsView.InitAsync();
-            else if (e.Content is Views.Expenses.ExpenseListView expenseView)
-                await expenseView.InitAsync();
-            else if (e.Content is Views.Settings.StoreSettingsView settingsView)
-                await settingsView.InitAsync();
+            var page = e.Content;
+            if (page is null) return;
+
+            bool isFirstLoad = _initializedPages.Add(page);
+
+            if (page is Views.Sales.PosView posView)
+            {
+                if (isFirstLoad)
+                    await posView.InitAsync();
+            }
+            else if (page is Views.Products.ProductListView productView)
+            {
+                if (isFirstLoad || ProductListViewModel.PendingOpenAddProduct)
+                    await productView.InitAsync();
+            }
+            else if (page is Views.Purchasing.PurchasingView purchasingView)
+            {
+                if (isFirstLoad)
+                    await purchasingView.InitAsync();
+            }
+            else if (page is Views.Products.CategoryManagementView catView)
+            {
+                if (isFirstLoad)
+                    await catView.InitAsync();
+            }
+            else if (page is Views.Suppliers.SupplierListView supplierView)
+            {
+                if (isFirstLoad)
+                    await supplierView.InitAsync();
+            }
+            else if (page is Views.Sales.CustomerListView customerView)
+            {
+                if (isFirstLoad)
+                    await customerView.InitAsync();
+            }
+            else if (page is Views.Sales.CustomerPurchasedItemsView purchasedView)
+            {
+                if (isFirstLoad || CustomerPurchasedItemsViewModel.PendingCustomer is not null)
+                    await purchasedView.InitAsync();
+            }
+            else if (page is Views.Reports.ReportsView reportsView)
+            {
+                if (isFirstLoad)
+                    await reportsView.InitAsync();
+            }
+            else if (page is Views.Expenses.ExpenseListView expenseView)
+            {
+                if (isFirstLoad)
+                    await expenseView.InitAsync();
+            }
+            else if (page is Views.Settings.StoreSettingsView settingsView)
+            {
+                if (isFirstLoad)
+                    await settingsView.InitAsync();
+            }
         }
         catch (Exception ex)
         {
@@ -94,18 +125,10 @@ public partial class MainWindow : Window
         }
     }
 
-    // ── Helper: create a fresh DI scope and navigate ──────────────────────
+    // ── Helper: navigate using the cached navigation service ─────────────
     private void NavigateTo<TViewModel>() where TViewModel : class
     {
-        // Dispose the previous page's scope to free its DbContext
-        _currentPageScope?.Dispose();
-        _currentPageScope = _scopeFactory.CreateScope();
-
-        // Resolve the view from the new scope so it gets a fresh DbContext
-        if (_nav is Services.NavigationService ns)
-            ns.NavigateToScoped<TViewModel>(_currentPageScope.ServiceProvider);
-        else
-            _nav.NavigateTo<TViewModel>();
+        _nav.NavigateTo<TViewModel>();
     }
 
     // ── Sidebar button handlers ───────────────────────────────────────────
@@ -153,7 +176,8 @@ public partial class MainWindow : Window
 
     private void BtnLogout_Click(object sender, RoutedEventArgs e)
     {
-        _currentPageScope?.Dispose();
+        _nav.ClearCache();
+        _initializedPages.Clear();
         _session.Clear();
         var processPath = System.Diagnostics.Process.GetCurrentProcess().MainModule?.FileName;
         if (!string.IsNullOrEmpty(processPath))
