@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using WarehousePOS.Application.Common;
+using WarehousePOS.Application.Notifications;
 using WarehousePOS.Application.Settings;
 using WarehousePOS.Desktop.ViewModels;
 
@@ -10,6 +11,7 @@ public sealed class StoreSettingsViewModel : ViewModelBase
     private readonly IStoreSettingService _settingService;
     private readonly IBackupService _backupService;
     private readonly ICloudBackupService _cloudBackupService;
+    private readonly INotificationOrchestrator _notificationOrchestrator;
 
     // Store settings fields
     private string _storeName = string.Empty;
@@ -31,6 +33,21 @@ public sealed class StoreSettingsViewModel : ViewModelBase
     private string _lastLocalBackupDisplay = "No local backups found";
     private string _lastCloudBackupDisplay = "No cloud backups found";
 
+    // Notifications fields (Brevo & WhatsApp)
+    private string _brevoApiKey = string.Empty;
+    private string _brevoSenderEmail = string.Empty;
+    private string _brevoSenderName = "WarehousePOS";
+    private string _ownerEmail = string.Empty;
+    private bool _isEmailLowStockAlertEnabled = true;
+    private bool _isEmailMonthlyReportEnabled = true;
+
+    private bool _isWhatsAppEnabled;
+    private string _ownerPhone = string.Empty;
+    private string _whatsAppGatewayUrl = string.Empty;
+    private string _whatsAppApiKey = string.Empty;
+    private string _notificationStatusMessage = string.Empty;
+    private bool _isNotificationBusy;
+
     public string StoreName { get => _storeName; set => SetField(ref _storeName, value); }
     public string StoreAddress { get => _storeAddress; set => SetField(ref _storeAddress, value); }
     public string StorePhone { get => _storePhone; set => SetField(ref _storePhone, value); }
@@ -50,6 +67,21 @@ public sealed class StoreSettingsViewModel : ViewModelBase
     public string LastLocalBackupDisplay { get => _lastLocalBackupDisplay; private set => SetField(ref _lastLocalBackupDisplay, value); }
     public string LastCloudBackupDisplay { get => _lastCloudBackupDisplay; private set => SetField(ref _lastCloudBackupDisplay, value); }
 
+    // Notifications Properties
+    public string BrevoApiKey { get => _brevoApiKey; set => SetField(ref _brevoApiKey, value); }
+    public string BrevoSenderEmail { get => _brevoSenderEmail; set => SetField(ref _brevoSenderEmail, value); }
+    public string BrevoSenderName { get => _brevoSenderName; set => SetField(ref _brevoSenderName, value); }
+    public string OwnerEmail { get => _ownerEmail; set => SetField(ref _ownerEmail, value); }
+    public bool IsEmailLowStockAlertEnabled { get => _isEmailLowStockAlertEnabled; set => SetField(ref _isEmailLowStockAlertEnabled, value); }
+    public bool IsEmailMonthlyReportEnabled { get => _isEmailMonthlyReportEnabled; set => SetField(ref _isEmailMonthlyReportEnabled, value); }
+
+    public bool IsWhatsAppEnabled { get => _isWhatsAppEnabled; set => SetField(ref _isWhatsAppEnabled, value); }
+    public string OwnerPhone { get => _ownerPhone; set => SetField(ref _ownerPhone, value); }
+    public string WhatsAppGatewayUrl { get => _whatsAppGatewayUrl; set => SetField(ref _whatsAppGatewayUrl, value); }
+    public string WhatsAppApiKey { get => _whatsAppApiKey; set => SetField(ref _whatsAppApiKey, value); }
+    public string NotificationStatusMessage { get => _notificationStatusMessage; set => SetField(ref _notificationStatusMessage, value); }
+    public bool IsNotificationBusy { get => _isNotificationBusy; private set => SetField(ref _isNotificationBusy, value); }
+
     private int _selectedTabIndex = 0;
     public int SelectedTabIndex
     {
@@ -60,6 +92,7 @@ public sealed class StoreSettingsViewModel : ViewModelBase
             {
                 OnPropertyChanged(nameof(IsStoreTabActive));
                 OnPropertyChanged(nameof(IsBackupTabActive));
+                OnPropertyChanged(nameof(IsNotificationTabActive));
             }
         }
     }
@@ -82,6 +115,15 @@ public sealed class StoreSettingsViewModel : ViewModelBase
         }
     }
 
+    public bool IsNotificationTabActive
+    {
+        get => _selectedTabIndex == 2;
+        set
+        {
+            if (value) SelectedTabIndex = 2;
+        }
+    }
+
     public bool IsSyncPending => _cloudBackupService.IsSyncPending;
     public string? PendingSyncReason => _cloudBackupService.PendingSyncReason;
 
@@ -91,20 +133,28 @@ public sealed class StoreSettingsViewModel : ViewModelBase
     // Commands
     public RelayCommand SelectStoreTabCommand { get; }
     public RelayCommand SelectBackupTabCommand { get; }
+    public RelayCommand SelectNotificationTabCommand { get; }
     public RelayCommand SaveCommand { get; }
     public RelayCommand BackupNowCommand { get; }
     public RelayCommand ConnectDriveCommand { get; }
     public RelayCommand DisconnectDriveCommand { get; }
     public RelayCommand RefreshBackupsCommand { get; }
+    public RelayCommand SaveNotificationSettingsCommand { get; }
+    public RelayCommand SendTestEmailCommand { get; }
+    public RelayCommand SendTestWhatsAppCommand { get; }
+    public RelayCommand SendMonthlyReportNowCommand { get; }
+    public RelayCommand CheckLowStockAlertsNowCommand { get; }
 
     public StoreSettingsViewModel(
         IStoreSettingService settingService,
         IBackupService backupService,
-        ICloudBackupService cloudBackupService)
+        ICloudBackupService cloudBackupService,
+        INotificationOrchestrator notificationOrchestrator)
     {
         _settingService = settingService;
         _backupService = backupService;
         _cloudBackupService = cloudBackupService;
+        _notificationOrchestrator = notificationOrchestrator;
 
         _cloudBackupService.SyncStatusChanged += () =>
         {
@@ -114,11 +164,19 @@ public sealed class StoreSettingsViewModel : ViewModelBase
 
         SelectStoreTabCommand = new RelayCommand(() => SelectedTabIndex = 0);
         SelectBackupTabCommand = new RelayCommand(() => SelectedTabIndex = 1);
+        SelectNotificationTabCommand = new RelayCommand(() => SelectedTabIndex = 2);
+
         SaveCommand = new RelayCommand(async () => await SaveSettingsAsync());
         BackupNowCommand = new RelayCommand(async () => await ExecuteBackupAsync(), () => !IsBackupInProgress);
         ConnectDriveCommand = new RelayCommand(async () => await ConnectGoogleDriveAsync(), () => !IsBackupInProgress);
         DisconnectDriveCommand = new RelayCommand(async () => await DisconnectGoogleDriveAsync(), () => !IsBackupInProgress);
         RefreshBackupsCommand = new RelayCommand(async () => await RefreshBackupListsAsync(), () => !IsBackupInProgress);
+
+        SaveNotificationSettingsCommand = new RelayCommand(async () => await SaveNotificationSettingsAsync(), () => !IsNotificationBusy);
+        SendTestEmailCommand = new RelayCommand(async () => await SendTestEmailAsync(), () => !IsNotificationBusy);
+        SendTestWhatsAppCommand = new RelayCommand(async () => await SendTestWhatsAppAsync(), () => !IsNotificationBusy);
+        SendMonthlyReportNowCommand = new RelayCommand(async () => await SendMonthlyReportNowAsync(), () => !IsNotificationBusy);
+        CheckLowStockAlertsNowCommand = new RelayCommand(async () => await CheckLowStockAlertsNowAsync(), () => !IsNotificationBusy);
     }
 
     public async Task LoadSettingsAsync()
@@ -135,6 +193,7 @@ public sealed class StoreSettingsViewModel : ViewModelBase
 
             await CheckGoogleDriveStatusAsync();
             await RefreshBackupListsAsync();
+            await LoadNotificationSettingsAsync();
         }
         finally
         {
@@ -321,6 +380,139 @@ public sealed class StoreSettingsViewModel : ViewModelBase
         finally
         {
             IsBackupInProgress = false;
+        }
+    }
+
+    public async Task LoadNotificationSettingsAsync()
+    {
+        try
+        {
+            var s = await _notificationOrchestrator.GetSettingsAsync();
+            BrevoApiKey = s.BrevoApiKey;
+            BrevoSenderEmail = s.BrevoSenderEmail;
+            BrevoSenderName = s.BrevoSenderName;
+            OwnerEmail = s.OwnerEmail;
+            IsEmailLowStockAlertEnabled = s.IsEmailLowStockAlertEnabled;
+            IsEmailMonthlyReportEnabled = s.IsEmailMonthlyReportEnabled;
+            IsWhatsAppEnabled = s.IsWhatsAppEnabled;
+            OwnerPhone = s.OwnerPhone;
+            WhatsAppGatewayUrl = s.WhatsAppGatewayUrl;
+            WhatsAppApiKey = s.WhatsAppApiKey;
+        }
+        catch (Exception ex)
+        {
+            NotificationStatusMessage = $"Failed to load notification settings: {ex.Message}";
+        }
+    }
+
+    public async Task SaveNotificationSettingsAsync()
+    {
+        IsNotificationBusy = true;
+        NotificationStatusMessage = "Saving notification settings...";
+        try
+        {
+            var dto = new NotificationSettingsDto(
+                BrevoApiKey,
+                BrevoSenderEmail,
+                BrevoSenderName,
+                OwnerEmail,
+                IsEmailLowStockAlertEnabled,
+                IsEmailMonthlyReportEnabled,
+                IsWhatsAppEnabled,
+                OwnerPhone,
+                WhatsAppGatewayUrl,
+                WhatsAppApiKey);
+
+            await _notificationOrchestrator.SaveSettingsAsync(dto);
+            NotificationStatusMessage = "Notification settings saved successfully!";
+        }
+        catch (Exception ex)
+        {
+            NotificationStatusMessage = $"Failed to save settings: {ex.Message}";
+        }
+        finally
+        {
+            IsNotificationBusy = false;
+        }
+    }
+
+    public async Task SendTestEmailAsync()
+    {
+        IsNotificationBusy = true;
+        NotificationStatusMessage = "Sending test email via Brevo...";
+        try
+        {
+            await SaveNotificationSettingsAsync();
+            var (ok, msg) = await _notificationOrchestrator.SendTestEmailAsync(OwnerEmail);
+            NotificationStatusMessage = ok ? "✅ Test email sent! Please check your inbox." : $"❌ {msg}";
+        }
+        catch (Exception ex)
+        {
+            NotificationStatusMessage = $"❌ Error: {ex.Message}";
+        }
+        finally
+        {
+            IsNotificationBusy = false;
+        }
+    }
+
+    public async Task SendTestWhatsAppAsync()
+    {
+        IsNotificationBusy = true;
+        NotificationStatusMessage = "Sending test WhatsApp message...";
+        try
+        {
+            await SaveNotificationSettingsAsync();
+            var (ok, msg) = await _notificationOrchestrator.SendTestWhatsAppAsync(OwnerPhone);
+            NotificationStatusMessage = ok ? "✅ Test WhatsApp message sent!" : $"❌ {msg}";
+        }
+        catch (Exception ex)
+        {
+            NotificationStatusMessage = $"❌ Error: {ex.Message}";
+        }
+        finally
+        {
+            IsNotificationBusy = false;
+        }
+    }
+
+    public async Task SendMonthlyReportNowAsync()
+    {
+        IsNotificationBusy = true;
+        NotificationStatusMessage = "Generating and dispatching monthly report...";
+        try
+        {
+            await SaveNotificationSettingsAsync();
+            var (ok, msg) = await _notificationOrchestrator.CheckAndSendMonthlyReportAsync(force: true);
+            NotificationStatusMessage = ok ? $"✅ {msg}" : $"❌ {msg}";
+        }
+        catch (Exception ex)
+        {
+            NotificationStatusMessage = $"❌ Error: {ex.Message}";
+        }
+        finally
+        {
+            IsNotificationBusy = false;
+        }
+    }
+
+    public async Task CheckLowStockAlertsNowAsync()
+    {
+        IsNotificationBusy = true;
+        NotificationStatusMessage = "Checking inventory levels and dispatching alerts...";
+        try
+        {
+            await SaveNotificationSettingsAsync();
+            var (ok, msg) = await _notificationOrchestrator.CheckAndSendLowStockAlertsAsync(force: true);
+            NotificationStatusMessage = ok ? $"✅ {msg}" : $"❌ {msg}";
+        }
+        catch (Exception ex)
+        {
+            NotificationStatusMessage = $"❌ Error: {ex.Message}";
+        }
+        finally
+        {
+            IsNotificationBusy = false;
         }
     }
 }
