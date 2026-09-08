@@ -46,6 +46,14 @@ public sealed class User : AggregateRoot
         SetUpdatedAt();
     }
 
+    public void UpdateProfile(string fullName, UserRole role)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(fullName);
+        FullName = fullName.Trim();
+        Role = role;
+        SetUpdatedAt();
+    }
+
     public void Deactivate() { IsActive = false; SetUpdatedAt(); }
     public void Activate()   { IsActive = true;  SetUpdatedAt(); }
 }

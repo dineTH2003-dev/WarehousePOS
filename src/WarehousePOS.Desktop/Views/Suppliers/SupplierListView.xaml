@@ -40,16 +40,22 @@
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0" Text="Supplier:" FontWeight="Bold" Foreground="{StaticResource PrimaryBrush}" VerticalAlignment="Center" Margin="0,0,8,0" FontSize="13"/>
-                        <TextBlock Grid.Column="1" Text="🔍" FontSize="14" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="{StaticResource TextSecondaryBrush}"/>
-                        <TextBox Grid.Column="2" Style="{StaticResource FormTextBox}"
-                                 Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                                 Tag="Enter supplier name or contact..."
-                                 ToolTip="Search supplier name or contact person"/>
+                        <Grid Grid.Column="1" Grid.ColumnSpan="2">
+                            <Path Style="{StaticResource SearchIcon}" />
+                            <TextBox Style="{StaticResource FormTextBox}"
+                                     Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                                     Padding="34,8,8,8"
+                                     Tag="Enter supplier name or contact..."
+                                     ToolTip="Search supplier name or contact person" />
+                        </Grid>
                     </Grid>
                 </Border>
 
                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
-                    <CheckBox Content="Show Inactive" IsChecked="{Binding ShowInactive}" VerticalAlignment="Center"/>
+                    <CheckBox Content="Show Inactive Suppliers"
+                              Style="{StaticResource ModernSwitch}"
+                              IsChecked="{Binding ShowInactive}"
+                              ToolTip="Toggle visibility of deactivated suppliers"/>
                     <Button Content="Refresh" Style="{StaticResource SecondaryButton}"
                             Margin="16,0,0,0" Command="{Binding RefreshCommand}"/>
                 </StackPanel>
@@ -58,7 +64,7 @@
 
         <!-- Grid -->
         <Border Grid.Row="2" Style="{StaticResource Card}" Padding="0">
-            <DataGrid ItemsSource="{Binding Suppliers}" SelectedItem="{Binding SelectedSupplier}">
+            <DataGrid ItemsSource="{Binding Suppliers}" SelectedItem="{Binding SelectedSupplier}" RowStyle="{StaticResource InactiveDataGridRow}">
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="Name"              Binding="{Binding Name}"             Width="160"/>
                     <DataGridTextColumn Header="Contact Person"     Binding="{Binding ContactPerson}"     Width="160"/>

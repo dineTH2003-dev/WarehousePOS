@@ -4,6 +4,9 @@
              ShutdownMode="OnExplicitShutdown">
     <Application.Resources>
         <ResourceDictionary>
+            <BitmapImage x:Key="HappyProductsLogo"
+                         UriSource="/WarehousePOS.Desktop;component/Resources/Images/happy-products-logo.png"
+                         CacheOption="OnLoad" />
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="Resources/Styles/Colors.xaml" />
                 <ResourceDictionary Source="Resources/Styles/Typography.xaml" />

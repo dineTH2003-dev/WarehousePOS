@@ -56,10 +56,14 @@
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0" Text="Product:" FontWeight="Bold" Foreground="{StaticResource PrimaryBrush}" VerticalAlignment="Center" Margin="0,0,6,0" FontSize="12"/>
                         <TextBlock Grid.Column="1" Text="🔍" FontSize="13" VerticalAlignment="Center" Margin="0,0,6,0" Foreground="{StaticResource TextSecondaryBrush}"/>
-                        <TextBox Grid.Column="2" Style="{StaticResource FormTextBox}"
-                                 Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                                 Tag="Enter SKU, name or barcode..."
-                                 ToolTip="Search product catalog by name, SKU or barcode"/>
+                        <Grid Grid.Column="1" Grid.ColumnSpan="2">
+                            <Path Style="{StaticResource SearchIcon}" />
+                            <TextBox Style="{StaticResource FormTextBox}"
+                                     Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                                     Padding="34,8,8,8"
+                                     Tag="Enter SKU, name or barcode..."
+                                     ToolTip="Search product catalog by name, SKU or barcode" />
+                        </Grid>
                     </Grid>
                 </Border>
 
@@ -94,7 +98,8 @@
         <!-- Product grid -->
         <Border Grid.Row="2" Style="{StaticResource Card}" Padding="0">
             <DataGrid ItemsSource="{Binding Products}"
-                      SelectedItem="{Binding SelectedProduct}">
+                      SelectedItem="{Binding SelectedProduct}"
+                      RowStyle="{StaticResource InactiveDataGridRow}">
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="SKU"             Binding="{Binding SKU}"           Width="130"/>
                     <DataGridTemplateColumn Header="Name" Width="*">

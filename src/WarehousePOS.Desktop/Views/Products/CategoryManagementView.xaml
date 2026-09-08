@@ -100,7 +100,8 @@
 
                     <DataGrid Grid.Row="1"
                               ItemsSource="{Binding Categories}"
-                              SelectedItem="{Binding SelectedCategory}">
+                              SelectedItem="{Binding SelectedCategory}"
+                              RowStyle="{StaticResource InactiveDataGridRow}">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Name"        Binding="{Binding Name}"         Width="*"/>
                             <DataGridTextColumn Header="Products"    Binding="{Binding ProductCount}"  Width="90"/>

@@ -10,6 +10,7 @@ using WarehousePOS.Desktop.ViewModels.Reports;
 using WarehousePOS.Desktop.ViewModels.Sales;
 using WarehousePOS.Desktop.ViewModels.Settings;
 using WarehousePOS.Desktop.ViewModels.Suppliers;
+using WarehousePOS.Desktop.ViewModels.Users;
 
 namespace WarehousePOS.Desktop;
 
@@ -45,7 +46,12 @@ public partial class MainWindow : Window
         Loaded += (_, _) =>
         {
             if (_session.IsLoggedIn)
+            {
                 UserLabel.Text = $"{_session.CurrentUser.FullName} ({_session.CurrentUser.Role})";
+                BtnReports.Visibility = _session.IsAdmin ? Visibility.Visible : Visibility.Collapsed;
+                BtnExpenses.Visibility = _session.IsAdmin ? Visibility.Visible : Visibility.Collapsed;
+                BtnUserManagement.Visibility = _session.IsAdmin ? Visibility.Visible : Visibility.Collapsed;
+            }
 
             // Navigate to POS as the default landing page
             NavigateTo<PosViewModel>();
@@ -123,13 +129,27 @@ public partial class MainWindow : Window
         => NavigateTo<CustomerListViewModel>();
 
     private void BtnReports_Click(object sender, RoutedEventArgs e)
-        => NavigateTo<ReportsViewModel>();
+        => NavigateToAuthorized<ReportsViewModel>();
 
     private void BtnExpenses_Click(object sender, RoutedEventArgs e)
-        => NavigateTo<ExpenseListViewModel>();
+        => NavigateToAuthorized<ExpenseListViewModel>();
+
+    private void BtnUserManagement_Click(object sender, RoutedEventArgs e)
+        => NavigateToAuthorized<UserManagementViewModel>();
 
     private void BtnSettings_Click(object sender, RoutedEventArgs e)
         => NavigateTo<StoreSettingsViewModel>();
+
+    private void NavigateToAuthorized<TViewModel>() where TViewModel : class
+    {
+        if (!_session.IsAdmin)
+        {
+            MessageBox.Show("Only an Admin can access this feature.", "Access denied", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        NavigateTo<TViewModel>();
+    }
 
     private void BtnLogout_Click(object sender, RoutedEventArgs e)
     {

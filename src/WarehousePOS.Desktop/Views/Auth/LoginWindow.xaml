@@ -2,101 +2,114 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Warehouse POS — Login"
-        MinHeight="480"
-        Height="520"
-        Width="440"
-        SizeToContent="Height"
-        ResizeMode="NoResize"
+        MinHeight="600"
+        MinWidth="820"
+        Height="720"
+        Width="1280"
+        ResizeMode="CanResize"
         WindowStartupLocation="CenterScreen"
-        Background="{StaticResource BackgroundBrush}">
+        Background="#101820">
 
     <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="*" />
-            <RowDefinition Height="Auto" />
-        </Grid.RowDefinitions>
+        <!-- Local retail/POS image keeps the login usable offline. -->
+        <Image Source="/WarehousePOS.Desktop;component/Resources/Images/pos-retail-background.jpg"
+               Stretch="UniformToFill"
+               HorizontalAlignment="Stretch"
+               VerticalAlignment="Stretch" />
 
-        <!-- Login card -->
-        <Border Grid.Row="0"
-                Style="{StaticResource Card}"
-                Margin="40,40,40,20"
-                VerticalAlignment="Center">
+        <!-- Soft dark veil maintains contrast over bright store details. -->
+        <Border Background="#B8101820" />
 
-            <StackPanel>
+        <Grid HorizontalAlignment="Center"
+              VerticalAlignment="Center"
+              Margin="24">
+            <Border Width="430"
+                    MaxWidth="430"
+                    Padding="38,34,38,30"
+                    Background="#F7FFFFFF"
+                    BorderBrush="#55FFFFFF"
+                    BorderThickness="1"
+                    CornerRadius="14"
+                    Effect="{StaticResource LoginCardShadow}">
+                <StackPanel>
 
-                <!-- Logo / title -->
-                <StackPanel HorizontalAlignment="Center"
-                            Margin="0,0,0,8">
-                    <TextBlock Text="📦"
-                               FontSize="40"
-                               HorizontalAlignment="Center"
-                               Margin="0,0,0,8"/>
+                    <!-- Official Happy Products logo stored as a local resource. -->
+                    <Image Source="{StaticResource HappyProductsLogo}"
+                           Width="190"
+                           Height="76"
+                           Stretch="Uniform"
+                           HorizontalAlignment="Center"
+                           Margin="0,0,0,18" />
+
                     <TextBlock Text="Warehouse POS"
                                Style="{StaticResource H2}"
-                               HorizontalAlignment="Center"/>
+                               HorizontalAlignment="Center"
+                               FontSize="25"
+                               Margin="0,0,0,4" />
                     <TextBlock Text="Sign in to continue"
                                Style="{StaticResource CaptionText}"
                                HorizontalAlignment="Center"
-                               Margin="0,4,0,0"/>
+                               Margin="0,0,0,28" />
+
+                    <!-- Username -->
+                    <StackPanel Margin="0,0,0,16">
+                        <TextBlock Text="Username"
+                                   Style="{StaticResource LabelText}"
+                                   Margin="0,0,0,6" />
+                        <TextBox x:Name="UsernameBox"
+                                 Style="{StaticResource FormTextBox}"
+                                 Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}"
+                                 IsEnabled="{Binding IsBusy, Converter={StaticResource InvertBoolConverter}}" />
+                    </StackPanel>
+
+                    <!-- Password -->
+                    <StackPanel Margin="0,0,0,18">
+                        <TextBlock Text="Password"
+                                   Style="{StaticResource LabelText}"
+                                   Margin="0,0,0,6" />
+                        <PasswordBox x:Name="PasswordBox"
+                                     Style="{StaticResource FormPasswordBox}"
+                                     IsEnabled="{Binding IsBusy, Converter={StaticResource InvertBoolConverter}}"
+                                     KeyDown="PasswordBox_KeyDown" />
+                    </StackPanel>
+
+                    <!-- Existing validation/error message. -->
+                    <Border Background="#15E02424"
+                            BorderBrush="{StaticResource DangerBrush}"
+                            BorderThickness="1"
+                            CornerRadius="6"
+                            Padding="12,8"
+                            Margin="0,0,0,16"
+                            Visibility="{Binding HasError, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <TextBlock Text="{Binding ErrorMessage}"
+                                   Foreground="{StaticResource DangerBrush}"
+                                   FontSize="13"
+                                   TextWrapping="Wrap" />
+                    </Border>
+
+                    <!-- Existing login command/event wiring is preserved. -->
+                    <Button Content="Sign In"
+                            Style="{StaticResource PrimaryButton}"
+                            Height="46"
+                            x:Name="LoginButton"
+                            IsEnabled="{Binding IsBusy, Converter={StaticResource InvertBoolConverter}}"
+                            Click="LoginButton_Click" />
+
+                    <TextBlock Text="Signing in..."
+                               Style="{StaticResource CaptionText}"
+                               HorizontalAlignment="Center"
+                               Margin="0,12,0,0"
+                               Visibility="{Binding IsBusy, Converter={StaticResource BoolToVisibilityConverter}}" />
                 </StackPanel>
+            </Border>
+        </Grid>
 
-                <!-- Username -->
-                <StackPanel Margin="0,0,0,12">
-                    <TextBlock Text="Username"
-                               Style="{StaticResource LabelText}"
-                               Margin="0,0,0,6"/>
-                    <TextBox x:Name="UsernameBox"
-                             Style="{StaticResource FormTextBox}"
-                             Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}"
-                             IsEnabled="{Binding IsBusy, Converter={StaticResource InvertBoolConverter}}" />
-                </StackPanel>
-
-                <!-- Password -->
-                <StackPanel Margin="0,0,0,16">
-                    <TextBlock Text="Password"
-                               Style="{StaticResource LabelText}"
-                               Margin="0,0,0,6"/>
-                    <PasswordBox x:Name="PasswordBox"
-                                 Style="{StaticResource FormPasswordBox}"
-                                 IsEnabled="{Binding IsBusy, Converter={StaticResource InvertBoolConverter}}"
-                                 KeyDown="PasswordBox_KeyDown" />
-                </StackPanel>
-
-                <!-- Error message -->
-                <Border Background="#FEF2F2"
-                        BorderBrush="{StaticResource DangerBrush}"
-                        BorderThickness="1"
-                        CornerRadius="6"
-                        Padding="12,8"
-                        Visibility="{Binding HasError, Converter={StaticResource BoolToVisibilityConverter}}">
-                    <TextBlock Text="{Binding ErrorMessage}"
-                               Foreground="{StaticResource DangerBrush}"
-                               FontSize="13"
-                               TextWrapping="Wrap"/>
-                </Border>
-
-                <!-- Login button -->
-                <Button Content="Sign In"
-                        Style="{StaticResource PrimaryButton}"
-                        Height="44"
-                        x:Name="LoginButton"
-                        IsEnabled="{Binding IsBusy, Converter={StaticResource InvertBoolConverter}}"
-                        Click="LoginButton_Click"/>
-
-                <!-- Busy indicator -->
-                <TextBlock Text="Signing in…"
-                           Style="{StaticResource CaptionText}"
-                           HorizontalAlignment="Center"
-                           Visibility="{Binding IsBusy, Converter={StaticResource BoolToVisibilityConverter}}"/>
-
-            </StackPanel>
-        </Border>
-
-        <!-- Footer -->
-        <TextBlock Grid.Row="1"
-                   Text="Warehouse POS v1.0"
-                   Style="{StaticResource CaptionText}"
+        <TextBlock Text="Warehouse POS  |  Happy Products"
+                   Foreground="#D9FFFFFF"
+                   FontSize="12"
                    HorizontalAlignment="Center"
-                   Margin="0,0,0,16"/>
+                   VerticalAlignment="Bottom"
+                   Margin="0,0,0,22" />
+
     </Grid>
 </Window>

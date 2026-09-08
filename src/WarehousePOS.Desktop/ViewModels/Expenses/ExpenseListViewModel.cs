@@ -113,6 +113,9 @@ public sealed class ExpenseListViewModel : ViewModelBase
 
     public ExpenseListViewModel(IExpenseService expenseService, SessionContext sessionContext)
     {
+        if (!sessionContext.IsAdmin)
+            throw new UnauthorizedAccessException("Only an Admin can access Expenses.");
+
         _expenseService = expenseService;
         _sessionContext = sessionContext;
 
@@ -122,6 +125,7 @@ public sealed class ExpenseListViewModel : ViewModelBase
 
     public async Task LoadDataAsync()
     {
+        EnsureAdmin();
         IsBusy = true;
         try
         {
@@ -229,6 +233,7 @@ public sealed class ExpenseListViewModel : ViewModelBase
 
     private async Task AddExpenseAsync()
     {
+        EnsureAdmin();
         ErrorMessage = string.Empty;
 
         if (SelectedCategoryId <= 0)
@@ -301,6 +306,12 @@ public sealed class ExpenseListViewModel : ViewModelBase
         {
             IsBusy = false;
         }
+    }
+
+    private void EnsureAdmin()
+    {
+        if (!_sessionContext.IsAdmin)
+            throw new UnauthorizedAccessException("Only an Admin can access Expenses.");
     }
 
     private void ClearGeneralError()
