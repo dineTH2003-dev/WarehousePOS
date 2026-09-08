@@ -26,6 +26,10 @@
   <ItemGroup Label="Security">
     <PackageVersion Include="BCrypt.Net-Next" Version="4.0.3" />
   </ItemGroup>
+  <ItemGroup Label="Google Drive &amp; Cloud">
+    <PackageVersion Include="Google.Apis.Drive.v3" Version="1.76.0.4252" />
+    <PackageVersion Include="Google.Apis.Auth" Version="1.76.0" />
+  </ItemGroup>
   <ItemGroup Label="Dependency Injection">
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Configuration" Version="10.0.0" />

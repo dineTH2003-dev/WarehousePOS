@@ -22,13 +22,22 @@ public partial class MainWindow : Window
 {
     private readonly INavigationService _nav;
     private readonly SessionContext _session;
+    private readonly WarehousePOS.Application.Common.IBackupService _backupService;
+    private readonly WarehousePOS.Application.Common.ICloudBackupService _cloudService;
     private readonly HashSet<object> _initializedPages = [];
+    private System.Windows.Threading.DispatcherTimer? _autoBackupTimer;
 
-    public MainWindow(INavigationService nav, SessionContext session)
+    public MainWindow(
+        INavigationService nav,
+        SessionContext session,
+        WarehousePOS.Application.Common.IBackupService backupService,
+        WarehousePOS.Application.Common.ICloudBackupService cloudService)
     {
         InitializeComponent();
         _nav = nav;
         _session = session;
+        _backupService = backupService;
+        _cloudService = cloudService;
 
         // Wire the navigation service to the Frame inside this window
         if (_nav is Services.NavigationService ns)
@@ -51,7 +60,79 @@ public partial class MainWindow : Window
 
             // Navigate to POS as the default landing page
             NavigateTo<PosViewModel>();
+
+            // Start automated daily backup schedule
+            StartAutoBackupTimer();
         };
+    }
+
+    private void StartAutoBackupTimer()
+    {
+        // Subscribe to cloud sync status changes to update the notification banner
+        _cloudService.SyncStatusChanged += OnSyncStatusChanged;
+
+        // Auto-reconnect listener: automatically sync when internet/network becomes available
+        System.Net.NetworkInformation.NetworkChange.NetworkAddressChanged += (_, _) =>
+        {
+            Dispatcher.Invoke(async () => await CheckAndRunAutoBackupAsync());
+        };
+
+        // Check 15 seconds after app startup without blocking UI
+        Task.Delay(15000).ContinueWith(_ => _ = CheckAndRunAutoBackupAsync());
+
+        // Check periodically every hour while the app remains open
+        _autoBackupTimer = new System.Windows.Threading.DispatcherTimer
+        {
+            Interval = TimeSpan.FromHours(1)
+        };
+        _autoBackupTimer.Tick += async (_, _) => await CheckAndRunAutoBackupAsync();
+        _autoBackupTimer.Start();
+    }
+
+    private void OnSyncStatusChanged()
+    {
+        Dispatcher.Invoke(() =>
+        {
+            if (_cloudService.IsSyncPending)
+            {
+                CloudSyncNoticeBanner.Visibility = Visibility.Visible;
+                CloudSyncNoticeText.Text = string.IsNullOrEmpty(_cloudService.PendingSyncReason)
+                    ? "Internet offline: Local backup is saved safely on this PC. Cloud backup will automatically upload when internet reconnects."
+                    : _cloudService.PendingSyncReason;
+            }
+            else
+            {
+                CloudSyncNoticeBanner.Visibility = Visibility.Collapsed;
+            }
+        });
+    }
+
+    private async Task CheckAndRunAutoBackupAsync()
+    {
+        try
+        {
+            var backups = _backupService.GetLocalBackups();
+            bool needsBackup = backups.Count == 0 || (DateTime.UtcNow - backups[0].CreatedTimeUtc).TotalHours >= 24;
+
+            string? zipPath = null;
+            if (needsBackup)
+            {
+                zipPath = await _backupService.CreateBackupAsync();
+            }
+            else if (_cloudService.IsSyncPending && backups.Count > 0)
+            {
+                zipPath = backups[0].FilePath;
+            }
+
+            if (zipPath is not null && await _cloudService.IsConnectedAsync())
+            {
+                await _cloudService.UploadBackupAsync(zipPath);
+            }
+        }
+        catch
+        {
+            // Silent catch on background thread — never disrupt the cashier or UI
+        }
     }
 
     // Called by WPF after Frame.Navigate() has fully committed — Content is populated here.

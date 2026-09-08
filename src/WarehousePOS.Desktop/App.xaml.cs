@@ -207,6 +207,29 @@ public partial class App : System.Windows.Application
 
     protected override async void OnExit(ExitEventArgs e)
     {
+        try
+        {
+            if (_host is not null)
+            {
+                var backupService = _host.Services.GetService<WarehousePOS.Application.Common.IBackupService>();
+                var cloudService = _host.Services.GetService<WarehousePOS.Application.Common.ICloudBackupService>();
+                if (backupService is not null)
+                {
+                    Log.Information("Creating automatic daily shutdown backup...");
+                    var localZip = await backupService.CreateBackupAsync();
+                    if (cloudService is not null && await cloudService.IsConnectedAsync())
+                    {
+                        Log.Information("Uploading automatic shutdown backup to Google Drive...");
+                        await cloudService.UploadBackupAsync(localZip);
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "Failed to complete automatic shutdown backup");
+        }
+
         if (_host is not null)
         {
             await _host.StopAsync();
