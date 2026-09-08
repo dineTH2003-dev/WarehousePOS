@@ -82,46 +82,67 @@
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <!-- Customer Selection with Unified Search Card -->
+                <!-- Customer Selection -->
                 <StackPanel Grid.Row="0" Margin="0,0,0,12">
-                    <Border Style="{StaticResource SearchHoverCard}" Padding="12,10" Margin="0,0,0,10">
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="8"/>
-                                <RowDefinition Height="Auto"/>
-                            </Grid.RowDefinitions>
+                    <!-- Search Input Row -->
+                    <Grid Margin="0,0,0,10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="Customer:" FontWeight="Bold" Foreground="{StaticResource PrimaryBrush}" VerticalAlignment="Center" Margin="0,0,6,0" FontSize="12"/>
+                        <TextBlock Grid.Column="1" Text="🔍" FontSize="13" VerticalAlignment="Center" Margin="0,0,6,0" Foreground="{StaticResource TextSecondaryBrush}"/>
+                        <TextBox x:Name="TxtCustomerSearch" Grid.Column="2" Style="{StaticResource FormTextBox}"
+                                 Text="{Binding CustomerSearchQuery, UpdateSourceTrigger=PropertyChanged}"
+                                 Tag="Phone number or name"
+                                 Height="32" FontSize="12"
+                                 ToolTip="Search customer by phone number or name"/>
+                        <Button Grid.Column="3" Content="✕" Margin="4,0,0,0" Padding="6,2"
+                                Style="{StaticResource SecondaryButton}" BorderThickness="0" Foreground="#EF4444" FontWeight="Bold"
+                                Command="{Binding ClearCustomerSelectionCommand}"
+                                Visibility="{Binding SelectedCustomer, Converter={StaticResource NullToVisibilityConverter}}"
+                                ToolTip="Clear selected customer"/>
 
-                            <!-- Search Input Row -->
-                            <Grid Grid.Row="0">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0" Text="Customer:" FontWeight="Bold" Foreground="{StaticResource PrimaryBrush}" VerticalAlignment="Center" Margin="0,0,6,0" FontSize="12"/>
-                                <TextBlock Grid.Column="1" Text="🔍" FontSize="13" VerticalAlignment="Center" Margin="0,0,6,0" Foreground="{StaticResource TextSecondaryBrush}"/>
-                                <TextBox Grid.Column="2" Style="{StaticResource FormTextBox}"
-                                         Text="{Binding CustomerSearchQuery, UpdateSourceTrigger=PropertyChanged}"
-                                         Tag="Phone number or name"
-                                         Height="30" FontSize="12"
-                                         ToolTip="Search customer by phone number or name"/>
-                                <Button Grid.Column="3" Content="✕" Margin="4,0,0,0" Padding="6,2"
-                                        Style="{StaticResource SecondaryButton}" BorderThickness="0" Foreground="#EF4444" FontWeight="Bold"
-                                        Command="{Binding ClearCustomerSelectionCommand}"
-                                        Visibility="{Binding SelectedCustomer, Converter={StaticResource NullToVisibilityConverter}}"
-                                        ToolTip="Clear selected customer"/>
-                            </Grid>
-
-                            <!-- Filtered Customer Dropdown -->
-                            <ComboBox Grid.Row="2"
-                                      ItemsSource="{Binding FilteredCustomers}"
-                                      SelectedItem="{Binding SelectedCustomer}"
-                                      DisplayMemberPath="DisplayName"
-                                      Height="32" VerticalContentAlignment="Center"/>
-                        </Grid>
-                    </Border>
+                        <!-- Popup Dropdown for Search Results -->
+                        <Popup IsOpen="{Binding IsCustomerDropDownOpen, Mode=TwoWay}"
+                               PlacementTarget="{Binding ElementName=TxtCustomerSearch}"
+                               Placement="Bottom"
+                               StaysOpen="False"
+                               AllowsTransparency="True"
+                               PopupAnimation="Slide">
+                            <Border Background="White" BorderBrush="{StaticResource PrimaryBrush}" BorderThickness="1.5" CornerRadius="6"
+                                    Margin="0,2,0,0" MaxHeight="200" Width="{Binding ActualWidth, ElementName=TxtCustomerSearch}">
+                                <Border.Effect>
+                                    <DropShadowEffect BlurRadius="12" ShadowDepth="3" Opacity="0.15" Color="#2563EB"/>
+                                </Border.Effect>
+                                <ListBox ItemsSource="{Binding FilteredCustomers}"
+                                         SelectedItem="{Binding SelectedCustomer}"
+                                         DisplayMemberPath="DisplayName"
+                                         BorderThickness="0" Background="Transparent"
+                                         ScrollViewer.VerticalScrollBarVisibility="Auto">
+                                    <ListBox.ItemContainerStyle>
+                                        <Style TargetType="ListBoxItem">
+                                            <Setter Property="Padding" Value="10,6"/>
+                                            <Setter Property="FontSize" Value="12"/>
+                                            <Setter Property="Cursor" Value="Hand"/>
+                                            <Style.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter Property="Background" Value="#EFF6FF"/>
+                                                    <Setter Property="Foreground" Value="{StaticResource PrimaryBrush}"/>
+                                                </Trigger>
+                                                <Trigger Property="IsSelected" Value="True">
+                                                    <Setter Property="Background" Value="{StaticResource PrimaryBrush}"/>
+                                                    <Setter Property="Foreground" Value="White"/>
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </ListBox.ItemContainerStyle>
+                                </ListBox>
+                            </Border>
+                        </Popup>
+                    </Grid>
 
                     <Grid>
                         <Grid.ColumnDefinitions>

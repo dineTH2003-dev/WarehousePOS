@@ -69,6 +69,7 @@ public sealed class PosViewModel : ViewModelBase
 
     private string      _searchQuery         = string.Empty;
     private string      _customerSearchQuery = string.Empty;
+    private bool        _isCustomerDropDownOpen;
     private CustomerDto? _selectedCustomer;
     private bool _isDiscountManuallyOverridden;
     private SaleType    _saleType       = SaleType.Retail;
@@ -88,6 +89,12 @@ public sealed class PosViewModel : ViewModelBase
     {
         get => _searchQuery;
         set { SetField(ref _searchQuery, value); _ = PerformSearchAsync(); }
+    }
+
+    public bool IsCustomerDropDownOpen
+    {
+        get => _isCustomerDropDownOpen;
+        set => SetField(ref _isCustomerDropDownOpen, value);
     }
 
     public string CustomerSearchQuery
@@ -110,8 +117,11 @@ public sealed class PosViewModel : ViewModelBase
             if (SetField(ref _selectedCustomer, value))
             {
                 _isDiscountManuallyOverridden = false;
+                IsCustomerDropDownOpen = false;
                 if (value is not null)
                 {
+                    _customerSearchQuery = value.DisplayName;
+                    OnPropertyChanged(nameof(CustomerSearchQuery));
                     SaleType = value.Type; // Auto-set SaleType based on customer preference
                     ApplyCustomerDiscountRate();
                 }
@@ -251,12 +261,20 @@ public sealed class PosViewModel : ViewModelBase
         {
             FilteredCustomers.Add(c);
         }
+
+        if (!string.IsNullOrWhiteSpace(query) && FilteredCustomers.Any())
+        {
+            IsCustomerDropDownOpen = true;
+        }
     }
 
     private void ClearCustomerSelection()
     {
-        CustomerSearchQuery = string.Empty;
+        _customerSearchQuery = string.Empty;
+        OnPropertyChanged(nameof(CustomerSearchQuery));
         SelectedCustomer = null;
+        IsCustomerDropDownOpen = false;
+        FilterCustomers();
     }
 
     private async Task PerformSearchAsync()

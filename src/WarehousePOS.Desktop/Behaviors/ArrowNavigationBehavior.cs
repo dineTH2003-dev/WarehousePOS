@@ -43,18 +43,59 @@ public static class ArrowNavigationBehavior
         if (focusedElement is ComboBox comboBox && comboBox.IsDropDownOpen)
             return;
 
-        if (focusedElement is TextBox textBox && textBox.AcceptsReturn && e.Key == Key.Enter)
-            return;
-
-        if (e.Key == Key.Down || e.Key == Key.Enter)
+        if (e.Key == Key.Enter)
         {
+            if (focusedElement is TextBox tb && tb.AcceptsReturn)
+                return;
+            if (focusedElement is Button)
+                return;
+
             focusedElement.MoveFocus(new TraversalRequest(FocusNavigationDirection.Next));
             e.Handled = true;
+            return;
         }
-        else if (e.Key == Key.Up)
+
+        if (focusedElement is TextBox textBox)
         {
-            focusedElement.MoveFocus(new TraversalRequest(FocusNavigationDirection.Previous));
-            e.Handled = true;
+            if (e.Key == Key.Down)
+            {
+                focusedElement.MoveFocus(new TraversalRequest(FocusNavigationDirection.Down));
+                e.Handled = true;
+            }
+            else if (e.Key == Key.Up)
+            {
+                focusedElement.MoveFocus(new TraversalRequest(FocusNavigationDirection.Up));
+                e.Handled = true;
+            }
+            else if (e.Key == Key.Left)
+            {
+                if (textBox.CaretIndex == 0 && textBox.SelectionLength == 0)
+                {
+                    focusedElement.MoveFocus(new TraversalRequest(FocusNavigationDirection.Left));
+                    e.Handled = true;
+                }
+            }
+            else if (e.Key == Key.Right)
+            {
+                if (textBox.CaretIndex == (textBox.Text?.Length ?? 0) && textBox.SelectionLength == 0)
+                {
+                    focusedElement.MoveFocus(new TraversalRequest(FocusNavigationDirection.Right));
+                    e.Handled = true;
+                }
+            }
+        }
+        else
+        {
+            if (e.Key == Key.Down || e.Key == Key.Right)
+            {
+                focusedElement.MoveFocus(new TraversalRequest(FocusNavigationDirection.Next));
+                e.Handled = true;
+            }
+            else if (e.Key == Key.Up || e.Key == Key.Left)
+            {
+                focusedElement.MoveFocus(new TraversalRequest(FocusNavigationDirection.Previous));
+                e.Handled = true;
+            }
         }
     }
 }
