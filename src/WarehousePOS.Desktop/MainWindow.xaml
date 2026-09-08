@@ -133,10 +133,6 @@
                             Content="⚙️  Settings"
                             Style="{StaticResource NavButton}"
                             Click="BtnSettings_Click"/>
-                    <Button x:Name="BtnBackup"
-                            Content="💾  Backup &amp; Cloud"
-                            Style="{StaticResource NavButton}"
-                            Click="BtnBackup_Click"/>
                 </StackPanel>
 
             </DockPanel>

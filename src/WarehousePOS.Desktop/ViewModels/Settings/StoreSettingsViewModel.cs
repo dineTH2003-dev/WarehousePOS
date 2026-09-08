@@ -50,6 +50,38 @@ public sealed class StoreSettingsViewModel : ViewModelBase
     public string LastLocalBackupDisplay { get => _lastLocalBackupDisplay; private set => SetField(ref _lastLocalBackupDisplay, value); }
     public string LastCloudBackupDisplay { get => _lastCloudBackupDisplay; private set => SetField(ref _lastCloudBackupDisplay, value); }
 
+    private int _selectedTabIndex = 0;
+    public int SelectedTabIndex
+    {
+        get => _selectedTabIndex;
+        set
+        {
+            if (SetField(ref _selectedTabIndex, value))
+            {
+                OnPropertyChanged(nameof(IsStoreTabActive));
+                OnPropertyChanged(nameof(IsBackupTabActive));
+            }
+        }
+    }
+
+    public bool IsStoreTabActive
+    {
+        get => _selectedTabIndex == 0;
+        set
+        {
+            if (value) SelectedTabIndex = 0;
+        }
+    }
+
+    public bool IsBackupTabActive
+    {
+        get => _selectedTabIndex == 1;
+        set
+        {
+            if (value) SelectedTabIndex = 1;
+        }
+    }
+
     public bool IsSyncPending => _cloudBackupService.IsSyncPending;
     public string? PendingSyncReason => _cloudBackupService.PendingSyncReason;
 
@@ -57,6 +89,8 @@ public sealed class StoreSettingsViewModel : ViewModelBase
     public ObservableCollection<CloudBackupItemDto> RecentCloudBackups { get; } = [];
 
     // Commands
+    public RelayCommand SelectStoreTabCommand { get; }
+    public RelayCommand SelectBackupTabCommand { get; }
     public RelayCommand SaveCommand { get; }
     public RelayCommand BackupNowCommand { get; }
     public RelayCommand ConnectDriveCommand { get; }
@@ -78,6 +112,8 @@ public sealed class StoreSettingsViewModel : ViewModelBase
             OnPropertyChanged(nameof(PendingSyncReason));
         };
 
+        SelectStoreTabCommand = new RelayCommand(() => SelectedTabIndex = 0);
+        SelectBackupTabCommand = new RelayCommand(() => SelectedTabIndex = 1);
         SaveCommand = new RelayCommand(async () => await SaveSettingsAsync());
         BackupNowCommand = new RelayCommand(async () => await ExecuteBackupAsync(), () => !IsBackupInProgress);
         ConnectDriveCommand = new RelayCommand(async () => await ConnectGoogleDriveAsync(), () => !IsBackupInProgress);
