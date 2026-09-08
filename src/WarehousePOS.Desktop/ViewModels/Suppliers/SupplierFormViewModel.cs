@@ -70,7 +70,7 @@ public sealed class SupplierFormViewModel : ViewModelBase
         _nav            = nav;
 
         SaveCommand                  = new RelayCommand(async () => await SaveAsync(), () => !IsBusy && GetValidationError() is null);
-        CancelCommand                = new RelayCommand(() => SaveCompleted?.Invoke());
+        CancelCommand                = new RelayCommand(() => { ClearDraft(); SaveCompleted?.Invoke(); });
         AddProductCommand            = new RelayCommand(AddProductToSupplier);
         RemoveProductCommand         = new RelayCommand<ProductDto>(RemoveProductFromSupplier);
         CreateNewProductCommand      = new RelayCommand(() => CreateNewProductRequested?.Invoke());
@@ -79,42 +79,93 @@ public sealed class SupplierFormViewModel : ViewModelBase
         ProvidedProducts.CollectionChanged += (_, _) => RefreshValidation();
     }
 
+    public bool HasDraft() =>
+        !string.IsNullOrWhiteSpace(_name) ||
+        !string.IsNullOrWhiteSpace(_contactPerson) ||
+        !string.IsNullOrWhiteSpace(_phone) ||
+        !string.IsNullOrWhiteSpace(_email) ||
+        !string.IsNullOrWhiteSpace(_address) ||
+        ProvidedProducts.Count > 0;
+
+    public void ClearDraft()
+    {
+        _editingId = null;
+        _name = string.Empty;
+        _contactPerson = string.Empty;
+        _phone = string.Empty;
+        _email = string.Empty;
+        _address = string.Empty;
+        ErrorMessage = string.Empty;
+        SelectedProductIdToAdd = null;
+        ProvidedProducts.Clear();
+        OnPropertyChanged(nameof(Name));
+        OnPropertyChanged(nameof(ContactPerson));
+        OnPropertyChanged(nameof(Phone));
+        OnPropertyChanged(nameof(Email));
+        OnPropertyChanged(nameof(Address));
+        OnPropertyChanged(nameof(Title));
+        RefreshValidation();
+    }
+
     public async Task LoadAsync(SupplierDto? dto = null)
     {
-        _editingId     = dto?.Id;
-        Name           = dto?.Name ?? string.Empty;
-        ContactPerson  = dto?.ContactPerson ?? string.Empty;
-        Phone          = dto?.Phone ?? string.Empty;
-        Email          = dto?.Email ?? string.Empty;
-        Address        = dto?.Address ?? string.Empty;
-        ErrorMessage   = string.Empty;
-        SelectedProductIdToAdd = null;
-
-        ProvidedProducts.Clear();
-        AvailableProducts.Clear();
-
-        var allProducts = await _productService.GetAllAsync();
-        foreach (var p in allProducts)
+        if (dto is not null)
         {
-            AvailableProducts.Add(p);
-        }
+            _editingId     = dto.Id;
+            Name           = dto.Name;
+            ContactPerson  = dto.ContactPerson ?? string.Empty;
+            Phone          = dto.Phone ?? string.Empty;
+            Email          = dto.Email ?? string.Empty;
+            Address        = dto.Address ?? string.Empty;
+            ErrorMessage   = string.Empty;
+            SelectedProductIdToAdd = null;
 
-        if (!string.IsNullOrWhiteSpace(dto?.ProvidedProducts))
-        {
-            var namesOrSkus = dto.ProvidedProducts.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-            foreach (var token in namesOrSkus)
+            ProvidedProducts.Clear();
+            AvailableProducts.Clear();
+
+            var allProducts = await _productService.GetAllAsync();
+            foreach (var p in allProducts)
             {
-                var matched = allProducts.FirstOrDefault(p => p.Name.Equals(token, StringComparison.OrdinalIgnoreCase) || p.SKU.Equals(token, StringComparison.OrdinalIgnoreCase));
-                if (matched is not null)
+                AvailableProducts.Add(p);
+            }
+
+            if (!string.IsNullOrWhiteSpace(dto.ProvidedProducts))
+            {
+                var namesOrSkus = dto.ProvidedProducts.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                foreach (var token in namesOrSkus)
                 {
-                    if (!ProvidedProducts.Any(p => p.Id == matched.Id))
-                        ProvidedProducts.Add(matched);
+                    var matched = allProducts.FirstOrDefault(p => p.Name.Equals(token, StringComparison.OrdinalIgnoreCase) || p.SKU.Equals(token, StringComparison.OrdinalIgnoreCase));
+                    if (matched is not null)
+                    {
+                        if (!ProvidedProducts.Any(p => p.Id == matched.Id))
+                            ProvidedProducts.Add(matched);
+                    }
+                    else
+                    {
+                        // Fallback for custom text product
+                        ProvidedProducts.Add(new ProductDto(0, token, token, null, null, 0, 0, 0, 5, 0, 0, 0, 0, true, false, 1, "General"));
+                    }
                 }
-                else
-                {
-                    // Fallback for custom text product
-                    ProvidedProducts.Add(new ProductDto(0, token, token, null, null, 0, 0, 0, 5, 0, 0, 0, 0, true, false, 1, "General"));
-                }
+            }
+        }
+        else if (_editingId is null && HasDraft())
+        {
+            // Preserve user-entered draft fields when returning from creating/viewing products!
+            AvailableProducts.Clear();
+            var allProducts = await _productService.GetAllAsync();
+            foreach (var p in allProducts)
+            {
+                AvailableProducts.Add(p);
+            }
+        }
+        else
+        {
+            ClearDraft();
+            AvailableProducts.Clear();
+            var allProducts = await _productService.GetAllAsync();
+            foreach (var p in allProducts)
+            {
+                AvailableProducts.Add(p);
             }
         }
 
@@ -180,6 +231,7 @@ public sealed class SupplierFormViewModel : ViewModelBase
                 await _service.CreateAsync(new CreateSupplierRequest(
                     Name, Null(ContactPerson), Null(Phone), Null(Email), Null(Address), providedProductsStr));
 
+            ClearDraft();
             SaveCompleted?.Invoke();
         }
         catch (Exception ex) { ErrorMessage = ex.Message; }

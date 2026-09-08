@@ -133,6 +133,8 @@ public sealed class PurchasingViewModel : ViewModelBase
     public async Task LoadAsync()
     {
         ErrorMessage = string.Empty;
+        var currentSupplierId = SelectedSupplierId;
+
         var suppliers = await _supplierService.GetActiveAsync();
         Suppliers.Clear();
         foreach (var s in suppliers) Suppliers.Add(s);
@@ -140,7 +142,13 @@ public sealed class PurchasingViewModel : ViewModelBase
         var products = await _productService.GetAllAsync();
         _allActiveProducts = products.Where(p => p.IsActive).ToList();
 
-        if (SelectedSupplierId == null && Suppliers.Count > 0)
+        if (currentSupplierId.HasValue && Suppliers.Any(s => s.Id == currentSupplierId.Value))
+        {
+            _selectedSupplierId = currentSupplierId.Value;
+            OnPropertyChanged(nameof(SelectedSupplierId));
+            FilterProductsForSelectedSupplier();
+        }
+        else if (SelectedSupplierId == null && Suppliers.Count > 0)
         {
             SelectedSupplierId = Suppliers[0].Id;
         }
@@ -188,12 +196,9 @@ public sealed class PurchasingViewModel : ViewModelBase
 
         foreach (var item in LineItems)
         {
-            if (item.Product is null || !AvailableProducts.Any(p => p.Id == item.Product.Id))
+            if (item.Product is null && AvailableProducts.Count > 0)
             {
-                if (AvailableProducts.Count > 0)
-                {
-                    item.Product = AvailableProducts[0];
-                }
+                item.Product = AvailableProducts[0];
             }
         }
     }

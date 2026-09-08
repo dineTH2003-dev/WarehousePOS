@@ -33,6 +33,7 @@ namespace WarehousePOS.Desktop;
 public partial class App : System.Windows.Application
 {
     private IHost? _host;
+    private IServiceScope? _loginScope;
 
     protected override async void OnStartup(StartupEventArgs e)
     {
@@ -141,17 +142,28 @@ public partial class App : System.Windows.Application
                 Log.Information("Database initialised successfully.");
             }
 
-            // Prevent WPF from automatically terminating when LoginWindow closes.
-            // Set OnExplicitShutdown so the app stays alive after the dialog closes.
+            // Keep the application alive while the same top-level window transitions
+            // from login content to the main shell.
             ShutdownMode = ShutdownMode.OnExplicitShutdown;
 
-            // ── Show Login (inside its own DI scope) ─────────────
+            // ── Show Login and transition in-place ───────────────
 
             bool loggedIn;
-            using (var loginScope = _host.Services.CreateScope())
+            _loginScope = _host.Services.CreateScope();
             {
-                var loginWindow = loginScope.ServiceProvider.GetRequiredService<LoginWindow>();
-                loggedIn = loginWindow.ShowDialog() == true;
+                var loginWindow = _loginScope.ServiceProvider.GetRequiredService<LoginWindow>();
+                loginWindow.Show();
+                loggedIn = await loginWindow.WaitForLoginAsync();
+
+                if (loggedIn)
+                {
+                    Log.Information("Login successful. Transitioning to MainWindow shell...");
+                    var mainWindow = _host.Services.GetRequiredService<MainWindow>();
+                    mainWindow.InitializeShell();
+                    loginWindow.Content = mainWindow.TakeShellContent();
+                    loginWindow.Title = "Warehouse POS";
+                    MainWindow = loginWindow;
+                }
             }
 
             if (!loggedIn)
@@ -161,14 +173,7 @@ public partial class App : System.Windows.Application
                 return;
             }
 
-            Log.Information("Login successful. Opening MainWindow...");
-
-            // ── Show Main Window ──────────────────────────────────
-            var mainWindow = _host.Services.GetRequiredService<MainWindow>();
-            MainWindow = mainWindow;
-            mainWindow.Show();
-
-            // Once MainWindow is shown, switch ShutdownMode back so closing it terminates the app.
+            // The login window is now the main shell window, so closing it terminates the app.
             ShutdownMode = ShutdownMode.OnMainWindowClose;
 
             base.OnStartup(e);
@@ -207,11 +212,36 @@ public partial class App : System.Windows.Application
 
     protected override async void OnExit(ExitEventArgs e)
     {
+        try
+        {
+            if (_host is not null)
+            {
+                var backupService = _host.Services.GetService<WarehousePOS.Application.Common.IBackupService>();
+                var cloudService = _host.Services.GetService<WarehousePOS.Application.Common.ICloudBackupService>();
+                if (backupService is not null)
+                {
+                    Log.Information("Creating automatic daily shutdown backup...");
+                    var localZip = await backupService.CreateBackupAsync();
+                    if (cloudService is not null && await cloudService.IsConnectedAsync())
+                    {
+                        Log.Information("Uploading automatic shutdown backup to Google Drive...");
+                        await cloudService.UploadBackupAsync(localZip);
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "Failed to complete automatic shutdown backup");
+        }
+
         if (_host is not null)
         {
             await _host.StopAsync();
             _host.Dispose();
         }
+        _loginScope?.Dispose();
+        _loginScope = null;
         Log.Information("WarehousePOS shut down.");
         Log.CloseAndFlush();
         base.OnExit(e);

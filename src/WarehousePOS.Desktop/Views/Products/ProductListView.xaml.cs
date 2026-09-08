@@ -26,6 +26,11 @@ public partial class ProductListView : Page
     public async Task InitAsync()
     {
         await _vm.LoadAsync();
+        HandlePendingOpenAddProduct();
+    }
+
+    public void HandlePendingOpenAddProduct()
+    {
         if (ProductListViewModel.PendingOpenAddProduct)
         {
             ProductListViewModel.PendingOpenAddProduct = false;

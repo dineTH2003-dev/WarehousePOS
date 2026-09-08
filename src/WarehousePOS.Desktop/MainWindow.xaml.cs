@@ -22,17 +22,23 @@ public partial class MainWindow : Window
 {
     private readonly INavigationService _nav;
     private readonly SessionContext _session;
-    private readonly IServiceScopeFactory _scopeFactory;
+    private readonly WarehousePOS.Application.Common.IBackupService _backupService;
+    private readonly WarehousePOS.Application.Common.ICloudBackupService _cloudService;
+    private readonly HashSet<object> _initializedPages = [];
+    private System.Windows.Threading.DispatcherTimer? _autoBackupTimer;
+    private bool _shellInitialized;
 
-    // Tracks the current DI scope so it can be disposed when navigating away.
-    private IServiceScope? _currentPageScope;
-
-    public MainWindow(INavigationService nav, SessionContext session, IServiceScopeFactory scopeFactory)
+    public MainWindow(
+        INavigationService nav,
+        SessionContext session,
+        WarehousePOS.Application.Common.IBackupService backupService,
+        WarehousePOS.Application.Common.ICloudBackupService cloudService)
     {
         InitializeComponent();
         _nav = nav;
         _session = session;
-        _scopeFactory = scopeFactory;
+        _backupService = backupService;
+        _cloudService = cloudService;
 
         // Wire the navigation service to the Frame inside this window
         if (_nav is Services.NavigationService ns)
@@ -43,19 +49,105 @@ public partial class MainWindow : Window
         // Content property is null immediately after the call returns.
         MainFrame.Navigated += OnFrameNavigated;
 
-        Loaded += (_, _) =>
+        Loaded += (_, _) => InitializeShell();
+    }
+
+    public object? TakeShellContent()
+    {
+        var content = Content;
+        Content = null;
+        return content;
+    }
+
+    public void InitializeShell()
+    {
+        if (_shellInitialized)
+            return;
+
+        _shellInitialized = true;
+
+        if (_session.IsLoggedIn)
         {
-            if (_session.IsLoggedIn)
+            UserLabel.Text = $"{_session.CurrentUser.FullName} ({_session.CurrentUser.Role})";
+            BtnReports.Visibility = _session.IsAdmin ? Visibility.Visible : Visibility.Collapsed;
+            BtnExpenses.Visibility = _session.IsAdmin ? Visibility.Visible : Visibility.Collapsed;
+            BtnUserManagement.Visibility = _session.IsAdmin ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        // Navigate to POS as the default landing page
+        NavigateTo<PosViewModel>();
+
+        // Start automated daily backup schedule
+        StartAutoBackupTimer();
+    }
+
+    private void StartAutoBackupTimer()
+    {
+        // Subscribe to cloud sync status changes to update the notification banner
+        _cloudService.SyncStatusChanged += OnSyncStatusChanged;
+
+        // Auto-reconnect listener: automatically sync when internet/network becomes available
+        System.Net.NetworkInformation.NetworkChange.NetworkAddressChanged += (_, _) =>
+        {
+            Dispatcher.Invoke(async () => await CheckAndRunAutoBackupAsync());
+        };
+
+        // Check 15 seconds after app startup without blocking UI
+        Task.Delay(15000).ContinueWith(_ => _ = CheckAndRunAutoBackupAsync());
+
+        // Check periodically every hour while the app remains open
+        _autoBackupTimer = new System.Windows.Threading.DispatcherTimer
+        {
+            Interval = TimeSpan.FromHours(1)
+        };
+        _autoBackupTimer.Tick += async (_, _) => await CheckAndRunAutoBackupAsync();
+        _autoBackupTimer.Start();
+    }
+
+    private void OnSyncStatusChanged()
+    {
+        Dispatcher.Invoke(() =>
+        {
+            if (_cloudService.IsSyncPending)
             {
-                UserLabel.Text = $"{_session.CurrentUser.FullName} ({_session.CurrentUser.Role})";
-                BtnReports.Visibility = _session.IsAdmin ? Visibility.Visible : Visibility.Collapsed;
-                BtnExpenses.Visibility = _session.IsAdmin ? Visibility.Visible : Visibility.Collapsed;
-                BtnUserManagement.Visibility = _session.IsAdmin ? Visibility.Visible : Visibility.Collapsed;
+                CloudSyncNoticeBanner.Visibility = Visibility.Visible;
+                CloudSyncNoticeText.Text = string.IsNullOrEmpty(_cloudService.PendingSyncReason)
+                    ? "Internet offline: Local backup is saved safely on this PC. Cloud backup will automatically upload when internet reconnects."
+                    : _cloudService.PendingSyncReason;
+            }
+            else
+            {
+                CloudSyncNoticeBanner.Visibility = Visibility.Collapsed;
+            }
+        });
+    }
+
+    private async Task CheckAndRunAutoBackupAsync()
+    {
+        try
+        {
+            var backups = _backupService.GetLocalBackups();
+            bool needsBackup = backups.Count == 0 || (DateTime.UtcNow - backups[0].CreatedTimeUtc).TotalHours >= 24;
+
+            string? zipPath = null;
+            if (needsBackup)
+            {
+                zipPath = await _backupService.CreateBackupAsync();
+            }
+            else if (_cloudService.IsSyncPending && backups.Count > 0)
+            {
+                zipPath = backups[0].FilePath;
             }
 
-            // Navigate to POS as the default landing page
-            NavigateTo<PosViewModel>();
-        };
+            if (zipPath is not null && await _cloudService.IsConnectedAsync())
+            {
+                await _cloudService.UploadBackupAsync(zipPath);
+            }
+        }
+        catch
+        {
+            // Silent catch on background thread — never disrupt the cashier or UI
+        }
     }
 
     // Called by WPF after Frame.Navigate() has fully committed — Content is populated here.
@@ -63,26 +155,68 @@ public partial class MainWindow : Window
     {
         try
         {
-            if (e.Content is Views.Sales.PosView posView)
-                await posView.InitAsync();
-            else if (e.Content is Views.Products.ProductListView productView)
-                await productView.InitAsync();
-            else if (e.Content is Views.Purchasing.PurchasingView purchasingView)
-                await purchasingView.InitAsync();
-            else if (e.Content is Views.Products.CategoryManagementView catView)
-                await catView.InitAsync();
-            else if (e.Content is Views.Suppliers.SupplierListView supplierView)
-                await supplierView.InitAsync();
-            else if (e.Content is Views.Sales.CustomerListView customerView)
-                await customerView.InitAsync();
-            else if (e.Content is Views.Sales.CustomerPurchasedItemsView purchasedView)
-                await purchasedView.InitAsync();
-            else if (e.Content is Views.Reports.ReportsView reportsView)
-                await reportsView.InitAsync();
-            else if (e.Content is Views.Expenses.ExpenseListView expenseView)
-                await expenseView.InitAsync();
-            else if (e.Content is Views.Settings.StoreSettingsView settingsView)
-                await settingsView.InitAsync();
+            var page = e.Content;
+            if (page is null) return;
+
+            bool isFirstLoad = _initializedPages.Add(page);
+
+            if (page is Views.Sales.PosView posView)
+            {
+                if (isFirstLoad)
+                    await posView.InitAsync();
+            }
+            else if (page is Views.Products.ProductListView productView)
+            {
+                if (isFirstLoad)
+                    await productView.InitAsync();
+                else if (ProductListViewModel.PendingOpenAddProduct)
+                    productView.HandlePendingOpenAddProduct();
+            }
+            else if (page is Views.Purchasing.PurchasingView purchasingView)
+            {
+                if (isFirstLoad)
+                    await purchasingView.InitAsync();
+            }
+            else if (page is Views.Products.CategoryManagementView catView)
+            {
+                if (isFirstLoad)
+                    await catView.InitAsync();
+            }
+            else if (page is Views.Suppliers.SupplierListView supplierView)
+            {
+                if (isFirstLoad)
+                    await supplierView.InitAsync();
+            }
+            else if (page is Views.Sales.CustomerListView customerView)
+            {
+                if (isFirstLoad)
+                    await customerView.InitAsync();
+            }
+            else if (page is Views.Sales.CustomerPurchasedItemsView purchasedView)
+            {
+                if (isFirstLoad || CustomerPurchasedItemsViewModel.PendingCustomer is not null)
+                    await purchasedView.InitAsync();
+            }
+            else if (page is Views.Reports.ReportsView reportsView)
+            {
+                if (isFirstLoad)
+                    await reportsView.InitAsync();
+            }
+            else if (page is Views.Expenses.ExpenseListView expenseView)
+            {
+                if (isFirstLoad)
+                    await expenseView.InitAsync();
+            }
+            else if (page is Views.Users.UserManagementView userView)
+            {
+                if (isFirstLoad)
+                    await userView.InitAsync();
+            }
+            else if (page is Views.Settings.StoreSettingsView settingsView)
+            {
+                if (isFirstLoad)
+                    await settingsView.InitAsync();
+            }
         }
         catch (Exception ex)
         {
@@ -94,18 +228,10 @@ public partial class MainWindow : Window
         }
     }
 
-    // ── Helper: create a fresh DI scope and navigate ──────────────────────
+    // ── Helper: navigate using the cached navigation service ─────────────
     private void NavigateTo<TViewModel>() where TViewModel : class
     {
-        // Dispose the previous page's scope to free its DbContext
-        _currentPageScope?.Dispose();
-        _currentPageScope = _scopeFactory.CreateScope();
-
-        // Resolve the view from the new scope so it gets a fresh DbContext
-        if (_nav is Services.NavigationService ns)
-            ns.NavigateToScoped<TViewModel>(_currentPageScope.ServiceProvider);
-        else
-            _nav.NavigateTo<TViewModel>();
+        _nav.NavigateTo<TViewModel>();
     }
 
     // ── Sidebar button handlers ───────────────────────────────────────────
@@ -153,7 +279,8 @@ public partial class MainWindow : Window
 
     private void BtnLogout_Click(object sender, RoutedEventArgs e)
     {
-        _currentPageScope?.Dispose();
+        _nav.ClearCache();
+        _initializedPages.Clear();
         _session.Clear();
         var processPath = System.Diagnostics.Process.GetCurrentProcess().MainModule?.FileName;
         if (!string.IsNullOrEmpty(processPath))

@@ -4,6 +4,7 @@
         Title="Warehouse POS"
         Height="768"
         Width="1280"
+        WindowState="Maximized"
         MinHeight="600"
         MinWidth="1024"
         WindowStartupLocation="CenterScreen"
@@ -137,9 +138,32 @@
             </DockPanel>
         </Border>
 
-        <!-- ── Main content Frame ──────────────────────────── -->
-        <Frame Grid.Column="1"
-               x:Name="MainFrame"
-               NavigationUIVisibility="Hidden"/>
+        <!-- ── Main content Area ────────────────────────── -->
+        <Grid Grid.Column="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <!-- Offline Cloud Backup Notification Banner -->
+            <Border x:Name="CloudSyncNoticeBanner" Grid.Row="0" Background="#FEF3C7" BorderBrush="#F59E0B"
+                    BorderThickness="0,0,0,1" Padding="14,10" Visibility="Collapsed">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0" Text="⚠️" FontSize="14" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                    <TextBlock x:Name="CloudSyncNoticeText" Grid.Column="1"
+                               Text="Internet offline: Local backup is saved safely on this PC. Cloud backup will automatically upload when internet reconnects."
+                               Foreground="#92400E" FontWeight="SemiBold" FontSize="13" VerticalAlignment="Center"/>
+                </Grid>
+            </Border>
+
+            <!-- Main content Frame -->
+            <Frame Grid.Row="1"
+                   x:Name="MainFrame"
+                   NavigationUIVisibility="Hidden"/>
+        </Grid>
     </Grid>
 </Window>

@@ -1,3 +1,4 @@
+using System.IO.Compression;
 using Microsoft.Extensions.Logging;
 using WarehousePOS.Application.Common;
 
@@ -12,6 +13,8 @@ public sealed class BackupService(
             ? @"C:\ProgramData\WarehousePOS\Backups\"
             : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".warehousepos", "Backups");
 
+    private const string MainBackupFileName = "WarehousePOS_Backup.zip";
+
     public Task<string> CreateBackupAsync(CancellationToken ct = default)
     {
         if (!File.Exists(dbFilePath))
@@ -19,14 +22,38 @@ public sealed class BackupService(
 
         Directory.CreateDirectory(BackupDirectory);
 
-        var timestamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
-        var backupFileName = $"WarehousePOS_Backup_{timestamp}.db";
-        var destinationPath = Path.Combine(BackupDirectory, backupFileName);
+        var destinationZipPath = Path.Combine(BackupDirectory, MainBackupFileName);
+        var tempZipPath = Path.Combine(BackupDirectory, $"WarehousePOS_Backup_temp_{Guid.NewGuid():N}.zip");
+        var tempDbPath = Path.Combine(Path.GetTempPath(), $"WarehousePOS_temp_{Guid.NewGuid():N}.db");
 
-        File.Copy(dbFilePath, destinationPath, overwrite: true);
+        try
+        {
+            // 1. Create a clean staging copy of the database
+            File.Copy(dbFilePath, tempDbPath, overwrite: true);
 
-        logger.LogInformation("Database backup created successfully at {Path}", destinationPath);
-        return Task.FromResult(destinationPath);
+            // 2. Compress into temporary zip
+            using (var zipArchive = ZipFile.Open(tempZipPath, ZipArchiveMode.Create))
+            {
+                zipArchive.CreateEntryFromFile(tempDbPath, "WarehousePOS.db", CompressionLevel.Optimal);
+            }
+
+            // 3. Atomically overwrite the single main backup file
+            File.Move(tempZipPath, destinationZipPath, overwrite: true);
+
+            logger.LogInformation("Database backup updated successfully at {Path}", destinationZipPath);
+            return Task.FromResult(destinationZipPath);
+        }
+        finally
+        {
+            if (File.Exists(tempDbPath))
+            {
+                try { File.Delete(tempDbPath); } catch { /* best effort */ }
+            }
+            if (File.Exists(tempZipPath))
+            {
+                try { File.Delete(tempZipPath); } catch { /* best effort */ }
+            }
+        }
     }
 
     public IReadOnlyList<FileInfo> GetBackupFiles()
@@ -35,8 +62,23 @@ public sealed class BackupService(
             return Array.Empty<FileInfo>();
 
         var dir = new DirectoryInfo(BackupDirectory);
-        return dir.GetFiles("*.db")
-                  .OrderByDescending(f => f.CreationTimeUtc)
+        return dir.GetFiles("WarehousePOS_Backup*.zip")
+                  .OrderByDescending(f => f.LastWriteTimeUtc)
                   .ToList();
+    }
+
+    public IReadOnlyList<LocalBackupItemDto> GetLocalBackups()
+    {
+        var files = GetBackupFiles();
+        return files.Select(f => new LocalBackupItemDto(
+            f.FullName,
+            f.Name,
+            f.Length,
+            f.LastWriteTimeUtc)).ToList();
+    }
+
+    public void PruneOldLocalBackups(int keepCount = 30)
+    {
+        // Single backup file strategy: No automatic deletion
     }
 }

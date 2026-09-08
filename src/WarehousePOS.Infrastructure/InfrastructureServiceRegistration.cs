@@ -41,6 +41,7 @@ public static class InfrastructureServiceRegistration
         // Backup
         services.AddSingleton<IBackupService>(sp =>
             new Backup.BackupService(databasePath, sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Backup.BackupService>>()));
+        services.AddSingleton<ICloudBackupService, Backup.GoogleDriveBackupService>();
 
         return services;
     }

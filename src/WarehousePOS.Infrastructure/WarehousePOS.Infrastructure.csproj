@@ -18,6 +18,8 @@
     <PackageReference Include="Serilog.Sinks.Console" />
     <PackageReference Include="BCrypt.Net-Next" />
     <PackageReference Include="System.Drawing.Common" />
+    <PackageReference Include="Google.Apis.Drive.v3" />
+    <PackageReference Include="Google.Apis.Auth" />
   </ItemGroup>
 
   <ItemGroup>
