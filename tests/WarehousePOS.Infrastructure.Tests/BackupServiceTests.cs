@@ -65,4 +65,31 @@ public sealed class BackupServiceTests : IDisposable
         // Act & Assert
         await Assert.ThrowsAsync<FileNotFoundException>(() => service.CreateBackupAsync());
     }
+
+    [Fact]
+    public async Task CreateBackupAsync_MultipleRuns_ShouldAtomicallyUpdateSameMainZipFile()
+    {
+        // Arrange
+        var service = new BackupService(_dummyDbPath, NullLogger<BackupService>.Instance);
+
+        // Act - First run
+        var firstBackupPath = await service.CreateBackupAsync();
+
+        // Update dummy db with new content
+        File.AppendAllText(_dummyDbPath, " Additional transaction records");
+
+        // Act - Second run
+        var secondBackupPath = await service.CreateBackupAsync();
+
+        // Assert
+        secondBackupPath.Should().Be(firstBackupPath);
+        File.Exists(secondBackupPath).Should().BeTrue();
+
+        // Check that only 1 main backup file is returned
+        var localBackups = service.GetLocalBackups();
+        localBackups.Should().ContainSingle(b => b.FileName == "WarehousePOS_Backup.zip");
+
+        // Cleanup created backup
+        try { File.Delete(secondBackupPath); } catch { }
+    }
 }
