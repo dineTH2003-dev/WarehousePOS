@@ -15,6 +15,17 @@ public sealed class BoolToVisibilityConverter : IValueConverter
         value is Visibility.Visible;
 }
 
+/// <summary>Converts bool to inverted Visibility. True → Collapsed, False → Visible.</summary>
+[ValueConversion(typeof(bool), typeof(Visibility))]
+public sealed class InverseBoolToVisibilityConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture) =>
+        value is true ? Visibility.Collapsed : Visibility.Visible;
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) =>
+        value is Visibility.Collapsed;
+}
+
 /// <summary>Inverts a bool. True → False, False → True.</summary>
 [ValueConversion(typeof(bool), typeof(bool))]
 public sealed class InvertBoolConverter : IValueConverter
@@ -26,12 +37,16 @@ public sealed class InvertBoolConverter : IValueConverter
         value is bool b && !b;
 }
 
-/// <summary>Converts null to Collapsed, non-null to Visible.</summary>
+/// <summary>Converts null or empty string to Collapsed, non-null/non-empty string to Visible.</summary>
 [ValueConversion(typeof(object), typeof(Visibility))]
 public sealed class NullToVisibilityConverter : IValueConverter
 {
-    public object Convert(object value, Type targetType, object parameter, CultureInfo culture) =>
-        value is null ? Visibility.Collapsed : Visibility.Visible;
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        if (value is string s)
+            return string.IsNullOrWhiteSpace(s) ? Visibility.Collapsed : Visibility.Visible;
+        return value is null ? Visibility.Collapsed : Visibility.Visible;
+    }
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) =>
         throw new NotSupportedException();

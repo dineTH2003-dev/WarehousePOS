@@ -12,14 +12,17 @@ public sealed class NavigationService : INavigationService
 {
     private Frame? _frame;
     private readonly IServiceScopeFactory _scopeFactory;
+    private readonly SessionContext _session;
     private IServiceScope? _currentScope;
 
     // ViewModel → View type mapping
     private static readonly Dictionary<Type, Type> _viewMap = new();
+    private static readonly HashSet<Type> _adminOnlyViewModels = [];
 
-    public NavigationService(IServiceScopeFactory scopeFactory)
+    public NavigationService(IServiceScopeFactory scopeFactory, SessionContext session)
     {
         _scopeFactory = scopeFactory;
+        _session = session;
     }
 
     public static void Register<TViewModel, TView>()
@@ -27,6 +30,9 @@ public sealed class NavigationService : INavigationService
     {
         _viewMap[typeof(TViewModel)] = typeof(TView);
     }
+
+    public static void RegisterAdminOnly<TViewModel>() where TViewModel : class =>
+        _adminOnlyViewModels.Add(typeof(TViewModel));
 
     public void SetFrame(Frame frame)
     {
@@ -54,6 +60,9 @@ public sealed class NavigationService : INavigationService
 
     private void NavigateCore(Type viewModelType, IServiceProvider provider)
     {
+        if (_adminOnlyViewModels.Contains(viewModelType) && !_session.IsAdmin)
+            return;
+
         if (_frame is null)
             throw new InvalidOperationException("Frame not set. Call SetFrame first.");
 

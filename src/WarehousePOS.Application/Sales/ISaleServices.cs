@@ -18,7 +18,9 @@ public interface ISaleService
 {
     Task<IReadOnlyList<SaleDto>> GetAllAsync(CancellationToken ct = default);
     Task<IReadOnlyList<SaleDto>> GetByDateRangeAsync(DateTime from, DateTime to, CancellationToken ct = default);
+    Task<IReadOnlyList<SaleDto>> GetByCustomerAsync(int customerId, CancellationToken ct = default);
     Task<SaleDto?> GetByIdAsync(int id, CancellationToken ct = default);
     Task<SaleDto> ProcessSaleAsync(CreateSaleRequest request, CancellationToken ct = default);
     Task CancelSaleAsync(int saleId, CancellationToken ct = default);
+    Task ClaimWarrantyAsync(int saleId, int productId, int claimQuantity, int userId = 1, string? notes = null, CancellationToken ct = default);
 }

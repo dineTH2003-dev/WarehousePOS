@@ -9,7 +9,7 @@
         Background="{StaticResource BackgroundBrush}">
 
     <Border Style="{StaticResource Card}" Margin="24">
-        <Grid>
+        <Grid behaviors:ArrowNavigationBehavior.IsEnabled="True">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
@@ -23,7 +23,9 @@
                     <!-- Supplier Name -->
                     <TextBlock Text="Supplier Name *" Style="{StaticResource LabelText}" Margin="0,0,0,6"/>
                     <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"
-                             Style="{StaticResource FormTextBox}" Margin="0,0,0,14"/>
+                             Style="{StaticResource FormTextBox}" Margin="0,0,0,4"/>
+                    <TextBlock Text="{Binding NameError}" Foreground="{StaticResource DangerBrush}" FontSize="11" Margin="0,0,0,10"
+                               Visibility="{Binding NameError, Converter={StaticResource NullToVisibilityConverter}}" TextWrapping="Wrap"/>
 
                     <!-- Contact Person -->
                     <TextBlock Text="Contact Person" Style="{StaticResource LabelText}" Margin="0,0,0,6"/>
@@ -43,11 +45,15 @@
                                      behaviors:DigitsOnlyBehavior.IsEnabled="True"
                                      MaxLength="10"
                                      Style="{StaticResource FormTextBox}"/>
+                            <TextBlock Text="{Binding PhoneError}" Foreground="{StaticResource DangerBrush}" FontSize="11" Margin="0,4,0,0"
+                                       Visibility="{Binding PhoneError, Converter={StaticResource NullToVisibilityConverter}}" TextWrapping="Wrap"/>
                         </StackPanel>
                         <StackPanel Grid.Column="2">
                             <TextBlock Text="Email" Style="{StaticResource LabelText}" Margin="0,0,0,6"/>
                             <TextBox Text="{Binding Email, UpdateSourceTrigger=PropertyChanged}"
                                      Style="{StaticResource FormTextBox}"/>
+                            <TextBlock Text="{Binding EmailError}" Foreground="{StaticResource DangerBrush}" FontSize="11" Margin="0,4,0,0"
+                                       Visibility="{Binding EmailError, Converter={StaticResource NullToVisibilityConverter}}" TextWrapping="Wrap"/>
                         </StackPanel>
                     </Grid>
 
@@ -117,6 +123,9 @@
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
+
+                            <TextBlock Text="{Binding ProvidedProductsError}" Foreground="{StaticResource DangerBrush}" FontSize="11" Margin="0,6,0,0"
+                                       Visibility="{Binding ProvidedProductsError, Converter={StaticResource NullToVisibilityConverter}}" TextWrapping="Wrap"/>
                         </StackPanel>
                     </Border>
                 </StackPanel>
@@ -134,8 +143,7 @@
                     <Button Content="Cancel" Style="{StaticResource SecondaryButton}"
                             Margin="0,0,8,0" Command="{Binding CancelCommand}"/>
                     <Button Content="Save Supplier" Style="{StaticResource PrimaryButton}"
-                            Command="{Binding SaveCommand}"
-                            IsEnabled="{Binding IsBusy, Converter={StaticResource InvertBoolConverter}}"/>
+                            Command="{Binding SaveCommand}"/>
                 </StackPanel>
             </StackPanel>
         </Grid>

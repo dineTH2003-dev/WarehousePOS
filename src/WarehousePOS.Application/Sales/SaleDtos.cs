@@ -12,14 +12,19 @@ public sealed record CustomerDto(
     string? Phone,
     string? Email,
     string? Address,
-    bool IsActive);
+    decimal DiscountRate,
+    bool IsActive)
+{
+    public string DisplayName => string.IsNullOrWhiteSpace(Phone) ? Name : $"{Name} ({Phone})";
+};
 
 public sealed record CreateCustomerRequest(
     string Name,
     SaleType Type = SaleType.Retail,
     string? Phone = null,
     string? Email = null,
-    string? Address = null);
+    string? Address = null,
+    decimal DiscountRate = 0m);
 
 public sealed record UpdateCustomerRequest(
     int Id,
@@ -27,7 +32,8 @@ public sealed record UpdateCustomerRequest(
     SaleType Type,
     string? Phone = null,
     string? Email = null,
-    string? Address = null);
+    string? Address = null,
+    decimal DiscountRate = 0m);
 
 // ── Sale DTOs ─────────────────────────────────────────────────────────────────
 
@@ -38,7 +44,11 @@ public sealed record SaleItemDto(
     int Quantity,
     decimal UnitPrice,
     decimal Discount,
-    decimal LineTotal);
+    decimal LineTotal,
+    int WarrantyYears = 0,
+    int WarrantyMonths = 0,
+    int WarrantyDays = 0,
+    int ClaimedQuantity = 0);
 
 public sealed record SaleDto(
     int Id,

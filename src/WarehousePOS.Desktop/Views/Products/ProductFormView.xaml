@@ -3,13 +3,13 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:behaviors="clr-namespace:WarehousePOS.Desktop.Behaviors"
         Title="{Binding Title}"
-        Height="520" Width="500"
+        Height="620" Width="500"
         ResizeMode="NoResize"
         WindowStartupLocation="CenterOwner"
         Background="{StaticResource BackgroundBrush}">
 
     <Border Style="{StaticResource Card}" Margin="24">
-        <Grid>
+        <Grid behaviors:ArrowNavigationBehavior.IsEnabled="True">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
@@ -23,13 +23,17 @@
                     <!-- Name -->
                     <TextBlock Text="Product Name *" Style="{StaticResource LabelText}" Margin="0,0,0,6"/>
                     <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"
-                             Style="{StaticResource FormTextBox}" Margin="0,0,0,14"/>
+                             Style="{StaticResource FormTextBox}" Margin="0,0,0,4"/>
+                    <TextBlock Text="{Binding NameError}" Foreground="{StaticResource DangerBrush}" FontSize="11" Margin="0,0,0,10"
+                               Visibility="{Binding NameError, Converter={StaticResource NullToVisibilityConverter}}" TextWrapping="Wrap"/>
 
                     <!-- SKU -->
                     <TextBlock Text="SKU *" Style="{StaticResource LabelText}" Margin="0,0,0,6"/>
                     <TextBox Text="{Binding SKU, UpdateSourceTrigger=PropertyChanged}"
                              Style="{StaticResource FormTextBox}"
-                             Margin="0,0,0,14"/>
+                             Margin="0,0,0,4"/>
+                    <TextBlock Text="{Binding SkuError}" Foreground="{StaticResource DangerBrush}" FontSize="11" Margin="0,0,0,10"
+                               Visibility="{Binding SkuError, Converter={StaticResource NullToVisibilityConverter}}" TextWrapping="Wrap"/>
 
                     <!-- Barcode -->
                     <TextBlock Text="Barcode" Style="{StaticResource LabelText}" Margin="0,0,0,6"/>
@@ -49,7 +53,7 @@
                                 Command="{Binding AddCategoryCommand}"
                                 ToolTip="Create a new category immediately"/>
                     </Grid>
-                    <Grid Margin="0,0,0,14">
+                    <Grid Margin="0,0,0,4">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
@@ -65,11 +69,58 @@
                                 Command="{Binding ManageCategoriesCommand}"
                                 ToolTip="Go to Category Management page"/>
                     </Grid>
+                    <TextBlock Text="{Binding CategoryError}" Foreground="{StaticResource DangerBrush}" FontSize="11" Margin="0,0,0,10"
+                               Visibility="{Binding CategoryError, Converter={StaticResource NullToVisibilityConverter}}" TextWrapping="Wrap"/>
 
-                    <!-- Reorder level -->
+                     <!-- Reorder level -->
                     <TextBlock Text="Reorder Level" Style="{StaticResource LabelText}" Margin="0,0,0,6"/>
                     <TextBox Text="{Binding ReorderLevel, UpdateSourceTrigger=PropertyChanged}"
-                             Style="{StaticResource FormTextBox}" Margin="0,0,0,14"/>
+                             behaviors:IntegerOnlyBehavior.IsEnabled="True"
+                             Style="{StaticResource FormTextBox}" Margin="0,0,0,4"/>
+                    <TextBlock Text="{Binding ReorderLevelError}" Foreground="{StaticResource DangerBrush}" FontSize="11" Margin="0,0,0,10"
+                               Visibility="{Binding ReorderLevelError, Converter={StaticResource NullToVisibilityConverter}}" TextWrapping="Wrap"/>
+
+                    <!-- Warranty Period Section -->
+                    <TextBlock Text="Warranty Period" Style="{StaticResource LabelText}" FontWeight="SemiBold" Margin="0,4,0,6"/>
+                    <Grid Margin="0,0,0,10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="8"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="8"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Years -->
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="Years" Style="{StaticResource LabelText}" FontSize="11" Margin="0,0,0,4"/>
+                            <TextBox Text="{Binding WarrantyYearsText, UpdateSourceTrigger=PropertyChanged}"
+                                     behaviors:IntegerOnlyBehavior.IsEnabled="True"
+                                     Style="{StaticResource FormTextBox}"/>
+                            <TextBlock Text="{Binding WarrantyYearsError}" Foreground="{StaticResource DangerBrush}" FontSize="11" Margin="0,2,0,0"
+                                       Visibility="{Binding WarrantyYearsError, Converter={StaticResource NullToVisibilityConverter}}" TextWrapping="Wrap"/>
+                        </StackPanel>
+
+                        <!-- Months -->
+                        <StackPanel Grid.Column="2">
+                            <TextBlock Text="Months" Style="{StaticResource LabelText}" FontSize="11" Margin="0,0,0,4"/>
+                            <TextBox Text="{Binding WarrantyMonthsText, UpdateSourceTrigger=PropertyChanged}"
+                                     behaviors:IntegerOnlyBehavior.IsEnabled="True"
+                                     Style="{StaticResource FormTextBox}"/>
+                            <TextBlock Text="{Binding WarrantyMonthsError}" Foreground="{StaticResource DangerBrush}" FontSize="11" Margin="0,2,0,0"
+                                       Visibility="{Binding WarrantyMonthsError, Converter={StaticResource NullToVisibilityConverter}}" TextWrapping="Wrap"/>
+                        </StackPanel>
+
+                        <!-- Days -->
+                        <StackPanel Grid.Column="4">
+                            <TextBlock Text="Days" Style="{StaticResource LabelText}" FontSize="11" Margin="0,0,0,4"/>
+                            <TextBox Text="{Binding WarrantyDaysText, UpdateSourceTrigger=PropertyChanged}"
+                                     behaviors:IntegerOnlyBehavior.IsEnabled="True"
+                                     Style="{StaticResource FormTextBox}"/>
+                            <TextBlock Text="{Binding WarrantyDaysError}" Foreground="{StaticResource DangerBrush}" FontSize="11" Margin="0,2,0,0"
+                                       Visibility="{Binding WarrantyDaysError, Converter={StaticResource NullToVisibilityConverter}}" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Grid>
 
                     <!-- Description -->
                     <TextBlock Text="Description" Style="{StaticResource LabelText}" Margin="0,0,0,6"/>

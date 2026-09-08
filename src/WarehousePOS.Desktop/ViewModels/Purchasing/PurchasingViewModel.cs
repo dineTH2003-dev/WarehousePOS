@@ -39,6 +39,7 @@ public sealed class PurchasingViewModel : ViewModelBase
             if (SetField(ref _selectedSupplierId, value))
             {
                 FilterProductsForSelectedSupplier();
+                OnPropertyChanged(nameof(SupplierError));
             }
         }
     }
@@ -65,9 +66,13 @@ public sealed class PurchasingViewModel : ViewModelBase
                 _isPaidAmountUserModified = true;
                 OnPropertyChanged(nameof(PaidAmount));
                 OnPropertyChanged(nameof(RemainingBalance));
+                OnPropertyChanged(nameof(PaidAmountError));
             }
         }
     }
+
+    public string? SupplierError   => (!SelectedSupplierId.HasValue || SelectedSupplierId.Value <= 0) ? "Please select a supplier." : null;
+    public string? PaidAmountError => (!decimal.TryParse(PaidAmountText, out var val) || val < 0) ? "Paid amount must be a valid number." : null;
 
     public string PaymentDetails
     {
@@ -287,6 +292,12 @@ public sealed class PurchasingViewModel : ViewModelBase
             return;
         }
 
+        if (validItems.Any(i => i.Quantity > 0 && i.UnitCost <= 0))
+        {
+            ErrorMessage = "Unit cost must be entered for all paid purchase items.";
+            return;
+        }
+
         IsBusy = true;
         try
         {
@@ -296,7 +307,8 @@ public sealed class PurchasingViewModel : ViewModelBase
                 i.UnitCost,
                 i.FreeQuantity,
                 i.RetailPrice,
-                i.WholesalePrice)).ToList();
+                i.WholesalePrice,
+                i.ClaimedQuantityReceived)).ToList();
 
             var currentUserId = _session.IsLoggedIn ? _session.CurrentUser.UserId : 1;
 

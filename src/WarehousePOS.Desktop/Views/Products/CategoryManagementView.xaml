@@ -50,7 +50,9 @@
 
                     <TextBlock Text="Category Name *" Style="{StaticResource LabelText}" Margin="0,0,0,6"/>
                     <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"
-                             Style="{StaticResource FormTextBox}" Margin="0,0,0,16"/>
+                             Style="{StaticResource FormTextBox}" Margin="0,0,0,4"/>
+                    <TextBlock Text="{Binding NameError}" Foreground="{StaticResource DangerBrush}" FontSize="11" Margin="0,0,0,10"
+                               Visibility="{Binding NameError, Converter={StaticResource NullToVisibilityConverter}}" TextWrapping="Wrap"/>
 
                     <TextBlock Text="Description" Style="{StaticResource LabelText}" Margin="0,0,0,6"/>
                     <TextBox Text="{Binding Description, UpdateSourceTrigger=PropertyChanged}"
@@ -98,7 +100,8 @@
 
                     <DataGrid Grid.Row="1"
                               ItemsSource="{Binding Categories}"
-                              SelectedItem="{Binding SelectedCategory}">
+                              SelectedItem="{Binding SelectedCategory}"
+                              RowStyle="{StaticResource InactiveDataGridRow}">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Name"        Binding="{Binding Name}"         Width="*"/>
                             <DataGridTextColumn Header="Products"    Binding="{Binding ProductCount}"  Width="90"/>

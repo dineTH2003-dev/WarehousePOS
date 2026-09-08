@@ -14,6 +14,7 @@ public static class ApplicationServiceRegistration
     {
         // Authentication
         services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<IUserManagementService, UserManagementService>();
 
         // Products & Categories
         services.AddScoped<ICategoryService, CategoryService>();

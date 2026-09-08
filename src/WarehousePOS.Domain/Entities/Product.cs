@@ -18,6 +18,10 @@ public sealed class Product : AggregateRoot
     public decimal WholesalePrice { get; private set; }
     public int StockQuantity { get; private set; }
     public int ReorderLevel { get; private set; }
+    public int WarrantyYears { get; private set; }
+    public int WarrantyMonths { get; private set; }
+    public int WarrantyDays { get; private set; }
+    public int ClaimedQuantity { get; private set; }
     public bool IsActive { get; private set; } = true;
 
     public int CategoryId { get; private set; }
@@ -32,7 +36,10 @@ public sealed class Product : AggregateRoot
         string? barcode = null,
         string? description = null,
         int reorderLevel = 5,
-        int stockQuantity = 0)
+        int stockQuantity = 0,
+        int warrantyYears = 0,
+        int warrantyMonths = 0,
+        int warrantyDays = 0)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         ArgumentException.ThrowIfNullOrWhiteSpace(sku);
@@ -46,6 +53,15 @@ public sealed class Product : AggregateRoot
         if (stockQuantity < 0)
             throw new ArgumentOutOfRangeException(nameof(stockQuantity), "Stock quantity cannot be negative.");
 
+        if (warrantyYears < 0)
+            throw new ArgumentOutOfRangeException(nameof(warrantyYears), "Warranty years cannot be negative.");
+
+        if (warrantyMonths < 0)
+            throw new ArgumentOutOfRangeException(nameof(warrantyMonths), "Warranty months cannot be negative.");
+
+        if (warrantyDays < 0)
+            throw new ArgumentOutOfRangeException(nameof(warrantyDays), "Warranty days cannot be negative.");
+
         return new Product
         {
             Name = name.Trim(),
@@ -56,7 +72,10 @@ public sealed class Product : AggregateRoot
             WholesalePrice = wholesalePrice,
             CategoryId = categoryId,
             ReorderLevel = reorderLevel,
-            StockQuantity = stockQuantity
+            StockQuantity = stockQuantity,
+            WarrantyYears = warrantyYears,
+            WarrantyMonths = warrantyMonths,
+            WarrantyDays = warrantyDays
         };
     }
 
@@ -72,12 +91,27 @@ public sealed class Product : AggregateRoot
         SetUpdatedAt();
     }
 
-    public void UpdateDetails(string name, string sku, string? barcode, string? description, int categoryId, int reorderLevel)
+    public void UpdateDetails(
+        string name,
+        string sku,
+        string? barcode,
+        string? description,
+        int categoryId,
+        int reorderLevel,
+        int warrantyYears = 0,
+        int warrantyMonths = 0,
+        int warrantyDays = 0)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         ArgumentException.ThrowIfNullOrWhiteSpace(sku);
         if (reorderLevel < 0)
             throw new ArgumentOutOfRangeException(nameof(reorderLevel));
+        if (warrantyYears < 0)
+            throw new ArgumentOutOfRangeException(nameof(warrantyYears));
+        if (warrantyMonths < 0)
+            throw new ArgumentOutOfRangeException(nameof(warrantyMonths));
+        if (warrantyDays < 0)
+            throw new ArgumentOutOfRangeException(nameof(warrantyDays));
 
         Name = name.Trim();
         SKU = sku.Trim().ToUpperInvariant();
@@ -85,6 +119,9 @@ public sealed class Product : AggregateRoot
         Description = description?.Trim();
         CategoryId = categoryId;
         ReorderLevel = reorderLevel;
+        WarrantyYears = warrantyYears;
+        WarrantyMonths = warrantyMonths;
+        WarrantyDays = warrantyDays;
         SetUpdatedAt();
     }
 
@@ -115,6 +152,28 @@ public sealed class Product : AggregateRoot
             throw new ArgumentOutOfRangeException(nameof(quantity), "Stock quantity cannot be negative.");
 
         StockQuantity = quantity;
+        SetUpdatedAt();
+    }
+
+    public void RecordWarrantyClaim(int quantity)
+    {
+        if (quantity <= 0)
+            throw new ArgumentOutOfRangeException(nameof(quantity), "Claim quantity must be positive.");
+
+        ClaimedQuantity += quantity;
+        SetUpdatedAt();
+    }
+
+    public void FulfillClaim(int quantity)
+    {
+        if (quantity <= 0)
+            throw new ArgumentOutOfRangeException(nameof(quantity), "Fulfill quantity must be positive.");
+
+        if (quantity > ClaimedQuantity)
+            throw new InvalidOperationException($"Cannot fulfill {quantity} claimed items because only {ClaimedQuantity} items are pending claim.");
+
+        ClaimedQuantity -= quantity;
+        StockQuantity += quantity;
         SetUpdatedAt();
     }
 

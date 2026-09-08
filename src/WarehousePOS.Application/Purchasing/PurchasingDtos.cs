@@ -13,7 +13,8 @@ public sealed record PurchaseItemDto(
     decimal UnitCost,
     decimal TotalCost,
     decimal RetailPrice = 0,
-    decimal WholesalePrice = 0);
+    decimal WholesalePrice = 0,
+    int ClaimedQuantityReceived = 0);
 
 public sealed record PurchaseDto(
     int Id,
@@ -46,7 +47,8 @@ public sealed record CreatePurchaseItemRequest(
     decimal UnitCost,
     int FreeQuantity = 0,
     decimal RetailPrice = 0,
-    decimal WholesalePrice = 0);
+    decimal WholesalePrice = 0,
+    int ClaimedQuantityReceived = 0);
 
 // ── Inventory DTOs ────────────────────────────────────────────────────────────
 

@@ -136,4 +136,55 @@ public sealed class ProductTests
 
         product.IsLowStock.Should().BeFalse();
     }
+
+    [Fact]
+    public void Create_WithWarrantyPeriod_ShouldSetWarrantyFields()
+    {
+        var product = Product.Create("Test", "SKU001", 100, 80, 1, warrantyYears: 2, warrantyMonths: 6, warrantyDays: 15);
+
+        product.WarrantyYears.Should().Be(2);
+        product.WarrantyMonths.Should().Be(6);
+        product.WarrantyDays.Should().Be(15);
+    }
+
+    [Fact]
+    public void Create_WithNegativeWarranty_ShouldThrow()
+    {
+        Action act = () => Product.Create("Test", "SKU001", 100, 80, 1, warrantyYears: -1);
+        act.Should().Throw<ArgumentOutOfRangeException>();
+    }
+
+    [Fact]
+    public void RecordWarrantyClaim_ValidQuantity_ShouldIncreaseClaimedQuantity()
+    {
+        var product = Product.Create("Test", "SKU001", 100, 80, 1);
+        product.RecordWarrantyClaim(3);
+        product.ClaimedQuantity.Should().Be(3);
+    }
+
+    [Fact]
+    public void RecordWarrantyClaim_InvalidQuantity_ShouldThrow()
+    {
+        var product = Product.Create("Test", "SKU001", 100, 80, 1);
+        Action act = () => product.RecordWarrantyClaim(0);
+        act.Should().Throw<ArgumentOutOfRangeException>();
+    }
+
+    [Fact]
+    public void FulfillClaim_ValidQuantity_ShouldDecreaseClaimedQuantity()
+    {
+        var product = Product.Create("Test", "SKU001", 100, 80, 1);
+        product.RecordWarrantyClaim(5);
+        product.FulfillClaim(3);
+        product.ClaimedQuantity.Should().Be(2);
+    }
+
+    [Fact]
+    public void FulfillClaim_ExceedingQuantity_ShouldThrowInvalidOperationException()
+    {
+        var product = Product.Create("Test", "SKU001", 100, 80, 1);
+        product.RecordWarrantyClaim(2);
+        Action act = () => product.FulfillClaim(5);
+        act.Should().Throw<InvalidOperationException>();
+    }
 }

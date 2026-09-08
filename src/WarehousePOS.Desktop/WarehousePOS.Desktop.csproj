@@ -21,6 +21,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Resource Include="Resources\Images\happy-products-logo.png" />
+    <Resource Include="Resources\Images\pos-retail-background.jpg" />
+  </ItemGroup>
+
+  <ItemGroup>
     <!--
       Desktop connects to Application and Infrastructure through DI.
       Desktop does NOT directly reference Domain — it goes through Application.

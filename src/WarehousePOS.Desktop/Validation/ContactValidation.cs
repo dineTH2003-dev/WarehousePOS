@@ -9,11 +9,18 @@ public static class ContactValidation
     {
         if (string.IsNullOrWhiteSpace(phone))
             return null;
-        if (phone.Length > 10)
-            return "Phone number cannot exceed 10 digits.";
-        return phone.Any(character => character is < '0' or > '9')
-            ? "Phone number must contain digits only."
-            : null;
+
+        var trimmed = phone.Trim();
+        if (!trimmed.StartsWith('0'))
+            return "Phone number must start with '0' (e.g. 0717454667).";
+
+        if (trimmed.Any(character => character is < '0' or > '9'))
+            return "Phone number must contain digits only.";
+
+        if (trimmed.Length != 10)
+            return "Phone number must consist of 10 digits (e.g. 0717454667).";
+
+        return null;
     }
 
     public static string? GetEmailError(string email) =>

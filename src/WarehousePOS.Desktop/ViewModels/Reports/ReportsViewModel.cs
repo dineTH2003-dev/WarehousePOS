@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using WarehousePOS.Application.Reports;
+using WarehousePOS.Desktop.Services;
 using WarehousePOS.Desktop.ViewModels;
 
 namespace WarehousePOS.Desktop.ViewModels.Reports;
@@ -7,6 +8,7 @@ namespace WarehousePOS.Desktop.ViewModels.Reports;
 public sealed class ReportsViewModel : ViewModelBase
 {
     private readonly IReportService _reportService;
+    private readonly SessionContext _session;
 
     private DateTime _selectedDate = DateTime.Today;
     private DailySalesReportDto? _dailySales;
@@ -48,14 +50,19 @@ public sealed class ReportsViewModel : ViewModelBase
 
     public RelayCommand RefreshCommand { get; }
 
-    public ReportsViewModel(IReportService reportService)
+    public ReportsViewModel(IReportService reportService, SessionContext session)
     {
+        if (!session.IsAdmin)
+            throw new UnauthorizedAccessException("Only an Admin can access Reports.");
+
         _reportService = reportService;
+        _session = session;
         RefreshCommand = new RelayCommand(async () => await LoadAllReportsAsync());
     }
 
     public async Task LoadAllReportsAsync()
     {
+        EnsureAdmin();
         IsBusy = true;
         try
         {
@@ -80,6 +87,13 @@ public sealed class ReportsViewModel : ViewModelBase
 
     private async Task LoadDailySalesAsync()
     {
+        EnsureAdmin();
         DailySales = await _reportService.GetDailySalesReportAsync(SelectedDate);
+    }
+
+    private void EnsureAdmin()
+    {
+        if (!_session.IsAdmin)
+            throw new UnauthorizedAccessException("Only an Admin can access Reports.");
     }
 }

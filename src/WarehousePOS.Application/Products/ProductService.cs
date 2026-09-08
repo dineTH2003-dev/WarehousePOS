@@ -75,7 +75,8 @@ public sealed class ProductService(
         var product = Product.Create(
             request.Name, request.SKU, request.RetailPrice,
             request.WholesalePrice, request.CategoryId,
-            request.Barcode, request.Description, request.ReorderLevel, request.StockQuantity);
+            request.Barcode, request.Description, request.ReorderLevel, request.StockQuantity,
+            request.WarrantyYears, request.WarrantyMonths, request.WarrantyDays);
 
         await repo.AddAsync(product, ct);
         if (request.StockQuantity > 0)
@@ -103,7 +104,7 @@ public sealed class ProductService(
         var oldName = product.Name;
 
         // Reflect name/sku/description/category changes via dedicated update method
-        product.UpdateDetails(request.Name, request.SKU, request.Barcode, request.Description, request.CategoryId, request.ReorderLevel);
+        product.UpdateDetails(request.Name, request.SKU, request.Barcode, request.Description, request.CategoryId, request.ReorderLevel, request.WarrantyYears, request.WarrantyMonths, request.WarrantyDays);
         product.UpdatePricing(request.RetailPrice, request.WholesalePrice);
 
         var stockBefore = product.StockQuantity;
@@ -160,6 +161,8 @@ public sealed class ProductService(
     private static ProductDto Map(Product p) => new(
         p.Id, p.Name, p.SKU, p.Barcode, p.Description,
         p.RetailPrice, p.WholesalePrice, p.StockQuantity, p.ReorderLevel,
+        p.WarrantyYears, p.WarrantyMonths, p.WarrantyDays,
+        p.ClaimedQuantity,
         p.IsActive, p.IsLowStock, p.CategoryId,
         p.Category?.Name ?? string.Empty);
 }
