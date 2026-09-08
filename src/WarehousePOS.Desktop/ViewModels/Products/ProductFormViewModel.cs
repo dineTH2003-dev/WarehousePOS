@@ -99,7 +99,7 @@ public sealed class ProductFormViewModel : ViewModelBase
         _session         = session;
 
         SaveCommand             = new RelayCommand(async () => await SaveAsync(), () => CanSave);
-        CancelCommand           = new RelayCommand(() => SaveCompleted?.Invoke());
+        CancelCommand           = new RelayCommand(() => { ClearDraft(); SaveCompleted?.Invoke(); });
         AddCategoryCommand      = new RelayCommand(() => AddCategoryRequested?.Invoke());
         ManageCategoriesCommand = new RelayCommand(() => ManageCategoriesRequested?.Invoke());
     }
@@ -146,22 +146,17 @@ public sealed class ProductFormViewModel : ViewModelBase
             ReorderLevel       = existing.ReorderLevel;
             ErrorMessage       = string.Empty;
         }
+        else if (_editingId is null && HasDraft())
+        {
+            // Preserve user-entered draft fields when navigating or managing categories!
+            if (CategoryId == 0 && cats.Count > 0)
+            {
+                CategoryId = cats[0].Id;
+            }
+        }
         else
         {
-            _editingId = null;
-            _name = string.Empty;
-            _sku = string.Empty;
-            Barcode = string.Empty;
-            Description = string.Empty;
-            RetailPriceText = "0.00";
-            WholesalePriceText = "0.00";
-            StockQuantityText = "0";
-            WarrantyYearsText = "0";
-            WarrantyMonthsText = "0";
-            WarrantyDaysText = "0";
-            CategoryId = cats.FirstOrDefault()?.Id ?? 0;
-            ReorderLevel = 5;
-            ErrorMessage = string.Empty;
+            ClearDraftInternal(cats.FirstOrDefault()?.Id ?? 0);
         }
 
         OnPropertyChanged(nameof(Name));
@@ -170,6 +165,41 @@ public sealed class ProductFormViewModel : ViewModelBase
         OnPropertyChanged(nameof(Title));
         OnPropertyChanged(nameof(CanSave));
         SaveCommand.RaiseCanExecuteChanged();
+    }
+
+    public bool HasDraft() =>
+        !string.IsNullOrWhiteSpace(_name) ||
+        !string.IsNullOrWhiteSpace(_sku) ||
+        !string.IsNullOrWhiteSpace(Description) ||
+        !string.IsNullOrWhiteSpace(Barcode);
+
+    public void ClearDraft()
+    {
+        ClearDraftInternal(Categories.FirstOrDefault()?.Id ?? 0);
+        OnPropertyChanged(nameof(Name));
+        OnPropertyChanged(nameof(SKU));
+        OnPropertyChanged(nameof(IsEditMode));
+        OnPropertyChanged(nameof(Title));
+        OnPropertyChanged(nameof(CanSave));
+        SaveCommand.RaiseCanExecuteChanged();
+    }
+
+    private void ClearDraftInternal(int defaultCategoryId)
+    {
+        _editingId = null;
+        _name = string.Empty;
+        _sku = string.Empty;
+        Barcode = string.Empty;
+        Description = string.Empty;
+        RetailPriceText = "0.00";
+        WholesalePriceText = "0.00";
+        StockQuantityText = "0";
+        WarrantyYearsText = "0";
+        WarrantyMonthsText = "0";
+        WarrantyDaysText = "0";
+        CategoryId = defaultCategoryId;
+        ReorderLevel = 5;
+        ErrorMessage = string.Empty;
     }
 
     private async Task ValidateUniquenessAsync()
@@ -290,6 +320,7 @@ public sealed class ProductFormViewModel : ViewModelBase
                     retail, wholesale, CategoryId, ReorderLevel, stockQuantity,
                     wYears, wMonths, wDays));
             }
+            ClearDraft();
             SaveCompleted?.Invoke();
         }
         catch (Exception ex) { ErrorMessage = ex.Message; }

@@ -63,6 +63,7 @@ public sealed class NavigationService : INavigationService
             var page = (Page)(scope.ServiceProvider.GetService(viewType)
                        ?? Activator.CreateInstance(viewType)!);
 
+            page.KeepAlive = true;
             entry = (page, scope);
             _pageCache[vmType] = entry;
         }
@@ -71,6 +72,12 @@ public sealed class NavigationService : INavigationService
             return;
 
         _frame.Navigate(entry.Page);
+
+        // Keep journal clean so history does not accumulate or reload
+        while (_frame.CanGoBack)
+        {
+            _frame.RemoveBackEntry();
+        }
     }
 
     /// <summary>

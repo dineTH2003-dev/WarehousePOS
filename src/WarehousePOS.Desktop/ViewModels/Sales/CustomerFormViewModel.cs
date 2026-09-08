@@ -47,21 +47,60 @@ public sealed class CustomerFormViewModel : ViewModelBase
     {
         _service = service;
         SaveCommand   = new RelayCommand(async () => await SaveAsync(), () => !IsBusy && GetValidationError() is null);
-        CancelCommand = new RelayCommand(() => SaveCompleted?.Invoke());
+        CancelCommand = new RelayCommand(() => { ClearDraft(); SaveCompleted?.Invoke(); });
+    }
+
+    public bool HasDraft() =>
+        !string.IsNullOrWhiteSpace(_name) ||
+        !string.IsNullOrWhiteSpace(_phone) ||
+        !string.IsNullOrWhiteSpace(_email) ||
+        !string.IsNullOrWhiteSpace(_address) ||
+        (_discountRateText != "0" && !string.IsNullOrWhiteSpace(_discountRateText));
+
+    public void ClearDraft()
+    {
+        _editingId = null;
+        _name = string.Empty;
+        _type = SaleType.Retail;
+        _phone = string.Empty;
+        _email = string.Empty;
+        _address = string.Empty;
+        _discountRateText = "0";
+        _errorMessage = string.Empty;
+        OnPropertyChanged(nameof(Name));
+        OnPropertyChanged(nameof(Type));
+        OnPropertyChanged(nameof(Phone));
+        OnPropertyChanged(nameof(Email));
+        OnPropertyChanged(nameof(Address));
+        OnPropertyChanged(nameof(DiscountRateText));
+        OnPropertyChanged(nameof(Title));
+        RefreshValidation();
     }
 
     public void Load(CustomerDto? dto = null)
     {
-        _editingId       = dto?.Id;
-        Name             = dto?.Name ?? string.Empty;
-        Type             = dto?.Type ?? SaleType.Retail;
-        Phone            = dto?.Phone ?? string.Empty;
-        Email            = dto?.Email ?? string.Empty;
-        Address          = dto?.Address ?? string.Empty;
-        DiscountRateText = dto?.DiscountRate.ToString("G29") ?? "0";
-        ErrorMessage     = string.Empty;
-        OnPropertyChanged(nameof(Title));
-        RefreshValidation();
+        if (dto is not null)
+        {
+            _editingId       = dto.Id;
+            Name             = dto.Name;
+            Type             = dto.Type;
+            Phone            = dto.Phone ?? string.Empty;
+            Email            = dto.Email ?? string.Empty;
+            Address          = dto.Address ?? string.Empty;
+            DiscountRateText = dto.DiscountRate.ToString("G29");
+            ErrorMessage     = string.Empty;
+            OnPropertyChanged(nameof(Title));
+            RefreshValidation();
+        }
+        else if (_editingId is null && HasDraft())
+        {
+            // Keep draft!
+            RefreshValidation();
+        }
+        else
+        {
+            ClearDraft();
+        }
     }
 
     private async Task SaveAsync()
@@ -82,6 +121,7 @@ public sealed class CustomerFormViewModel : ViewModelBase
                 await _service.CreateAsync(new CreateCustomerRequest(
                     Name, Type, Null(Phone), Null(Email), Null(Address), discountRate));
 
+            ClearDraft();
             SaveCompleted?.Invoke();
         }
         catch (Exception ex) { ErrorMessage = ex.Message; }

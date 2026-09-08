@@ -152,8 +152,10 @@ public partial class MainWindow : Window
             }
             else if (page is Views.Products.ProductListView productView)
             {
-                if (isFirstLoad || ProductListViewModel.PendingOpenAddProduct)
+                if (isFirstLoad)
                     await productView.InitAsync();
+                else if (ProductListViewModel.PendingOpenAddProduct)
+                    productView.HandlePendingOpenAddProduct();
             }
             else if (page is Views.Purchasing.PurchasingView purchasingView)
             {
@@ -189,6 +191,11 @@ public partial class MainWindow : Window
             {
                 if (isFirstLoad)
                     await expenseView.InitAsync();
+            }
+            else if (page is Views.Users.UserManagementView userView)
+            {
+                if (isFirstLoad)
+                    await userView.InitAsync();
             }
             else if (page is Views.Settings.StoreSettingsView settingsView)
             {

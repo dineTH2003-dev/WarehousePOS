@@ -5,12 +5,17 @@ namespace WarehousePOS.Desktop.Views.Users;
 
 public partial class UserManagementView
 {
+    private readonly UserManagementViewModel _vm;
+
     public UserManagementView(UserManagementViewModel viewModel)
     {
         InitializeComponent();
+        _vm = viewModel;
         DataContext = viewModel;
         viewModel.ClearPasswordRequested += ClearPassword;
     }
+
+    public async Task InitAsync() => await _vm.LoadAsync();
 
     private void PasswordBox_PasswordChanged(object sender, RoutedEventArgs e)
     {
