@@ -5,7 +5,7 @@
       Title="Purchasing"
       Background="{StaticResource BackgroundBrush}">
 
-    <Grid Margin="24">
+    <Grid Margin="24" behaviors:ArrowNavigationBehavior.IsEnabled="True">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>

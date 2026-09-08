@@ -54,6 +54,7 @@ public sealed class PurchasingItemRowViewModel : ViewModelBase
     public string? ProductError   => Product == null ? "Product is required." : null;
     public string? QuantityError  => (Quantity <= 0 && FreeQuantity <= 0 && ClaimedQuantityReceived <= 0) ? "Qty must be > 0." : null;
     public string? ClaimedQtyError => ClaimedQuantityReceived > (Product?.ClaimedQuantity ?? 0) ? $"Max claim: {Product?.ClaimedQuantity ?? 0}." : null;
+    public string? UnitCostError  => (Quantity > 0 && UnitCost <= 0) ? "Unit cost must be > 0." : null;
 
     public bool HasPendingClaim => Product != null && Product.ClaimedQuantity > 0;
     public string ClaimedText => Product != null && Product.ClaimedQuantity > 0 ? $"Claimed Red: {Product.ClaimedQuantity}" : string.Empty;
@@ -159,6 +160,7 @@ public sealed class PurchasingItemRowViewModel : ViewModelBase
 
         OnPropertyChanged(nameof(UnitCost));
         OnPropertyChanged(nameof(TotalCost));
+        OnPropertyChanged(nameof(UnitCostError));
     }
 
     private void RecalculateUnitCost()
@@ -181,5 +183,6 @@ public sealed class PurchasingItemRowViewModel : ViewModelBase
 
         OnPropertyChanged(nameof(UnitCost));
         OnPropertyChanged(nameof(TotalCost));
+        OnPropertyChanged(nameof(UnitCostError));
     }
 }

@@ -13,7 +13,10 @@ public sealed record CustomerDto(
     string? Email,
     string? Address,
     decimal DiscountRate,
-    bool IsActive);
+    bool IsActive)
+{
+    public string DisplayName => string.IsNullOrWhiteSpace(Phone) ? Name : $"{Name} ({Phone})";
+};
 
 public sealed record CreateCustomerRequest(
     string Name,
