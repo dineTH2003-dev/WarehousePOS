@@ -5,26 +5,30 @@
          COLOR PALETTE
          ============================================================ -->
 
-    <!-- Primary brand color -->
-    <Color x:Key="PrimaryColor">#1A56DB</Color>
-    <Color x:Key="PrimaryDarkColor">#1E429F</Color>
-    <Color x:Key="PrimaryLightColor">#76A9FA</Color>
+    <!-- Happy Products brand palette -->
+    <Color x:Key="PrimaryColor">#29B56A</Color>
+    <Color x:Key="PrimaryDarkColor">#0F7F4F</Color>
+    <Color x:Key="PrimaryLightColor">#9AE38F</Color>
+    <Color x:Key="SecondaryColor">#0E1F38</Color>
+    <Color x:Key="SecondaryDarkColor">#081827</Color>
+    <Color x:Key="SecondaryLightColor">#294C73</Color>
 
     <!-- Success / danger / warning -->
-    <Color x:Key="SuccessColor">#0E9F6E</Color>
-    <Color x:Key="DangerColor">#E02424</Color>
+    <Color x:Key="SuccessColor">#16A34A</Color>
+    <Color x:Key="DangerColor">#E11D48</Color>
     <Color x:Key="WarningColor">#D97706</Color>
 
     <!-- Backgrounds -->
-    <Color x:Key="BackgroundColor">#F9FAFB</Color>
-    <Color x:Key="SidebarColor">#1F2937</Color>
+    <Color x:Key="BackgroundColor">#F3F7F2</Color>
+    <Color x:Key="SidebarColor">#0F1F2E</Color>
     <Color x:Key="CardColor">#FFFFFF</Color>
-    <Color x:Key="BorderColor">#E5E7EB</Color>
+    <Color x:Key="BorderColor">#D9E6DC</Color>
+    <Color x:Key="SurfaceAltColor">#EEF8F0</Color>
 
     <!-- Text -->
-    <Color x:Key="TextPrimaryColor">#111827</Color>
-    <Color x:Key="TextSecondaryColor">#6B7280</Color>
-    <Color x:Key="TextOnDarkColor">#F9FAFB</Color>
+    <Color x:Key="TextPrimaryColor">#10243E</Color>
+    <Color x:Key="TextSecondaryColor">#5B6F82</Color>
+    <Color x:Key="TextOnDarkColor">#F5F7FA</Color>
 
     <!-- ============================================================
          BRUSHES
@@ -33,6 +37,9 @@
     <SolidColorBrush x:Key="PrimaryBrush"        Color="{StaticResource PrimaryColor}" />
     <SolidColorBrush x:Key="PrimaryDarkBrush"    Color="{StaticResource PrimaryDarkColor}" />
     <SolidColorBrush x:Key="PrimaryLightBrush"   Color="{StaticResource PrimaryLightColor}" />
+    <SolidColorBrush x:Key="SecondaryBrush"      Color="{StaticResource SecondaryColor}" />
+    <SolidColorBrush x:Key="SecondaryDarkBrush"  Color="{StaticResource SecondaryDarkColor}" />
+    <SolidColorBrush x:Key="SecondaryLightBrush" Color="{StaticResource SecondaryLightColor}" />
 
     <SolidColorBrush x:Key="SuccessBrush"        Color="{StaticResource SuccessColor}" />
     <SolidColorBrush x:Key="DangerBrush"         Color="{StaticResource DangerColor}" />
@@ -42,6 +49,7 @@
     <SolidColorBrush x:Key="SidebarBrush"        Color="{StaticResource SidebarColor}" />
     <SolidColorBrush x:Key="CardBrush"           Color="{StaticResource CardColor}" />
     <SolidColorBrush x:Key="BorderBrush"         Color="{StaticResource BorderColor}" />
+    <SolidColorBrush x:Key="SurfaceAltBrush"     Color="{StaticResource SurfaceAltColor}" />
 
     <SolidColorBrush x:Key="TextPrimaryBrush"    Color="{StaticResource TextPrimaryColor}" />
     <SolidColorBrush x:Key="TextSecondaryBrush"  Color="{StaticResource TextSecondaryColor}" />
