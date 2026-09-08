@@ -23,6 +23,7 @@ public partial class MainWindow : Window
     private readonly INavigationService _nav;
     private readonly SessionContext _session;
     private readonly HashSet<object> _initializedPages = [];
+    private bool _shellInitialized;
 
     public MainWindow(INavigationService nav, SessionContext session)
     {
@@ -39,19 +40,33 @@ public partial class MainWindow : Window
         // Content property is null immediately after the call returns.
         MainFrame.Navigated += OnFrameNavigated;
 
-        Loaded += (_, _) =>
-        {
-            if (_session.IsLoggedIn)
-            {
-                UserLabel.Text = $"{_session.CurrentUser.FullName} ({_session.CurrentUser.Role})";
-                BtnReports.Visibility = _session.IsAdmin ? Visibility.Visible : Visibility.Collapsed;
-                BtnExpenses.Visibility = _session.IsAdmin ? Visibility.Visible : Visibility.Collapsed;
-                BtnUserManagement.Visibility = _session.IsAdmin ? Visibility.Visible : Visibility.Collapsed;
-            }
+        Loaded += (_, _) => InitializeShell();
+    }
 
-            // Navigate to POS as the default landing page
-            NavigateTo<PosViewModel>();
-        };
+    public object? TakeShellContent()
+    {
+        var content = Content;
+        Content = null;
+        return content;
+    }
+
+    public void InitializeShell()
+    {
+        if (_shellInitialized)
+            return;
+
+        _shellInitialized = true;
+
+        if (_session.IsLoggedIn)
+        {
+            UserLabel.Text = $"{_session.CurrentUser.FullName} ({_session.CurrentUser.Role})";
+            BtnReports.Visibility = _session.IsAdmin ? Visibility.Visible : Visibility.Collapsed;
+            BtnExpenses.Visibility = _session.IsAdmin ? Visibility.Visible : Visibility.Collapsed;
+            BtnUserManagement.Visibility = _session.IsAdmin ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        // Navigate to POS as the default landing page
+        NavigateTo<PosViewModel>();
     }
 
     // Called by WPF after Frame.Navigate() has fully committed — Content is populated here.
