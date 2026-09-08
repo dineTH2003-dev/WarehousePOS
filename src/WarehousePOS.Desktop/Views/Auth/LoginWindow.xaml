@@ -6,6 +6,7 @@
         MinWidth="820"
         Height="720"
         Width="1280"
+        WindowState="Maximized"
         ResizeMode="CanResize"
         WindowStartupLocation="CenterScreen"
         Background="#101820">

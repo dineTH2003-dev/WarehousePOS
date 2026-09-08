@@ -7,6 +7,8 @@ namespace WarehousePOS.Desktop.Views.Auth;
 public partial class LoginWindow : Window
 {
     private readonly LoginViewModel _vm;
+    private readonly TaskCompletionSource<bool> _loginCompletion =
+        new(TaskCreationOptions.RunContinuationsAsynchronously);
 
     public LoginWindow(LoginViewModel vm)
     {
@@ -15,7 +17,10 @@ public partial class LoginWindow : Window
         DataContext = vm;
         vm.LoginSucceeded += OnLoginSucceeded;
         Loaded += (_, _) => UsernameBox.Focus();
+        Closed += (_, _) => _loginCompletion.TrySetResult(false);
     }
+
+    public Task<bool> WaitForLoginAsync() => _loginCompletion.Task;
 
     private void LoginButton_Click(object sender, RoutedEventArgs e)
     {
@@ -35,7 +40,6 @@ public partial class LoginWindow : Window
 
     private void OnLoginSucceeded()
     {
-        DialogResult = true;
-        Close();
+        _loginCompletion.TrySetResult(true);
     }
 }

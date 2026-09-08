@@ -4,6 +4,7 @@
         Title="Warehouse POS"
         Height="768"
         Width="1280"
+        WindowState="Maximized"
         MinHeight="600"
         MinWidth="1024"
         WindowStartupLocation="CenterScreen"

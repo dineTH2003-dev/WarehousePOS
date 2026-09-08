@@ -26,6 +26,7 @@ public partial class MainWindow : Window
     private readonly WarehousePOS.Application.Common.ICloudBackupService _cloudService;
     private readonly HashSet<object> _initializedPages = [];
     private System.Windows.Threading.DispatcherTimer? _autoBackupTimer;
+    private bool _shellInitialized;
 
     public MainWindow(
         INavigationService nav,
@@ -48,22 +49,36 @@ public partial class MainWindow : Window
         // Content property is null immediately after the call returns.
         MainFrame.Navigated += OnFrameNavigated;
 
-        Loaded += (_, _) =>
+        Loaded += (_, _) => InitializeShell();
+    }
+
+    public object? TakeShellContent()
+    {
+        var content = Content;
+        Content = null;
+        return content;
+    }
+
+    public void InitializeShell()
+    {
+        if (_shellInitialized)
+            return;
+
+        _shellInitialized = true;
+
+        if (_session.IsLoggedIn)
         {
-            if (_session.IsLoggedIn)
-            {
-                UserLabel.Text = $"{_session.CurrentUser.FullName} ({_session.CurrentUser.Role})";
-                BtnReports.Visibility = _session.IsAdmin ? Visibility.Visible : Visibility.Collapsed;
-                BtnExpenses.Visibility = _session.IsAdmin ? Visibility.Visible : Visibility.Collapsed;
-                BtnUserManagement.Visibility = _session.IsAdmin ? Visibility.Visible : Visibility.Collapsed;
-            }
+            UserLabel.Text = $"{_session.CurrentUser.FullName} ({_session.CurrentUser.Role})";
+            BtnReports.Visibility = _session.IsAdmin ? Visibility.Visible : Visibility.Collapsed;
+            BtnExpenses.Visibility = _session.IsAdmin ? Visibility.Visible : Visibility.Collapsed;
+            BtnUserManagement.Visibility = _session.IsAdmin ? Visibility.Visible : Visibility.Collapsed;
+        }
 
-            // Navigate to POS as the default landing page
-            NavigateTo<PosViewModel>();
+        // Navigate to POS as the default landing page
+        NavigateTo<PosViewModel>();
 
-            // Start automated daily backup schedule
-            StartAutoBackupTimer();
-        };
+        // Start automated daily backup schedule
+        StartAutoBackupTimer();
     }
 
     private void StartAutoBackupTimer()
