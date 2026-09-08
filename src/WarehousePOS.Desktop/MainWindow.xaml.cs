@@ -266,6 +266,9 @@ public partial class MainWindow : Window
     private void BtnSettings_Click(object sender, RoutedEventArgs e)
         => NavigateTo<StoreSettingsViewModel>();
 
+    private void BtnBackup_Click(object sender, RoutedEventArgs e)
+        => NavigateTo<StoreSettingsViewModel>();
+
     private void NavigateToAuthorized<TViewModel>() where TViewModel : class
     {
         if (!_session.IsAdmin)
