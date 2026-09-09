@@ -25,7 +25,10 @@
             </StackPanel>
             <Button Grid.Column="1" Content="+ Add Customer"
                     Style="{StaticResource PrimaryButton}"
-                    Command="{Binding AddCommand}"/>
+                    Command="{Binding AddCommand}"
+                    Width="150"
+                    Height="38"
+                    Padding="0"/>
         </Grid>
 
         <!-- Filters -->
@@ -34,6 +37,7 @@
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
                 <StackPanel Grid.Column="0" Width="340">
@@ -44,6 +48,15 @@
                                  Tag="Phone number or name"
                                  ToolTip="Search customer by name or phone number" />
                     </Border>
+                </StackPanel>
+
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Bottom" Margin="0,0,0,6">
+                    <CheckBox Content="Show Inactive Customers"
+                              Style="{StaticResource ModernSwitch}"
+                              IsChecked="{Binding ShowInactive}"
+                              ToolTip="Toggle visibility of deactivated customers"/>
+                    <Button Content="Refresh" Style="{StaticResource SecondaryButton}"
+                            Margin="16,0,0,0" Command="{Binding RefreshCommand}"/>
                 </StackPanel>
             </Grid>
         </Border>
@@ -56,17 +69,29 @@
                     <DataGridTextColumn Header="Type"          Binding="{Binding TypeLabel}" Width="100"/>
                     <DataGridTextColumn Header="Discount Rate" Binding="{Binding DiscountRate, StringFormat='{}{0:G29}%'}" Width="110"/>
                     <DataGridTextColumn Header="Phone"         Binding="{Binding Phone}"     Width="130"/>
-                    <DataGridTextColumn Header="Email"         Binding="{Binding Email}"     Width="180"/>
-                    <DataGridTemplateColumn Header="Actions" Width="170">
+                    <DataGridTextColumn Header="Email"         Binding="{Binding Email}"     Width="*"/>
+                    <DataGridTemplateColumn Header="Status" Width="90">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Border Style="{StaticResource StatusBadge}">
+                                    <TextBlock Text="{Binding IsActive, Converter={StaticResource BoolToStatusConverter}}"
+                                               Style="{StaticResource StatusBadgeText}" />
+                                </Border>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    <DataGridTemplateColumn Header="Actions" Width="195">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <StackPanel Orientation="Horizontal">
                                     <Button Content="Edit"
-                                            Style="{StaticResource SecondaryButton}" Padding="8,4" Margin="0,0,6,0"
+                                            Style="{StaticResource TableSecondaryButton}"
+                                            Width="60" Margin="0,0,8,0"
                                             Command="{Binding DataContext.EditCommand, RelativeSource={RelativeSource AncestorType=Page}}"
                                             CommandParameter="{Binding}"/>
                                     <Button Content="Purchased"
-                                            Style="{StaticResource PrimaryButton}" Padding="10,4"
+                                            Style="{StaticResource TablePrimaryButton}"
+                                            Width="85"
                                             Command="{Binding DataContext.PurchasedCommand, RelativeSource={RelativeSource AncestorType=Page}}"
                                             CommandParameter="{Binding}"/>
                                 </StackPanel>

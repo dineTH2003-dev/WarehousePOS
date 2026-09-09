@@ -64,8 +64,8 @@
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <Button Content="+ Add"
-                                                Style="{StaticResource PrimaryButton}"
-                                                Padding="10,4"
+                                                Style="{StaticResource TablePrimaryButton}"
+                                                Width="70"
                                                 Command="{Binding DataContext.AddToCartCommand, RelativeSource={RelativeSource AncestorType=Page}}"
                                                 CommandParameter="{Binding}"/>
                                     </DataTemplate>

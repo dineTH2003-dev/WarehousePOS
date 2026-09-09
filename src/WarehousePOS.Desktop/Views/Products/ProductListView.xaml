@@ -29,11 +29,14 @@
                         Style="{StaticResource SecondaryButton}"
                         Command="{Binding ManageCategoriesCommand}"
                         Margin="0,0,10,0"
-                        Padding="14,8"/>
+                        Height="38"
+                        Padding="14,0"/>
                 <Button Content="+ Add Product"
                         Style="{StaticResource PrimaryButton}"
                         Command="{Binding AddCommand}"
-                        Padding="16,8"/>
+                        Width="150"
+                        Height="38"
+                        Padding="0"/>
             </StackPanel>
         </Grid>
 
@@ -120,19 +123,28 @@
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
-                    <DataGridTextColumn Header="Status"          Binding="{Binding IsActive, Converter={StaticResource BoolToStatusConverter}}" Width="90"/>
-                    <DataGridTemplateColumn Header="Actions"     Width="160">
+                    <DataGridTemplateColumn Header="Status" Width="90">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Border Style="{StaticResource StatusBadge}">
+                                    <TextBlock Text="{Binding IsActive, Converter={StaticResource BoolToStatusConverter}}"
+                                               Style="{StaticResource StatusBadgeText}" />
+                                </Border>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    <DataGridTemplateColumn Header="Actions" Width="195">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <StackPanel Orientation="Horizontal">
                                     <Button Content="Edit"
-                                            Style="{StaticResource SecondaryButton}"
-                                            Padding="8,4" Margin="0,0,6,0"
+                                            Style="{StaticResource TableSecondaryButton}"
+                                            Width="60" Margin="0,0,8,0"
                                             Command="{Binding DataContext.EditCommand, RelativeSource={RelativeSource AncestorType=Page}}"
                                             CommandParameter="{Binding}"/>
                                     <Button Content="{Binding IsActive, Converter={StaticResource BoolToToggleTextConverter}}"
-                                            Style="{StaticResource SecondaryButton}"
-                                            Padding="8,4"
+                                            Style="{StaticResource TableSecondaryButton}"
+                                            Width="85"
                                             Command="{Binding DataContext.ToggleActiveCommand, RelativeSource={RelativeSource AncestorType=Page}}"
                                             CommandParameter="{Binding}"/>
                                 </StackPanel>

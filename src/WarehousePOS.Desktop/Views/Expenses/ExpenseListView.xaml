@@ -94,6 +94,7 @@
                 <TextBox Text="{Binding ReferenceNo, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource FormTextBox}" Margin="0,0,0,20"/>
 
                 <Button Content="Save Expense Entry" Style="{StaticResource DangerButton}"
+                        Height="38"
                         Command="{Binding AddExpenseCommand}"
                         IsEnabled="{Binding IsBusy, Converter={StaticResource InvertBoolConverter}}"/>
             </StackPanel>
