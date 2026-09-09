@@ -35,7 +35,7 @@
                     </Grid.RowDefinitions>
                     <Grid Margin="0,0,0,16">
                         <TextBlock Text="Users" Style="{StaticResource H3}"/>
-                        <Button Content="Refresh" Style="{StaticResource SecondaryButton}" Command="{Binding RefreshCommand}" HorizontalAlignment="Right"/>
+                        <Button Content="Refresh" Style="{StaticResource SecondaryButton}" Height="32" Padding="14,4" Command="{Binding RefreshCommand}" HorizontalAlignment="Right"/>
                     </Grid>
                     <DataGrid Grid.Row="1" ItemsSource="{Binding Users}" SelectedItem="{Binding SelectedUser}" AutoGenerateColumns="False" IsReadOnly="True" RowStyle="{StaticResource InactiveDataGridRow}">
                         <DataGrid.Columns>
@@ -52,10 +52,12 @@
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
-                            <DataGridTemplateColumn Header="Action" Width="110">
+                            <DataGridTemplateColumn Header="Action" Width="130">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
-                                        <Button Content="Activate/Deactivate" FontSize="11" Padding="4,2"
+                                        <Button Content="{Binding IsActive, Converter={StaticResource BoolToToggleTextConverter}}"
+                                                Style="{StaticResource TableSecondaryButton}"
+                                                Width="85"
                                                 Command="{Binding DataContext.ToggleActiveCommand, RelativeSource={RelativeSource AncestorType=Page}}"
                                                 CommandParameter="{Binding}"/>
                                     </DataTemplate>
@@ -95,8 +97,8 @@
                     <ComboBox ItemsSource="{Binding Roles}" SelectedItem="{Binding Role}" Margin="0,0,0,20"/>
 
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                        <Button Content="Clear" Style="{StaticResource SecondaryButton}" Command="{Binding ClearCommand}" Margin="0,0,8,0"/>
-                        <Button Content="{Binding SaveButtonText}" Style="{StaticResource PrimaryButton}" Command="{Binding SaveCommand}"/>
+                        <Button Content="Clear" Style="{StaticResource SecondaryButton}" Width="80" Height="36" Command="{Binding ClearCommand}" Margin="0,0,8,0"/>
+                        <Button Content="{Binding SaveButtonText}" Style="{StaticResource PrimaryButton}" MinWidth="110" Height="36" Command="{Binding SaveCommand}" Padding="16,0"/>
                     </StackPanel>
                 </StackPanel>
             </Border>
