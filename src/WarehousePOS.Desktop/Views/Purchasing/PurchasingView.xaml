@@ -36,18 +36,22 @@
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <!-- Row 0: Supplier & Purchase Notes -->
+                <!-- Row 0: Supplier, Payment Method, Purchase Notes -->
                 <Grid Grid.Row="0">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="320"/>
+                        <ColumnDefinition Width="340"/>
                         <ColumnDefinition Width="16"/>
+                        <ColumnDefinition Width="340"/>
+                        <ColumnDefinition Width="16"/>
+                        <ColumnDefinition Width="340"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
 
                     <!-- Supplier Selection -->
                     <StackPanel Grid.Column="0">
                         <TextBlock Text="Select Supplier *" Style="{StaticResource LabelText}" Margin="0,0,0,6"/>
-                        <ComboBox ItemsSource="{Binding Suppliers}"
+                        <ComboBox Width="340"
+                                  ItemsSource="{Binding Suppliers}"
                                   SelectedValuePath="Id"
                                   DisplayMemberPath="DisplayName"
                                   SelectedValue="{Binding SelectedSupplierId}">
@@ -57,60 +61,63 @@
                                    Visibility="{Binding SupplierError, Converter={StaticResource NullToVisibilityConverter}}" TextWrapping="Wrap"/>
                     </StackPanel>
 
-                    <!-- Purchase Notes -->
-                    <StackPanel Grid.Column="2">
-                        <TextBlock Text="Purchase Order Notes / Invoice No." Style="{StaticResource LabelText}" Margin="0,0,0,6"/>
-                        <TextBox Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}"
-                                 Style="{StaticResource FormTextBox}"
-                                 ToolTip="Optional reference notes or supplier invoice number"/>
-                    </StackPanel>
-                </Grid>
-
-                <!-- Row 2: Payment Method, Paid Amount, Remaining Balance, Payment Details -->
-                <Grid Grid.Row="2">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="160"/>
-                        <ColumnDefinition Width="12"/>
-                        <ColumnDefinition Width="140"/>
-                        <ColumnDefinition Width="12"/>
-                        <ColumnDefinition Width="150"/>
-                        <ColumnDefinition Width="12"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-
                     <!-- Payment Method -->
-                    <StackPanel Grid.Column="0">
-                        <TextBlock Text="Payment Method *" Style="{StaticResource LabelText}" FontSize="11" Margin="0,0,0,4"/>
-                        <ComboBox ItemsSource="{Binding PaymentMethods}"
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Text="Payment Method *" Style="{StaticResource LabelText}" Margin="0,0,0,6"/>
+                        <ComboBox Width="340"
+                                  ItemsSource="{Binding PaymentMethods}"
                                   SelectedItem="{Binding SelectedPaymentMethod}">
                             <ComboBox.ToolTip>Select payment method used for this transaction</ComboBox.ToolTip>
                         </ComboBox>
                     </StackPanel>
 
+                    <!-- Purchase Notes -->
+                    <StackPanel Grid.Column="4">
+                        <TextBlock Text="Purchase Order Notes / Invoice No." Style="{StaticResource LabelText}" Margin="0,0,0,6"/>
+                        <TextBox Width="340"
+                                 Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}"
+                                 Style="{StaticResource FormTextBox}"
+                                 ToolTip="Optional reference notes or supplier invoice number"/>
+                    </StackPanel>
+                </Grid>
+
+                <!-- Row 2: Paid Amount, Remaining Balance, Payment Details -->
+                <Grid Grid.Row="2">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="340"/>
+                        <ColumnDefinition Width="16"/>
+                        <ColumnDefinition Width="340"/>
+                        <ColumnDefinition Width="16"/>
+                        <ColumnDefinition Width="340"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
                     <!-- Paid Amount -->
-                    <StackPanel Grid.Column="2">
-                        <TextBlock Text="Paid Amount (Rs.) *" Style="{StaticResource LabelText}" FontSize="11" Margin="0,0,0,4"/>
-                        <TextBox Text="{Binding PaidAmountText, UpdateSourceTrigger=PropertyChanged}"
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="Paid Amount (Rs.) *" Style="{StaticResource LabelText}" Margin="0,0,0,6"/>
+                        <TextBox Width="340"
+                                 Text="{Binding PaidAmountText, UpdateSourceTrigger=PropertyChanged}"
                                  behaviors:DecimalOnlyBehavior.IsEnabled="True"
                                  Style="{StaticResource FormTextBox}"
                                  ToolTip="Amount paid for this transaction (defaults to Total Cost)"/>
-                        <TextBlock Text="{Binding PaidAmountError}" Foreground="{StaticResource DangerBrush}" FontSize="11" Margin="0,2,0,0"
+                        <TextBlock Text="{Binding PaidAmountError}" Foreground="{StaticResource DangerBrush}" FontSize="11" Margin="0,4,0,0"
                                    Visibility="{Binding PaidAmountError, Converter={StaticResource NullToVisibilityConverter}}" TextWrapping="Wrap"/>
                     </StackPanel>
 
                     <!-- Remaining Balance -->
-                    <StackPanel Grid.Column="4">
-                        <TextBlock Text="Remaining Balance" Style="{StaticResource LabelText}" FontSize="11" Margin="0,0,0,4"/>
-                        <Border Background="#FFFBEB" BorderBrush="#FCD34D" BorderThickness="1" CornerRadius="6" Padding="10,7">
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Text="Remaining Balance" Style="{StaticResource LabelText}" Margin="0,0,0,6"/>
+                        <Border Width="340" Background="#FFFBEB" BorderBrush="#FCD34D" BorderThickness="1" CornerRadius="6" Padding="10,7">
                             <TextBlock Text="{Binding RemainingBalance, StringFormat='Rs. {0:N2}'}"
                                        FontWeight="Bold" Foreground="#B45309" FontSize="13" VerticalAlignment="Center"/>
                         </Border>
                     </StackPanel>
 
                     <!-- Payment Details -->
-                    <StackPanel Grid.Column="6">
-                        <TextBlock Text="Payment Reference / Details" Style="{StaticResource LabelText}" FontSize="11" Margin="0,0,0,4"/>
-                        <TextBox Text="{Binding PaymentDetails, UpdateSourceTrigger=PropertyChanged}"
+                    <StackPanel Grid.Column="4">
+                        <TextBlock Text="Payment Reference / Details" Style="{StaticResource LabelText}" Margin="0,0,0,6"/>
+                        <TextBox Width="340"
+                                 Text="{Binding PaymentDetails, UpdateSourceTrigger=PropertyChanged}"
                                  Style="{StaticResource FormTextBox}"
                                  ToolTip="Optional cheque number, bank transaction ID, or payment notes"/>
                     </StackPanel>

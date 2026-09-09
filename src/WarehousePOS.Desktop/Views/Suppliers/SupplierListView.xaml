@@ -18,7 +18,11 @@
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
-            <TextBlock Text="Suppliers" Style="{StaticResource H2}" VerticalAlignment="Center"/>
+            <StackPanel Grid.Column="0">
+                <TextBlock Text="Suppliers" Style="{StaticResource H2}"/>
+                <TextBlock Text="Manage supplier contacts, supply lines, and outstanding balances"
+                           Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" Margin="0,2,0,0"/>
+            </StackPanel>
             <Button Grid.Column="1" Content="+ Add Supplier"
                     Style="{StaticResource PrimaryButton}"
                     Command="{Binding AddCommand}"/>
@@ -33,26 +37,17 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <Border Grid.Column="0" Style="{StaticResource SearchHoverCard}" Width="360" Padding="10,6" Margin="0,0,16,0">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Text="Supplier:" FontWeight="Bold" Foreground="{StaticResource PrimaryBrush}" VerticalAlignment="Center" Margin="0,0,8,0" FontSize="13"/>
-                        <Grid Grid.Column="1" Grid.ColumnSpan="2">
-                            <Path Style="{StaticResource SearchIcon}" />
-                            <TextBox Style="{StaticResource FormTextBox}"
-                                     Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                                     Padding="34,8,8,8"
-                                     Tag="Enter supplier name or contact..."
-                                     ToolTip="Search supplier name or contact person" />
-                        </Grid>
-                    </Grid>
-                </Border>
+                <StackPanel Grid.Column="0" Width="340" Margin="0,0,16,0">
+                    <TextBlock Text="Supplier Search" Style="{StaticResource LabelText}" Margin="0,0,0,4"/>
+                    <Border Style="{StaticResource SearchHoverCard}" Width="340" Padding="0">
+                        <TextBox Style="{StaticResource SearchTextBox}"
+                                 Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                                 Tag="Enter supplier name or contact..."
+                                 ToolTip="Search supplier name or contact person" />
+                    </Border>
+                </StackPanel>
 
-                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Bottom" Margin="0,0,0,6">
                     <CheckBox Content="Show Inactive Suppliers"
                               Style="{StaticResource ModernSwitch}"
                               IsChecked="{Binding ShowInactive}"
