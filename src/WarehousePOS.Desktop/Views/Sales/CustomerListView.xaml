@@ -18,30 +18,33 @@
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
-            <TextBlock Text="Customer Directory" Style="{StaticResource H2}" VerticalAlignment="Center"/>
+            <StackPanel Grid.Column="0">
+                <TextBlock Text="Customer Directory" Style="{StaticResource H2}"/>
+                <TextBlock Text="Manage customer accounts, wholesale/retail pricing tiers, and track transaction history"
+                           Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" Margin="0,2,0,0"/>
+            </StackPanel>
             <Button Grid.Column="1" Content="+ Add Customer"
                     Style="{StaticResource PrimaryButton}"
                     Command="{Binding AddCommand}"/>
         </Grid>
 
         <!-- Filters -->
-        <Border Grid.Row="1" Style="{StaticResource SearchHoverCard}" Margin="0,0,0,16" Padding="12,8" HorizontalAlignment="Left" Width="360">
+        <Border Grid.Row="1" Style="{StaticResource Card}" Margin="0,0,0,16" Padding="16,12">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
-                <TextBlock Grid.Column="0" Text="Customer:" FontWeight="Bold" Foreground="{StaticResource PrimaryBrush}" VerticalAlignment="Center" Margin="0,0,8,0" FontSize="13"/>
-                <TextBlock Grid.Column="1" Text="🔍" FontSize="14" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="{StaticResource TextSecondaryBrush}"/>
-                <Grid Grid.Column="1" Grid.ColumnSpan="2">
-                    <Path Style="{StaticResource SearchIcon}" />
-                    <TextBox Style="{StaticResource FormTextBox}"
-                             Padding="34,8,8,8"
-                             Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                             Tag="Phone number or name"
-                             ToolTip="Search customer by name or phone number" />
-                </Grid>
+
+                <StackPanel Grid.Column="0" Width="340">
+                    <TextBlock Text="Customer Search" Style="{StaticResource LabelText}" Margin="0,0,0,4"/>
+                    <Border Style="{StaticResource SearchHoverCard}" Width="340" Padding="0">
+                        <TextBox Style="{StaticResource SearchTextBox}"
+                                 Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                                 Tag="Phone number or name"
+                                 ToolTip="Search customer by name or phone number" />
+                    </Border>
+                </StackPanel>
             </Grid>
         </Border>
 

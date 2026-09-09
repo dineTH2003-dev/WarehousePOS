@@ -6,83 +6,100 @@
       Background="{StaticResource BackgroundBrush}">
 
     <Grid Margin="24">
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="340"/>
-            <ColumnDefinition Width="20"/>
-            <ColumnDefinition Width="*"/>
-        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
 
-        <Border Grid.Column="0" Style="{StaticResource Card}" VerticalAlignment="Top">
-            <StackPanel>
-                <TextBlock Text="{Binding FormTitle}" Style="{StaticResource H3}" Margin="0,0,0,16"/>
+        <!-- Header -->
+        <StackPanel Grid.Row="0" Margin="0,0,0,16">
+            <TextBlock Text="User Management" Style="{StaticResource H2}"/>
+            <TextBlock Text="Manage system accounts, user roles, authentication, and permissions"
+                       Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" Margin="0,2,0,0"/>
+        </StackPanel>
 
-                <Border Background="#FEF2F2" BorderBrush="{StaticResource DangerBrush}" BorderThickness="1"
-                        CornerRadius="6" Padding="10,8" Margin="0,0,0,12"
-                        Visibility="{Binding HasError, Converter={StaticResource BoolToVisibilityConverter}}">
-                    <TextBlock Text="{Binding ErrorMessage}" Foreground="{StaticResource DangerBrush}" TextWrapping="Wrap"/>
-                </Border>
-                <Border Background="#F0FDF4" BorderBrush="{StaticResource SuccessBrush}" BorderThickness="1"
-                        CornerRadius="6" Padding="10,8" Margin="0,0,0,12"
-                        Visibility="{Binding HasSuccess, Converter={StaticResource BoolToVisibilityConverter}}">
-                    <TextBlock Text="{Binding SuccessMessage}" Foreground="{StaticResource SuccessBrush}" TextWrapping="Wrap"/>
-                </Border>
+        <!-- Content Area -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="24"/>
+                <ColumnDefinition Width="340"/>
+            </Grid.ColumnDefinitions>
 
-                <TextBlock Text="Username *" Style="{StaticResource FormLabel}"/>
-                <TextBox Text="{Binding Username}" IsReadOnly="{Binding IsEditing}" Style="{StaticResource FormTextBox}" Margin="0,0,0,12"/>
-
-                <TextBlock Text="Full Name *" Style="{StaticResource FormLabel}"/>
-                <TextBox Text="{Binding FullName, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource FormTextBox}" Margin="0,0,0,12"/>
-
-                <TextBlock Text="Password" Style="{StaticResource FormLabel}"/>
-                <PasswordBox x:Name="PasswordBox" PasswordChanged="PasswordBox_PasswordChanged" Style="{StaticResource FormPasswordBox}" Margin="0,0,0,12"/>
-
-                <TextBlock Text="Role *" Style="{StaticResource FormLabel}"/>
-                <ComboBox ItemsSource="{Binding Roles}" SelectedItem="{Binding Role}" Margin="0,0,0,20"/>
-
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                    <Button Content="Clear" Style="{StaticResource SecondaryButton}" Command="{Binding ClearCommand}" Margin="0,0,8,0"/>
-                    <Button Content="{Binding SaveButtonText}" Style="{StaticResource PrimaryButton}" Command="{Binding SaveCommand}"/>
-                </StackPanel>
-            </StackPanel>
-        </Border>
-
-        <Border Grid.Column="2" Style="{StaticResource Card}">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
-                </Grid.RowDefinitions>
-                <Grid Margin="0,0,0,16">
-                    <TextBlock Text="Users" Style="{StaticResource H3}"/>
-                    <Button Content="Refresh" Style="{StaticResource SecondaryButton}" Command="{Binding RefreshCommand}" HorizontalAlignment="Right"/>
+            <!-- Left Column: Users List Card -->
+            <Border Grid.Column="0" Style="{StaticResource Card}">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <Grid Margin="0,0,0,16">
+                        <TextBlock Text="Users" Style="{StaticResource H3}"/>
+                        <Button Content="Refresh" Style="{StaticResource SecondaryButton}" Command="{Binding RefreshCommand}" HorizontalAlignment="Right"/>
+                    </Grid>
+                    <DataGrid Grid.Row="1" ItemsSource="{Binding Users}" SelectedItem="{Binding SelectedUser}" AutoGenerateColumns="False" IsReadOnly="True" RowStyle="{StaticResource InactiveDataGridRow}">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Username" Binding="{Binding Username}" Width="130"/>
+                            <DataGridTextColumn Header="Full Name" Binding="{Binding FullName}" Width="*"/>
+                            <DataGridTextColumn Header="Role" Binding="{Binding Role}" Width="100"/>
+                            <DataGridTemplateColumn Header="Status" Width="90">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Border Style="{StaticResource StatusBadge}">
+                                            <TextBlock Text="{Binding IsActive, Converter={StaticResource BoolToStatusConverter}}"
+                                                       Style="{StaticResource StatusBadgeText}" />
+                                        </Border>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn Header="Action" Width="110">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Button Content="Activate/Deactivate" FontSize="11" Padding="4,2"
+                                                Command="{Binding DataContext.ToggleActiveCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                CommandParameter="{Binding}"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
                 </Grid>
-                <DataGrid Grid.Row="1" ItemsSource="{Binding Users}" SelectedItem="{Binding SelectedUser}" AutoGenerateColumns="False" IsReadOnly="True" RowStyle="{StaticResource InactiveDataGridRow}">
-                    <DataGrid.Columns>
-                        <DataGridTextColumn Header="Username" Binding="{Binding Username}" Width="130"/>
-                        <DataGridTextColumn Header="Full Name" Binding="{Binding FullName}" Width="*"/>
-                        <DataGridTextColumn Header="Role" Binding="{Binding Role}" Width="100"/>
-                        <DataGridTemplateColumn Header="Status" Width="90">
-                            <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
-                                    <Border Style="{StaticResource StatusBadge}">
-                                        <TextBlock Text="{Binding IsActive, Converter={StaticResource BoolToStatusConverter}}"
-                                                   Style="{StaticResource StatusBadgeText}" />
-                                    </Border>
-                                </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                        </DataGridTemplateColumn>
-                        <DataGridTemplateColumn Header="Action" Width="110">
-                            <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
-                                    <Button Content="Activate/Deactivate" FontSize="11" Padding="4,2"
-                                            Command="{Binding DataContext.ToggleActiveCommand, RelativeSource={RelativeSource AncestorType=Page}}"
-                                            CommandParameter="{Binding}"/>
-                                </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                        </DataGridTemplateColumn>
-                    </DataGrid.Columns>
-                </DataGrid>
-            </Grid>
-        </Border>
+            </Border>
+
+            <!-- Right Column: Add/Edit User Form Card -->
+            <Border Grid.Column="2" Style="{StaticResource Card}" VerticalAlignment="Top">
+                <StackPanel>
+                    <TextBlock Text="{Binding FormTitle}" Style="{StaticResource H3}" Margin="0,0,0,16"/>
+
+                    <Border Background="#FEF2F2" BorderBrush="{StaticResource DangerBrush}" BorderThickness="1"
+                            CornerRadius="6" Padding="10,8" Margin="0,0,0,12"
+                            Visibility="{Binding HasError, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <TextBlock Text="{Binding ErrorMessage}" Foreground="{StaticResource DangerBrush}" TextWrapping="Wrap"/>
+                    </Border>
+                    <Border Background="#F0FDF4" BorderBrush="{StaticResource SuccessBrush}" BorderThickness="1"
+                            CornerRadius="6" Padding="10,8" Margin="0,0,0,12"
+                            Visibility="{Binding HasSuccess, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <TextBlock Text="{Binding SuccessMessage}" Foreground="{StaticResource SuccessBrush}" TextWrapping="Wrap"/>
+                    </Border>
+
+                    <TextBlock Text="Username *" Style="{StaticResource FormLabel}"/>
+                    <TextBox Text="{Binding Username}" IsReadOnly="{Binding IsEditing}" Style="{StaticResource FormTextBox}" Margin="0,0,0,12"/>
+
+                    <TextBlock Text="Full Name *" Style="{StaticResource FormLabel}"/>
+                    <TextBox Text="{Binding FullName, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource FormTextBox}" Margin="0,0,0,12"/>
+
+                    <TextBlock Text="Password" Style="{StaticResource FormLabel}"/>
+                    <PasswordBox x:Name="PasswordBox" PasswordChanged="PasswordBox_PasswordChanged" Style="{StaticResource FormPasswordBox}" Margin="0,0,0,12"/>
+
+                    <TextBlock Text="Role *" Style="{StaticResource FormLabel}"/>
+                    <ComboBox ItemsSource="{Binding Roles}" SelectedItem="{Binding Role}" Margin="0,0,0,20"/>
+
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                        <Button Content="Clear" Style="{StaticResource SecondaryButton}" Command="{Binding ClearCommand}" Margin="0,0,8,0"/>
+                        <Button Content="{Binding SaveButtonText}" Style="{StaticResource PrimaryButton}" Command="{Binding SaveCommand}"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </Grid>
     </Grid>
 </Page>

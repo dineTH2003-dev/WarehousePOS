@@ -20,7 +20,7 @@
 
     <!-- Backgrounds -->
     <Color x:Key="BackgroundColor">#F3F7F2</Color>
-    <Color x:Key="SidebarColor">#0F1F2E</Color>
+    <Color x:Key="SidebarColor">#FFFFFF</Color>
     <Color x:Key="CardColor">#FFFFFF</Color>
     <Color x:Key="BorderColor">#D9E6DC</Color>
     <Color x:Key="SurfaceAltColor">#EEF8F0</Color>
