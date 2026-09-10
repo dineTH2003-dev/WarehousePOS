@@ -1,154 +1,1088 @@
 <Page x:Class="WarehousePOS.Desktop.Views.Reports.ReportsView"
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:reports="clr-namespace:WarehousePOS.Application.Reports;assembly=WarehousePOS.Application"
       Title="Reports &amp; Analytics"
       KeepAlive="True"
       Background="{StaticResource BackgroundBrush}">
 
-    <Grid Margin="24">
+    <Grid Margin="20">
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!-- Header -->
-        <Grid Grid.Row="0" Margin="0,0,0,16">
+        <!-- ── Header ──────────────────────────────────────────────────────── -->
+        <Grid Grid.Row="0" Margin="0,0,0,12">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
             <StackPanel Grid.Column="0">
                 <TextBlock Text="Reports &amp; Executive Analytics" Style="{StaticResource H2}"/>
-                <TextBlock Text="Monitor daily sales revenue, inventory stock valuations, and product velocity reports"
-                           Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" Margin="0,2,0,0"/>
+                <TextBlock Text="Comprehensive financial, inventory, purchasing, sales, and customer intelligence"
+                           Foreground="{StaticResource TextSecondaryBrush}" FontSize="13" Margin="0,2,0,0"/>
             </StackPanel>
-            <Button Grid.Column="1" Content="Refresh All Reports"
+            <Button Grid.Column="1" Content="🔄  Refresh All Reports"
                     Style="{StaticResource PrimaryButton}"
                     Command="{Binding RefreshCommand}"
-                    Width="160" Height="38" Padding="0"/>
+                    IsEnabled="{Binding IsBusy, Converter={StaticResource InvertBoolConverter}}"
+                    Width="170" Height="38" Padding="0"/>
         </Grid>
 
-        <!-- Top Row: Daily Sales & Stock Valuation Cards -->
-        <Grid Grid.Row="1" Margin="0,0,0,16">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="16"/>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
+        <!-- ── Date Filter Bar & Active Filter Feedback ────────────────────── -->
+        <Border Grid.Row="1" Style="{StaticResource Card}" Margin="0,0,0,16" Padding="14">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
 
-            <!-- Daily Sales Summary Card -->
-            <Border Grid.Column="0" Style="{StaticResource Card}">
-                <StackPanel>
-                    <Grid Margin="0,0,0,12">
-                        <TextBlock Text="Daily Sales Summary" Style="{StaticResource H3}"/>
-                        <DatePicker SelectedDate="{Binding SelectedDate}" HorizontalAlignment="Right" Width="140"/>
-                    </Grid>
+                <WrapPanel Grid.Column="0" VerticalAlignment="Center">
+                    <TextBlock Text="Date Range:" FontWeight="Bold" Foreground="{StaticResource TextPrimaryBrush}" VerticalAlignment="Center" Margin="0,0,12,0"/>
 
-                    <Grid Margin="0,0,0,6">
-                        <TextBlock Text="Total Transactions:" Foreground="{StaticResource TextMutedBrush}"/>
-                        <TextBlock Text="{Binding DailySales.TotalSalesCount}" HorizontalAlignment="Right" FontWeight="Bold"/>
-                    </Grid>
+                    <ComboBox ItemsSource="{Binding PresetOptions}" SelectedItem="{Binding SelectedPreset}" Width="130" Margin="0,0,12,0" VerticalAlignment="Center"/>
 
-                    <Grid Margin="0,0,0,6">
-                        <TextBlock Text="Gross Sales:" Foreground="{StaticResource TextMutedBrush}"/>
-                        <TextBlock Text="{Binding DailySales.TotalRevenue, StringFormat=Rs. {0:N2}}" HorizontalAlignment="Right" FontWeight="Bold"/>
-                    </Grid>
+                    <TextBlock Text="From:" VerticalAlignment="Center" Margin="0,0,6,0" Foreground="{StaticResource TextSecondaryBrush}"/>
+                    <DatePicker SelectedDate="{Binding FromDate}" Width="130" Margin="0,0,12,0" VerticalAlignment="Center"/>
 
-                    <Grid Margin="0,0,0,6">
-                        <TextBlock Text="Discounts Given:" Foreground="{StaticResource TextMutedBrush}"/>
-                        <TextBlock Text="{Binding DailySales.TotalDiscounts, StringFormat=Rs. {0:N2}}" HorizontalAlignment="Right" FontWeight="Bold" Foreground="{StaticResource DangerBrush}"/>
-                    </Grid>
+                    <TextBlock Text="To:" VerticalAlignment="Center" Margin="0,0,6,0" Foreground="{StaticResource TextSecondaryBrush}"/>
+                    <DatePicker SelectedDate="{Binding ToDate}" Width="130" Margin="0,0,16,0" VerticalAlignment="Center"/>
 
-                    <Separator Margin="0,8,0,8"/>
+                    <Button Content="Apply Filter" Style="{StaticResource PrimaryButton}" Command="{Binding ApplyFilterCommand}" Width="110" Height="34"/>
 
-                    <Grid>
-                        <TextBlock Text="NET SALES REVENUE:" FontSize="15" FontWeight="Bold" Foreground="{StaticResource PrimaryBrush}"/>
-                        <TextBlock Text="{Binding DailySales.NetSales, StringFormat=Rs. {0:N2}}" HorizontalAlignment="Right" FontSize="16" FontWeight="Bold" Foreground="{StaticResource PrimaryBrush}"/>
-                    </Grid>
+                    <!-- Active Filter Chip -->
+                    <Border Background="#E8F5E9" CornerRadius="12" Padding="10,4" Margin="16,0,0,0" VerticalAlignment="Center"
+                            Visibility="{Binding HasError, Converter={StaticResource InverseBoolToVisibilityConverter}}">
+                        <TextBlock Text="{Binding ActiveFilterSummaryText}" Foreground="{StaticResource PrimaryDarkBrush}" FontWeight="SemiBold" FontSize="12"/>
+                    </Border>
+
+                    <!-- Error Notice Chip -->
+                    <Border Background="#FFEBEE" CornerRadius="12" Padding="10,4" Margin="16,0,0,0" VerticalAlignment="Center"
+                            Visibility="{Binding HasError, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <TextBlock Text="{Binding ErrorMessage, StringFormat='⚠️ {0}'}" Foreground="{StaticResource DangerBrush}" FontWeight="Bold" FontSize="12"/>
+                    </Border>
+                </WrapPanel>
+
+                <!-- Loading Indicator -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center"
+                            Visibility="{Binding IsBusy, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <ProgressBar IsIndeterminate="True" Width="80" Height="14" Margin="0,0,8,0"/>
+                    <TextBlock Text="Loading data..." Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" VerticalAlignment="Center"/>
                 </StackPanel>
-            </Border>
+            </Grid>
+        </Border>
 
-            <!-- Stock Valuation Summary Card -->
-            <Border Grid.Column="2" Style="{StaticResource Card}">
-                <StackPanel>
-                    <TextBlock Text="Inventory Stock Valuation" Style="{StaticResource H3}" Margin="0,0,0,12"/>
+        <!-- ── Main Tab Navigation Bar ──────────────────────────────────────── -->
+        <TabControl Grid.Row="3" SelectedIndex="{Binding SelectedTabIndex}" Background="Transparent" BorderThickness="0"
+                    HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch">
+            <TabControl.Resources>
+                <!-- TabControl Style with Floating Pill Header Bar (Matching Image 2) -->
+                <Style TargetType="TabControl">
+                    <Setter Property="Padding" Value="0"/>
+                    <Setter Property="Background" Value="Transparent"/>
+                    <Setter Property="BorderThickness" Value="0"/>
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="TabControl">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
+                                    </Grid.RowDefinitions>
 
-                    <Grid Margin="0,0,0,6">
-                        <TextBlock Text="Active Products:" Foreground="{StaticResource TextMutedBrush}"/>
-                        <TextBlock Text="{Binding StockValuation.TotalActiveProducts}" HorizontalAlignment="Right" FontWeight="Bold"/>
-                    </Grid>
+                                    <!-- Pill Navigation Header Container -->
+                                    <Border Grid.Row="0"
+                                            Background="#F1F5F9"
+                                            BorderBrush="#E2E8F0"
+                                            BorderThickness="1"
+                                            CornerRadius="12"
+                                            Padding="4"
+                                            Margin="0,0,0,16"
+                                            HorizontalAlignment="Stretch">
+                                        <UniformGrid Columns="8" IsItemsHost="True"
+                                                     VerticalAlignment="Center"/>
+                                    </Border>
 
-                    <Grid Margin="0,0,0,6">
-                        <TextBlock Text="Total Quantity in Stock:" Foreground="{StaticResource TextMutedBrush}"/>
-                        <TextBlock Text="{Binding StockValuation.TotalQuantityInStock}" HorizontalAlignment="Right" FontWeight="Bold"/>
-                    </Grid>
+                                    <!-- Tab Content Host -->
+                                    <Border Grid.Row="1">
+                                        <ContentPresenter x:Name="PART_SelectedContentHost"
+                                                          ContentSource="SelectedContent"
+                                                          Margin="0"
+                                                          HorizontalAlignment="Stretch"
+                                                          VerticalAlignment="Stretch"/>
+                                    </Border>
+                                </Grid>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
 
-                    <Grid Margin="0,0,0,6">
-                        <TextBlock Text="Stock Cost Value:" Foreground="{StaticResource TextMutedBrush}"/>
-                        <TextBlock Text="{Binding StockValuation.TotalCostValue, StringFormat=Rs. {0:N2}}" HorizontalAlignment="Right" FontWeight="Bold"/>
-                    </Grid>
+                <!-- Modern Pill TabItem Style (Matching Image 2) -->
+                <Style TargetType="TabItem">
+                    <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                    <Setter Property="FontSize" Value="13"/>
+                    <Setter Property="FontWeight" Value="SemiBold"/>
+                    <Setter Property="Foreground" Value="#475569"/>
+                    <Setter Property="Padding" Value="8,8"/>
+                    <Setter Property="Margin" Value="2,0"/>
+                    <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                    <Setter Property="VerticalContentAlignment" Value="Center"/>
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="TabItem">
+                                <Grid x:Name="TabGrid" Background="Transparent">
+                                    <!-- Right Divider Line for Inactive Tabs -->
+                                    <Border x:Name="RightDivider" Width="1" Background="#CBD5E1" HorizontalAlignment="Right" Margin="0,6" Visibility="Visible"/>
 
-                    <Grid Margin="0,0,0,6">
-                        <TextBlock Text="Retail Valuation:" Foreground="{StaticResource TextMutedBrush}"/>
-                        <TextBlock Text="{Binding StockValuation.TotalRetailValuation, StringFormat=Rs. {0:N2}}" HorizontalAlignment="Right" FontWeight="Bold"/>
-                    </Grid>
+                                    <!-- Outer Pill Container -->
+                                    <Border x:Name="PillBorder"
+                                            Background="Transparent"
+                                            BorderBrush="Transparent"
+                                            BorderThickness="0"
+                                            CornerRadius="8"
+                                            Padding="{TemplateBinding Padding}"
+                                            Margin="{TemplateBinding Margin}">
+                                        <Grid>
+                                            <!-- Content Presenter (Icon & Text) -->
+                                            <ContentPresenter x:Name="ContentSite"
+                                                              VerticalAlignment="Center"
+                                                              HorizontalAlignment="Center"
+                                                              ContentSource="Header"
+                                                              RecognizesAccessKey="True"/>
 
-                    <Separator Margin="0,8,0,8"/>
+                                            <!-- Bottom Active Accent Indicator Line (Image 2 style) -->
+                                            <Border x:Name="ActiveIndicator"
+                                                    Height="3"
+                                                    VerticalAlignment="Bottom"
+                                                    HorizontalAlignment="Stretch"
+                                                    Margin="4,0,4,-2"
+                                                    Background="#059669"
+                                                    CornerRadius="1.5"
+                                                    Visibility="Collapsed"/>
+                                        </Grid>
+                                    </Border>
+                                </Grid>
 
-                    <Grid>
-                        <TextBlock Text="ESTIMATED MARGIN:" FontSize="15" FontWeight="Bold" Foreground="{StaticResource SuccessBrush}"/>
-                        <TextBlock Text="{Binding StockValuation.PotentialProfitMargin, StringFormat=Rs. {0:N2}}" HorizontalAlignment="Right" FontSize="16" FontWeight="Bold" Foreground="{StaticResource SuccessBrush}"/>
-                    </Grid>
-                </StackPanel>
-            </Border>
-        </Grid>
+                                <ControlTemplate.Triggers>
+                                    <!-- Mouse Over State -->
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="PillBorder" Property="Background" Value="#F8FAFC"/>
+                                        <Setter Property="Foreground" Value="#0F172A"/>
+                                    </Trigger>
 
-        <!-- Bottom Row: Fast-Moving Items (Left) & Supplier Balances (Right) Cards -->
-        <Grid Grid.Row="2">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="16"/>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
+                                    <!-- Selected State (Active Tab Pill) -->
+                                    <Trigger Property="IsSelected" Value="True">
+                                        <Setter TargetName="PillBorder" Property="Background" Value="#FFFFFF"/>
+                                        <Setter TargetName="PillBorder" Property="BorderBrush" Value="#CBD5E1"/>
+                                        <Setter TargetName="PillBorder" Property="BorderThickness" Value="1"/>
+                                        <Setter TargetName="ActiveIndicator" Property="Visibility" Value="Visible"/>
+                                        <Setter TargetName="RightDivider" Property="Visibility" Value="Collapsed"/>
+                                        <Setter Property="Foreground" Value="#059669"/>
+                                        <Setter Property="FontWeight" Value="Bold"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </TabControl.Resources>
 
-            <!-- Fast-Moving Items DataGrid -->
-            <Border Grid.Column="0" Style="{StaticResource Card}">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                    </Grid.RowDefinitions>
-                    <TextBlock Grid.Row="0" Text="Top 10 Fast-Moving Products" Style="{StaticResource H3}" Margin="0,0,0,12"/>
-                    <DataGrid Grid.Row="1" ItemsSource="{Binding FastMovingItems}" AutoGenerateColumns="False" IsReadOnly="True" RowStyle="{StaticResource InactiveDataGridRow}">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="SKU" Binding="{Binding SKU}" Width="70"/>
-                            <DataGridTextColumn Header="Product Name" Binding="{Binding ProductName}" Width="*"/>
-                            <DataGridTextColumn Header="Category" Binding="{Binding CategoryName}" Width="100"/>
-                            <DataGridTextColumn Header="Qty Sold" Binding="{Binding QuantitySold}" Width="70"/>
-                            <DataGridTextColumn Header="Total Revenue" Binding="{Binding TotalRevenue, StringFormat=Rs. {0:N2}}" Width="110"/>
-                        </DataGrid.Columns>
-                    </DataGrid>
+            <!-- ============================================================
+                 TAB 0: GENERAL ANALYTICS (EXECUTIVE DASHBOARD)
+                 ============================================================ -->
+            <TabItem>
+                <TabItem.Header>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="📊" Foreground="#059669" FontSize="13" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                        <TextBlock Text="General Analytics" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </TabItem.Header>
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" HorizontalContentAlignment="Stretch">
+                    <StackPanel Margin="0,8,0,0" Width="{Binding ViewportWidth, RelativeSource={RelativeSource AncestorType=ScrollViewer}}">
+                        <!-- KPI Row 1: Revenue & Financial Summaries (Clickable) -->
+                        <UniformGrid Columns="4" Margin="0,0,0,16">
+                            <!-- Total Revenue Card -->
+                            <Border Style="{StaticResource Card}" Margin="0,0,8,0" Padding="14" Cursor="Hand">
+                                <Border.InputBindings>
+                                    <MouseBinding MouseAction="LeftClick" Command="{Binding NavigateToTabCommand}" CommandParameter="3"/>
+                                </Border.InputBindings>
+                                <StackPanel>
+                                    <TextBlock Text="Total Revenue" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" FontWeight="SemiBold"/>
+                                    <TextBlock Text="{Binding GeneralAnalytics.TotalRevenue, StringFormat=Rs. {0:N2}}" FontSize="20" FontWeight="Bold" Foreground="{StaticResource PrimaryDarkBrush}" Margin="0,4,0,0"/>
+                                    <TextBlock Text="➜ Click to view Sales Summary" Foreground="{StaticResource PrimaryBrush}" FontSize="11" Margin="0,6,0,0"/>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Net Revenue Card -->
+                            <Border Style="{StaticResource Card}" Margin="4,0,4,0" Padding="14" Cursor="Hand">
+                                <Border.InputBindings>
+                                    <MouseBinding MouseAction="LeftClick" Command="{Binding NavigateToTabCommand}" CommandParameter="3"/>
+                                </Border.InputBindings>
+                                <StackPanel>
+                                    <TextBlock Text="Net Revenue" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" FontWeight="SemiBold"/>
+                                    <TextBlock Text="{Binding GeneralAnalytics.NetRevenue, StringFormat=Rs. {0:N2}}" FontSize="20" FontWeight="Bold" Foreground="{StaticResource PrimaryBrush}" Margin="0,4,0,0"/>
+                                    <TextBlock Text="Revenue minus discounts" Foreground="{StaticResource TextSecondaryBrush}" FontSize="11" Margin="0,6,0,0"/>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Daily Sales Card -->
+                            <Border Background="{StaticResource PrimaryDarkBrush}" CornerRadius="10" Padding="14" Margin="4,0,4,0">
+                                <StackPanel>
+                                    <TextBlock Text="📅 Daily Sales (Today)" Foreground="#E0E0E0" FontSize="12" FontWeight="SemiBold"/>
+                                    <TextBlock Text="{Binding GeneralAnalytics.DailySalesRevenue, StringFormat=Rs. {0:N2}}" FontSize="22" FontWeight="Bold" Foreground="White" Margin="0,4,0,0"/>
+                                    <TextBlock Text="{Binding GeneralAnalytics.DailySalesCount, StringFormat='{}{0} transactions today'}" Foreground="#C8E6C9" FontSize="11" Margin="0,4,0,0"/>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Net Profit Card -->
+                            <Border Style="{StaticResource Card}" Margin="8,0,0,0" Padding="14">
+                                <StackPanel>
+                                    <TextBlock Text="Net Profit" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" FontWeight="SemiBold"/>
+                                    <TextBlock Text="{Binding GeneralAnalytics.NetProfit, StringFormat=Rs. {0:N2}}" FontSize="20" FontWeight="Bold" Foreground="{StaticResource SuccessBrush}" Margin="0,4,0,0"/>
+                                    <TextBlock Text="Net Revenue - COGS - Expenses" Foreground="{StaticResource TextSecondaryBrush}" FontSize="11" Margin="0,6,0,0"/>
+                                </StackPanel>
+                            </Border>
+                        </UniformGrid>
+
+                        <!-- KPI Row 2: Operational Summaries -->
+                        <UniformGrid Columns="4" Margin="0,0,0,16">
+                            <Border Style="{StaticResource Card}" Margin="0,0,8,0">
+                                <StackPanel>
+                                    <TextBlock Text="Total Transactions" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" FontWeight="SemiBold"/>
+                                    <TextBlock Text="{Binding GeneralAnalytics.TotalTransactions}" FontSize="18" FontWeight="Bold" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,4,0,0"/>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Style="{StaticResource Card}" Margin="4,0,4,0">
+                                <StackPanel>
+                                    <TextBlock Text="Average Order Value" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" FontWeight="SemiBold"/>
+                                    <TextBlock Text="{Binding GeneralAnalytics.AverageOrderValue, StringFormat=Rs. {0:N2}}" FontSize="18" FontWeight="Bold" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,4,0,0"/>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Style="{StaticResource Card}" Margin="4,0,4,0">
+                                <StackPanel>
+                                    <TextBlock Text="Discounts Given" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" FontWeight="SemiBold"/>
+                                    <TextBlock Text="{Binding GeneralAnalytics.TotalDiscounts, StringFormat=Rs. {0:N2}}" FontSize="18" FontWeight="Bold" Foreground="{StaticResource DangerBrush}" Margin="0,4,0,0"/>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Style="{StaticResource Card}" Margin="8,0,0,0">
+                                <StackPanel>
+                                    <TextBlock Text="Operational Expenses" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" FontWeight="SemiBold"/>
+                                    <TextBlock Text="{Binding GeneralAnalytics.TotalOperationalExpenses, StringFormat=Rs. {0:N2}}" FontSize="18" FontWeight="Bold" Foreground="{StaticResource WarningBrush}" Margin="0,4,0,0"/>
+                                </StackPanel>
+                            </Border>
+                        </UniformGrid>
+
+                        <!-- Interactive Sales Trend Visualizer -->
+                        <Border Style="{StaticResource Card}" Margin="0,0,0,16" Padding="16">
+                            <StackPanel>
+                                <TextBlock Text="📈 Revenue Trend Overview" Style="{StaticResource H3}" Margin="0,0,0,12"/>
+                                <ItemsControl ItemsSource="{Binding SalesTrend}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Bottom" Height="140"/>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Width="40" Margin="4,0" VerticalAlignment="Bottom" HorizontalAlignment="Center" ToolTipService.ShowDuration="10000">
+                                                <StackPanel.ToolTip>
+                                                    <ToolTip>
+                                                        <StackPanel>
+                                                            <TextBlock Text="{Binding DateLabel}" FontWeight="Bold"/>
+                                                            <TextBlock Text="{Binding Revenue, StringFormat=Revenue: Rs. {0:N2}}"/>
+                                                            <TextBlock Text="{Binding TransactionCount, StringFormat=Transactions: {0}}"/>
+                                                        </StackPanel>
+                                                    </ToolTip>
+                                                </StackPanel.ToolTip>
+
+                                                <!-- Bar Element -->
+                                                <Border Background="{StaticResource PrimaryBrush}" CornerRadius="4,4,0,0" HorizontalAlignment="Center" Width="24">
+                                                    <Border.Height>
+                                                        <MultiBinding Converter="{StaticResource ValueToHeightConverter}">
+                                                            <Binding Path="Revenue"/>
+                                                            <Binding Path="DataContext.MaxSalesTrendRevenue" RelativeSource="{RelativeSource AncestorType=Page}"/>
+                                                        </MultiBinding>
+                                                    </Border.Height>
+                                                </Border>
+
+                                                <TextBlock Text="{Binding DateLabel}" FontSize="9" Foreground="{StaticResource TextSecondaryBrush}" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Payment Breakdown & Market Segment Comparison -->
+                        <Grid Margin="0,0,0,16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="16"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Payment Breakdown Card -->
+                            <Border Grid.Column="0" Style="{StaticResource Card}">
+                                <StackPanel>
+                                    <TextBlock Text="💳 Payment Method Breakdown" Style="{StaticResource H3}" Margin="0,0,0,12"/>
+
+                                    <Grid Margin="0,0,0,8">
+                                        <TextBlock Text="Cash Payments:" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                        <TextBlock Text="{Binding GeneralAnalytics.CashPaymentTotal, StringFormat=Rs. {0:N2}}" HorizontalAlignment="Right" FontWeight="Bold"/>
+                                    </Grid>
+
+                                    <Grid Margin="0,0,0,8">
+                                        <TextBlock Text="Bank Transfer:" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                        <TextBlock Text="{Binding GeneralAnalytics.BankPaymentTotal, StringFormat=Rs. {0:N2}}" HorizontalAlignment="Right" FontWeight="Bold"/>
+                                    </Grid>
+
+                                    <Grid Margin="0,0,0,8">
+                                        <TextBlock Text="Cheque Payments:" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                        <TextBlock Text="{Binding GeneralAnalytics.ChequePaymentTotal, StringFormat=Rs. {0:N2}}" HorizontalAlignment="Right" FontWeight="Bold"/>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Retail vs Wholesale Comparison -->
+                            <Border Grid.Column="2" Style="{StaticResource Card}">
+                                <StackPanel>
+                                    <TextBlock Text="🛍️ Retail vs Wholesale Sales" Style="{StaticResource H3}" Margin="0,0,0,12"/>
+
+                                    <Grid Margin="0,0,0,8">
+                                        <TextBlock Text="Retail Revenue:" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                        <TextBlock Text="{Binding GeneralAnalytics.RetailSalesRevenue, StringFormat=Rs. {0:N2}}" HorizontalAlignment="Right" FontWeight="Bold" Foreground="{StaticResource PrimaryBrush}"/>
+                                    </Grid>
+                                    <TextBlock Text="{Binding GeneralAnalytics.RetailSalesCount, StringFormat=Transactions: {0}}" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,12"/>
+
+                                    <Grid Margin="0,0,0,8">
+                                        <TextBlock Text="Wholesale Revenue:" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                        <TextBlock Text="{Binding GeneralAnalytics.WholesaleSalesRevenue, StringFormat=Rs. {0:N2}}" HorizontalAlignment="Right" FontWeight="Bold" Foreground="{StaticResource PrimaryDarkBrush}"/>
+                                    </Grid>
+                                    <TextBlock Text="{Binding GeneralAnalytics.WholesaleSalesCount, StringFormat=Transactions: {0}}" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+
+                        <!-- Executive Insights Panel -->
+                        <Border Style="{StaticResource Card}" Padding="16">
+                            <StackPanel>
+                                <TextBlock Text="💡 Executive Insights &amp; Automated Notes" Style="{StaticResource H3}" Margin="0,0,0,8"/>
+                                <ItemsControl ItemsSource="{Binding BusinessInsights}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding}" Foreground="{StaticResource TextPrimaryBrush}" FontSize="13" Margin="0,4"/>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- ============================================================
+                 TAB 1: DAILY SALES
+                 ============================================================ -->
+            <TabItem>
+                <TabItem.Header>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="📅" Foreground="#334155" FontSize="13" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                        <TextBlock Text="Daily Sales" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </TabItem.Header>
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" HorizontalContentAlignment="Stretch">
+                    <StackPanel Margin="0,8,0,0" Width="{Binding ViewportWidth, RelativeSource={RelativeSource AncestorType=ScrollViewer}}">
+                        <!-- KPI Row -->
+                        <UniformGrid Columns="4" Margin="0,0,0,16">
+                            <Border Style="{StaticResource Card}" Margin="0,0,8,0">
+                                <StackPanel>
+                                    <TextBlock Text="Total Sales Revenue" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"/>
+                                    <TextBlock Text="{Binding DailySales.TotalRevenue, StringFormat=Rs. {0:N2}}" FontSize="18" FontWeight="Bold" Foreground="{StaticResource PrimaryBrush}"/>
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource Card}" Margin="4,0,4,0">
+                                <StackPanel>
+                                    <TextBlock Text="Transactions" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"/>
+                                    <TextBlock Text="{Binding DailySales.TotalSalesCount}" FontSize="18" FontWeight="Bold" Foreground="{StaticResource TextPrimaryBrush}"/>
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource Card}" Margin="4,0,4,0">
+                                <StackPanel>
+                                    <TextBlock Text="Retail Revenue" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"/>
+                                    <TextBlock Text="{Binding DailySales.RetailSales, StringFormat=Rs. {0:N2}}" FontSize="18" FontWeight="Bold" Foreground="{StaticResource PrimaryDarkBrush}"/>
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource Card}" Margin="8,0,0,0">
+                                <StackPanel>
+                                    <TextBlock Text="Wholesale Revenue" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"/>
+                                    <TextBlock Text="{Binding DailySales.WholesaleSales, StringFormat=Rs. {0:N2}}" FontSize="18" FontWeight="Bold" Foreground="{StaticResource SuccessBrush}"/>
+                                </StackPanel>
+                            </Border>
+                        </UniformGrid>
+
+                        <!-- 24-Hour Hourly Sales Column Chart -->
+                        <Border Style="{StaticResource Card}" Margin="0,0,0,16" Padding="16">
+                            <StackPanel>
+                                <TextBlock Text="⏰ Hourly Sales Distribution (08:00 - 20:00)" Style="{StaticResource H3}" Margin="0,0,0,12"/>
+                                <ItemsControl ItemsSource="{Binding HourlySales}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Bottom" Height="150"/>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Width="42" Margin="3,0" VerticalAlignment="Bottom" HorizontalAlignment="Center" ToolTipService.ShowDuration="10000">
+                                                <StackPanel.ToolTip>
+                                                    <ToolTip>
+                                                        <StackPanel>
+                                                            <TextBlock Text="{Binding HourLabel}" FontWeight="Bold"/>
+                                                            <TextBlock Text="{Binding Revenue, StringFormat=Revenue: Rs. {0:N2}}"/>
+                                                            <TextBlock Text="{Binding TransactionCount, StringFormat=Transactions: {0}}"/>
+                                                        </StackPanel>
+                                                    </ToolTip>
+                                                </StackPanel.ToolTip>
+
+                                                <Border Background="{StaticResource PrimaryBrush}" CornerRadius="4,4,0,0" HorizontalAlignment="Center" Width="26">
+                                                    <Border.Height>
+                                                        <MultiBinding Converter="{StaticResource ValueToHeightConverter}">
+                                                            <Binding Path="Revenue"/>
+                                                            <Binding Path="DataContext.MaxHourlyRevenue" RelativeSource="{RelativeSource AncestorType=Page}"/>
+                                                        </MultiBinding>
+                                                    </Border.Height>
+                                                </Border>
+
+                                                <TextBlock Text="{Binding HourLabel}" FontSize="9" Foreground="{StaticResource TextSecondaryBrush}" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Daily Sales Trend Table -->
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Text="📊 Sales Trend Data Points" Style="{StaticResource H3}" Margin="0,0,0,12"/>
+                                <DataGrid ItemsSource="{Binding SalesTrend}" AutoGenerateColumns="False" IsReadOnly="True" Height="220">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="Date" Binding="{Binding DateLabel}" Width="*"/>
+                                        <DataGridTextColumn Header="Transactions" Binding="{Binding TransactionCount}" Width="120"/>
+                                        <DataGridTextColumn Header="Total Revenue" Binding="{Binding Revenue, StringFormat=Rs. {0:N2}}" Width="160"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- ============================================================
+                 TAB 2: INVENTORY & STOCK
+                 ============================================================ -->
+            <TabItem>
+                <TabItem.Header>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="📦" Foreground="#2563EB" FontSize="13" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                        <TextBlock Text="Inventory &amp; Stock" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </TabItem.Header>
+                <Grid Margin="0,8,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" HorizontalContentAlignment="Stretch">
+                        <StackPanel Margin="0,0,12,0" Width="{Binding ViewportWidth, RelativeSource={RelativeSource AncestorType=ScrollViewer}}">
+                            <!-- Stock KPIs -->
+                            <UniformGrid Columns="4" Margin="0,0,0,16">
+                                <Border Style="{StaticResource Card}" Margin="0,0,8,0">
+                                    <StackPanel>
+                                        <TextBlock Text="Active Products" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"/>
+                                        <TextBlock Text="{Binding StockValuation.TotalActiveProducts}" FontSize="18" FontWeight="Bold"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Style="{StaticResource Card}" Margin="4,0,4,0">
+                                    <StackPanel>
+                                        <TextBlock Text="Stock Cost Value" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"/>
+                                        <TextBlock Text="{Binding StockValuation.TotalCostValue, StringFormat=Rs. {0:N2}}" FontSize="18" FontWeight="Bold" Foreground="{StaticResource PrimaryDarkBrush}"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Style="{StaticResource Card}" Margin="4,0,4,0">
+                                    <StackPanel>
+                                        <TextBlock Text="Retail Valuation" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"/>
+                                        <TextBlock Text="{Binding StockValuation.TotalRetailValuation, StringFormat=Rs. {0:N2}}" FontSize="18" FontWeight="Bold" Foreground="{StaticResource PrimaryBrush}"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Style="{StaticResource Card}" Margin="8,0,0,0">
+                                    <StackPanel>
+                                        <TextBlock Text="Potential Profit Margin" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"/>
+                                        <TextBlock Text="{Binding StockValuation.PotentialProfitMargin, StringFormat=Rs. {0:N2}}" FontSize="18" FontWeight="Bold" Foreground="{StaticResource SuccessBrush}"/>
+                                    </StackPanel>
+                                </Border>
+                            </UniformGrid>
+
+                            <!-- Stock Health Status Bar & Filter Controls -->
+                            <Border Style="{StaticResource Card}" Margin="0,0,0,16" Padding="14">
+                                <StackPanel>
+                                    <TextBlock Text="🏥 Inventory Health Summary &amp; Filters" Style="{StaticResource H3}" Margin="0,0,0,12"/>
+                                    <WrapPanel Margin="0,0,0,4">
+                                        <!-- All Products Filter Buttons -->
+                                        <Button Content="📦 All Products" Style="{StaticResource PrimaryButton}" Command="{Binding SetStockFilterCommand}" CommandParameter="All" Margin="0,0,8,0"
+                                                Visibility="{Binding IsAllStockFilterSelected, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                        <Button Content="📦 All Products" Style="{StaticResource SecondaryButton}" Command="{Binding SetStockFilterCommand}" CommandParameter="All" Margin="0,0,8,0"
+                                                Visibility="{Binding IsAllStockFilterSelected, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
+
+                                        <!-- Low Stock Filter Buttons -->
+                                        <Button Content="⚠️ Low Stock Items" Style="{StaticResource PrimaryButton}" Command="{Binding SetStockFilterCommand}" CommandParameter="LowStock" Margin="0,0,8,0"
+                                                Visibility="{Binding IsLowStockFilterSelected, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                        <Button Content="⚠️ Low Stock Items" Style="{StaticResource SecondaryButton}" Command="{Binding SetStockFilterCommand}" CommandParameter="LowStock" Margin="0,0,8,0"
+                                                Visibility="{Binding IsLowStockFilterSelected, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
+
+                                        <!-- Out of Stock Filter Buttons -->
+                                        <Button Content="🚨 Out of Stock" Style="{StaticResource PrimaryButton}" Command="{Binding SetStockFilterCommand}" CommandParameter="OutOfStock" Margin="0,0,16,0"
+                                                Visibility="{Binding IsOutOfStockFilterSelected, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                        <Button Content="🚨 Out of Stock" Style="{StaticResource SecondaryButton}" Command="{Binding SetStockFilterCommand}" CommandParameter="OutOfStock" Margin="0,0,16,0"
+                                                Visibility="{Binding IsOutOfStockFilterSelected, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
+
+                                        <!-- Search Box -->
+                                        <TextBox Width="240" Text="{Binding InventorySearchText, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Padding="8,6"/>
+                                    </WrapPanel>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Side-by-Side KPI Cards: Left (Stock Attention Items) & Right (Top Fast-Moving Products) -->
+                            <Grid Margin="0,0,0,16">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="16"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <!-- LEFT KPI CARD: Stock Attention Items -->
+                                <Border Grid.Column="0" Style="{StaticResource Card}">
+                                    <StackPanel>
+                                        <Grid Margin="0,0,0,12">
+                                            <TextBlock Text="⚠️ Stock Attention Items" Style="{StaticResource H3}"/>
+                                            <TextBlock Text="{Binding FilteredLowStockItems.Count, StringFormat='({0} items)'}" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                        </Grid>
+                                        <DataGrid ItemsSource="{Binding FilteredLowStockItems}" SelectedItem="{Binding SelectedLowStockItem}" AutoGenerateColumns="False" IsReadOnly="True" Height="260">
+                                            <DataGrid.Columns>
+                                                <DataGridTextColumn Header="SKU" Binding="{Binding SKU}" Width="85"/>
+                                                <DataGridTextColumn Header="Product Name" Binding="{Binding ProductName}" Width="*"/>
+                                                <DataGridTextColumn Header="Stock" Binding="{Binding CurrentStock}" Width="65"/>
+                                                <DataGridTextColumn Header="Reorder" Binding="{Binding ReorderLevel}" Width="65"/>
+                                                <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="90"/>
+                                            </DataGrid.Columns>
+                                        </DataGrid>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- RIGHT KPI CARD: Top Fast-Moving Products -->
+                                <Border Grid.Column="2" Style="{StaticResource Card}">
+                                    <StackPanel>
+                                        <Grid Margin="0,0,0,12">
+                                            <TextBlock Text="🚀 Top Fast-Moving Products" Style="{StaticResource H3}"/>
+                                            <TextBlock Text="{Binding FastMovingItems.Count, StringFormat='({0} products)'}" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                        </Grid>
+                                        <DataGrid ItemsSource="{Binding FastMovingItems}" AutoGenerateColumns="False" IsReadOnly="True" Height="260">
+                                            <DataGrid.Columns>
+                                                <DataGridTextColumn Header="SKU" Binding="{Binding SKU}" Width="85"/>
+                                                <DataGridTextColumn Header="Product Name" Binding="{Binding ProductName}" Width="*"/>
+                                                <DataGridTextColumn Header="Category" Binding="{Binding CategoryName}" Width="100"/>
+                                                <DataGridTextColumn Header="Sold Qty" Binding="{Binding QuantitySold}" Width="75"/>
+                                                <DataGridTextColumn Header="Revenue" Binding="{Binding TotalRevenue, StringFormat=Rs. {0:N2}}" Width="110"/>
+                                            </DataGrid.Columns>
+                                        </DataGrid>
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
+                        </StackPanel>
+                    </ScrollViewer>
+
+                    <!-- Product Detail Drawer -->
+                    <Border Grid.Column="1" Width="300" Style="{StaticResource Card}" Margin="0,0,0,0" Padding="16"
+                            Visibility="{Binding SelectedLowStockItem, Converter={StaticResource NotNullToVisibilityConverter}}">
+                        <StackPanel>
+                            <Grid Margin="0,0,0,12">
+                                <TextBlock Text="📦 Product Detail" Style="{StaticResource H3}"/>
+                                <Button Content="✕" Style="{StaticResource SecondaryButton}" Command="{Binding ClearLowStockSelectionCommand}" Width="28" Height="28" HorizontalAlignment="Right" Padding="0"/>
+                            </Grid>
+
+                            <TextBlock Text="{Binding SelectedLowStockItem.ProductName}" FontWeight="Bold" FontSize="15" TextWrapping="Wrap" Margin="0,0,0,4"/>
+                            <TextBlock Text="{Binding SelectedLowStockItem.SKU, StringFormat=SKU: {0}}" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" Margin="0,0,0,12"/>
+
+                            <Separator Margin="0,0,0,12"/>
+
+                            <Grid Margin="0,4">
+                                <TextBlock Text="Category:" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                <TextBlock Text="{Binding SelectedLowStockItem.CategoryName}" HorizontalAlignment="Right" FontWeight="SemiBold"/>
+                            </Grid>
+
+                            <Grid Margin="0,4">
+                                <TextBlock Text="Current Stock:" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                <TextBlock Text="{Binding SelectedLowStockItem.CurrentStock}" HorizontalAlignment="Right" FontWeight="Bold" Foreground="{StaticResource DangerBrush}"/>
+                            </Grid>
+
+                            <Grid Margin="0,4">
+                                <TextBlock Text="Reorder Level:" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                <TextBlock Text="{Binding SelectedLowStockItem.ReorderLevel}" HorizontalAlignment="Right" FontWeight="SemiBold"/>
+                            </Grid>
+
+                            <Grid Margin="0,4">
+                                <TextBlock Text="Wholesale Price:" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                <TextBlock Text="{Binding SelectedLowStockItem.WholesalePrice, StringFormat=Rs. {0:N2}}" HorizontalAlignment="Right" FontWeight="SemiBold"/>
+                            </Grid>
+
+                            <Grid Margin="0,4">
+                                <TextBlock Text="Retail Price:" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                <TextBlock Text="{Binding SelectedLowStockItem.RetailPrice, StringFormat=Rs. {0:N2}}" HorizontalAlignment="Right" FontWeight="SemiBold"/>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
                 </Grid>
-            </Border>
+            </TabItem>
 
-            <!-- Supplier Balances DataGrid -->
-            <Border Grid.Column="2" Style="{StaticResource Card}">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                    </Grid.RowDefinitions>
-                    <TextBlock Grid.Row="0" Text="Supplier Payable Balances" Style="{StaticResource H3}" Margin="0,0,0,12"/>
-                    <DataGrid Grid.Row="1" ItemsSource="{Binding SupplierBalances}" AutoGenerateColumns="False" IsReadOnly="True" RowStyle="{StaticResource InactiveDataGridRow}">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="Supplier Name" Binding="{Binding SupplierName}" Width="*"/>
-                            <DataGridTextColumn Header="Phone" Binding="{Binding Phone}" Width="110"/>
-                            <DataGridTextColumn Header="Payable Balance" Binding="{Binding CurrentBalance, StringFormat=Rs. {0:N2}}" Width="130"/>
-                        </DataGrid.Columns>
-                    </DataGrid>
+            <!-- ============================================================
+                 TAB 3: SALES SUMMARY
+                 ============================================================ -->
+            <TabItem>
+                <TabItem.Header>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="🛒" Foreground="#0D9488" FontSize="13" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                        <TextBlock Text="Sales Summary" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </TabItem.Header>
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" HorizontalContentAlignment="Stretch">
+                    <StackPanel Margin="0,8,0,0" Width="{Binding ViewportWidth, RelativeSource={RelativeSource AncestorType=ScrollViewer}}">
+                        <UniformGrid Columns="4" Margin="0,0,0,16">
+                            <Border Style="{StaticResource Card}" Margin="0,0,8,0">
+                                <StackPanel>
+                                    <TextBlock Text="Total Revenue" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"/>
+                                    <TextBlock Text="{Binding SalesSummary.TotalRevenue, StringFormat=Rs. {0:N2}}" FontSize="18" FontWeight="Bold" Foreground="{StaticResource PrimaryBrush}"/>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Style="{StaticResource Card}" Margin="4,0,4,0">
+                                <StackPanel>
+                                    <TextBlock Text="Total Units Sold" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"/>
+                                    <TextBlock Text="{Binding SalesSummary.TotalUnitsSold}" FontSize="18" FontWeight="Bold"/>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Style="{StaticResource Card}" Margin="4,0,4,0">
+                                <StackPanel>
+                                    <TextBlock Text="Total Transactions" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"/>
+                                    <TextBlock Text="{Binding SalesSummary.TotalTransactions}" FontSize="18" FontWeight="Bold"/>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Style="{StaticResource Card}" Margin="8,0,0,0">
+                                <StackPanel>
+                                    <TextBlock Text="Average Order Value" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"/>
+                                    <TextBlock Text="{Binding SalesSummary.AverageOrderValue, StringFormat=Rs. {0:N2}}" FontSize="18" FontWeight="Bold" Foreground="{StaticResource SuccessBrush}"/>
+                                </StackPanel>
+                            </Border>
+                        </UniformGrid>
+
+                        <!-- Category Performance Bar Chart -->
+                        <Border Style="{StaticResource Card}" Margin="0,0,0,16" Padding="16">
+                            <StackPanel>
+                                <TextBlock Text="🏷️ Category Performance Revenue Ranking" Style="{StaticResource H3}" Margin="0,0,0,12"/>
+                                <ItemsControl ItemsSource="{Binding CategoryPerformance}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid Margin="0,6">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="160"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="140"/>
+                                                </Grid.ColumnDefinitions>
+
+                                                <TextBlock Grid.Column="0" Text="{Binding CategoryName}" FontWeight="SemiBold" VerticalAlignment="Center"/>
+
+                                                <Border Grid.Column="1" Background="{StaticResource PrimaryBrush}" CornerRadius="4" Height="14" HorizontalAlignment="Left">
+                                                    <Border.Width>
+                                                        <MultiBinding Converter="{StaticResource ValueToWidthConverter}">
+                                                            <Binding Path="Revenue"/>
+                                                            <Binding Path="DataContext.MaxCategoryRevenue" RelativeSource="{RelativeSource AncestorType=Page}"/>
+                                                            <Binding RelativeSource="{RelativeSource AncestorType=Grid}" Path="ActualWidth"/>
+                                                        </MultiBinding>
+                                                    </Border.Width>
+                                                </Border>
+
+                                                <TextBlock Grid.Column="2" Text="{Binding Revenue, StringFormat=Rs. {0:N2}}" FontWeight="Bold" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- ============================================================
+                 TAB 4: GRN REPORTS
+                 ============================================================ -->
+            <TabItem>
+                <TabItem.Header>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="📑" Foreground="#7C3AED" FontSize="13" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                        <TextBlock Text="GRN Reports" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </TabItem.Header>
+                <Grid Margin="0,8,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto" HorizontalContentAlignment="Stretch">
+                        <StackPanel Margin="0,0,12,0" Width="{Binding ViewportWidth, RelativeSource={RelativeSource AncestorType=ScrollViewer}}">
+                            <UniformGrid Columns="4" Margin="0,0,0,16">
+                                <Border Style="{StaticResource Card}" Margin="0,0,8,0">
+                                    <StackPanel>
+                                        <TextBlock Text="Total Received Value" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"/>
+                                        <TextBlock Text="{Binding GrnReport.TotalReceivedValue, StringFormat=Rs. {0:N2}}" FontSize="18" FontWeight="Bold" Foreground="{StaticResource PrimaryBrush}"/>
+                                    </StackPanel>
+                                </Border>
+                                <Border Style="{StaticResource Card}" Margin="4,0,4,0">
+                                    <StackPanel>
+                                        <TextBlock Text="Total Paid Amount" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"/>
+                                        <TextBlock Text="{Binding GrnReport.TotalPaidAmount, StringFormat=Rs. {0:N2}}" FontSize="18" FontWeight="Bold" Foreground="{StaticResource SuccessBrush}"/>
+                                    </StackPanel>
+                                </Border>
+                                <Border Style="{StaticResource Card}" Margin="4,0,4,0">
+                                    <StackPanel>
+                                        <TextBlock Text="Outstanding Balance" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"/>
+                                        <TextBlock Text="{Binding GrnReport.TotalOutstandingBalance, StringFormat=Rs. {0:N2}}" FontSize="18" FontWeight="Bold" Foreground="{StaticResource DangerBrush}"/>
+                                    </StackPanel>
+                                </Border>
+                                <Border Style="{StaticResource Card}" Margin="8,0,0,0">
+                                    <StackPanel>
+                                        <TextBlock Text="Total GRNs" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"/>
+                                        <TextBlock Text="{Binding GrnReport.TotalGrnsCount}" FontSize="18" FontWeight="Bold"/>
+                                    </StackPanel>
+                                </Border>
+                            </UniformGrid>
+
+                            <Border Style="{StaticResource Card}" Margin="0,0,0,16" Padding="14">
+                                <WrapPanel VerticalAlignment="Center">
+                                    <TextBlock Text="Supplier Filter:" VerticalAlignment="Center" Margin="0,0,8,0" FontWeight="SemiBold"/>
+                                    <ComboBox ItemsSource="{Binding SuppliersList}" SelectedValue="{Binding SelectedSupplierId}" SelectedValuePath="Id" DisplayMemberPath="Name" Width="180" Margin="0,0,16,0"/>
+
+                                    <TextBlock Text="Search GRN:" VerticalAlignment="Center" Margin="0,0,8,0" FontWeight="SemiBold"/>
+                                    <TextBox Width="180" Text="{Binding GrnSearchText, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Padding="6,4"/>
+                                </WrapPanel>
+                            </Border>
+
+                            <Border Style="{StaticResource Card}">
+                                <DataGrid ItemsSource="{Binding FilteredGrnRecords}" SelectedItem="{Binding SelectedGrnRecord}" AutoGenerateColumns="False" IsReadOnly="True" Height="300">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="Purchase #" Binding="{Binding PurchaseId}" Width="110"/>
+                                        <DataGridTextColumn Header="Supplier" Binding="{Binding SupplierName}" Width="*"/>
+                                        <DataGridTextColumn Header="Date" Binding="{Binding ReceivedDate, StringFormat=dd MMM yyyy}" Width="120"/>
+                                        <DataGridTextColumn Header="Total" Binding="{Binding TotalAmount, StringFormat=Rs. {0:N2}}" Width="130"/>
+                                        <DataGridTextColumn Header="Paid" Binding="{Binding PaidAmount, StringFormat=Rs. {0:N2}}" Width="130"/>
+                                        <DataGridTextColumn Header="Balance" Binding="{Binding RemainingBalance, StringFormat=Rs. {0:N2}}" Width="130"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </Border>
+                        </StackPanel>
+                    </ScrollViewer>
+
+                    <!-- GRN Detail Drawer -->
+                    <Border Grid.Column="1" Width="340" Style="{StaticResource Card}" Padding="16"
+                            Visibility="{Binding SelectedGrnRecord, Converter={StaticResource NotNullToVisibilityConverter}}">
+                        <StackPanel>
+                            <Grid Margin="0,0,0,12">
+                                <TextBlock Text="📋 GRN Record Detail" Style="{StaticResource H3}"/>
+                                <Button Content="✕" Style="{StaticResource SecondaryButton}" Command="{Binding ClearGrnSelectionCommand}" Width="28" Height="28" HorizontalAlignment="Right" Padding="0"/>
+                            </Grid>
+
+                            <TextBlock Text="{Binding SelectedGrnRecord.PurchaseId, StringFormat=Purchase #{0}}" FontWeight="Bold" FontSize="16" Margin="0,0,0,4"/>
+                            <TextBlock Text="{Binding SelectedGrnRecord.SupplierName, StringFormat=Supplier: {0}}" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" Margin="0,0,0,12"/>
+
+                            <Separator Margin="0,0,0,12"/>
+
+                            <Grid Margin="0,4">
+                                <TextBlock Text="Total Amount:" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                <TextBlock Text="{Binding SelectedGrnRecord.TotalAmount, StringFormat=Rs. {0:N2}}" HorizontalAlignment="Right" FontWeight="Bold"/>
+                            </Grid>
+
+                            <Grid Margin="0,4">
+                                <TextBlock Text="Paid Amount:" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                <TextBlock Text="{Binding SelectedGrnRecord.PaidAmount, StringFormat=Rs. {0:N2}}" HorizontalAlignment="Right" FontWeight="Bold" Foreground="{StaticResource SuccessBrush}"/>
+                            </Grid>
+
+                            <Grid Margin="0,4">
+                                <TextBlock Text="Balance:" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                <TextBlock Text="{Binding SelectedGrnRecord.RemainingBalance, StringFormat=Rs. {0:N2}}" HorizontalAlignment="Right" FontWeight="Bold" Foreground="{StaticResource DangerBrush}"/>
+                            </Grid>
+
+                            <TextBlock Text="Line Items" FontWeight="Bold" Margin="0,16,0,8"/>
+                            <DataGrid ItemsSource="{Binding SelectedGrnRecord.LineItems}" AutoGenerateColumns="False" IsReadOnly="True" Height="160">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Product" Binding="{Binding ProductName}" Width="*"/>
+                                    <DataGridTextColumn Header="Qty" Binding="{Binding Quantity}" Width="50"/>
+                                    <DataGridTextColumn Header="Unit Price" Binding="{Binding UnitCost, StringFormat={}{0:N2}}" Width="80"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </StackPanel>
+                    </Border>
                 </Grid>
-            </Border>
-        </Grid>
+            </TabItem>
+
+            <!-- ============================================================
+                 TAB 5: CLAIM ITEMS
+                 ============================================================ -->
+            <TabItem>
+                <TabItem.Header>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="⚠️" Foreground="#D97706" FontSize="13" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                        <TextBlock Text="Claim Items" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </TabItem.Header>
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" HorizontalContentAlignment="Stretch">
+                    <StackPanel Margin="0,8,0,0" Width="{Binding ViewportWidth, RelativeSource={RelativeSource AncestorType=ScrollViewer}}">
+                        <UniformGrid Columns="4" Margin="0,0,0,16">
+                            <Border Style="{StaticResource Card}" Margin="0,0,8,0">
+                                <StackPanel>
+                                    <TextBlock Text="Total Claim Qty" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"/>
+                                    <TextBlock Text="{Binding ClaimReport.TotalClaimQuantity}" FontSize="18" FontWeight="Bold"/>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Style="{StaticResource Card}" Margin="4,0,4,0">
+                                <StackPanel>
+                                    <TextBlock Text="Total Claim Value" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"/>
+                                    <TextBlock Text="{Binding ClaimReport.TotalClaimValue, StringFormat=Rs. {0:N2}}" FontSize="18" FontWeight="Bold" Foreground="{StaticResource DangerBrush}"/>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Style="{StaticResource Card}" Margin="4,0,4,0">
+                                <StackPanel>
+                                    <TextBlock Text="Customer Returns" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"/>
+                                    <TextBlock Text="{Binding ClaimReport.CustomerReturnsCount}" FontSize="18" FontWeight="Bold"/>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Style="{StaticResource Card}" Margin="8,0,0,0">
+                                <StackPanel>
+                                    <TextBlock Text="Supplier Returns" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"/>
+                                    <TextBlock Text="{Binding ClaimReport.SupplierReturnsCount}" FontSize="18" FontWeight="Bold"/>
+                                </StackPanel>
+                            </Border>
+                        </UniformGrid>
+
+                        <Border Style="{StaticResource Card}">
+                            <DataGrid ItemsSource="{Binding FilteredClaimRecords}" AutoGenerateColumns="False" IsReadOnly="True" Height="320">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Date" Binding="{Binding Date, StringFormat=dd MMM yyyy}" Width="110"/>
+                                    <DataGridTextColumn Header="SKU" Binding="{Binding SKU}" Width="100"/>
+                                    <DataGridTextColumn Header="Product" Binding="{Binding ProductName}" Width="*"/>
+                                    <DataGridTextColumn Header="Source" Binding="{Binding ClaimSource}" Width="130"/>
+                                    <DataGridTextColumn Header="Qty" Binding="{Binding Quantity}" Width="70"/>
+                                    <DataGridTextColumn Header="Total Value" Binding="{Binding TotalValue, StringFormat=Rs. {0:N2}}" Width="120"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- ============================================================
+                 TAB 6: SUPPLIER BALANCES
+                 ============================================================ -->
+            <TabItem>
+                <TabItem.Header>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="🏢" Foreground="#DC2626" FontSize="13" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                        <TextBlock Text="Supplier Balances" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </TabItem.Header>
+                <Grid Margin="0,8,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto" HorizontalContentAlignment="Stretch">
+                        <StackPanel Margin="0,0,12,0" Width="{Binding ViewportWidth, RelativeSource={RelativeSource AncestorType=ScrollViewer}}">
+                            <UniformGrid Columns="3" Margin="0,0,0,16">
+                                <Border Style="{StaticResource Card}" Margin="0,0,8,0">
+                                    <StackPanel>
+                                        <TextBlock Text="Total Supplier Payables" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"/>
+                                        <TextBlock Text="{Binding SupplierBalanceSummary.TotalSupplierPayables, StringFormat=Rs. {0:N2}}" FontSize="20" FontWeight="Bold" Foreground="{StaticResource DangerBrush}"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Style="{StaticResource Card}" Margin="4,0,4,0">
+                                    <StackPanel>
+                                        <TextBlock Text="Total Purchases Value" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"/>
+                                        <TextBlock Text="{Binding SupplierBalanceSummary.TotalSupplierPurchases, StringFormat=Rs. {0:N2}}" FontSize="20" FontWeight="Bold" Foreground="{StaticResource PrimaryDarkBrush}"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Style="{StaticResource Card}" Margin="8,0,0,0">
+                                    <StackPanel>
+                                        <TextBlock Text="Suppliers With Balance" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"/>
+                                        <TextBlock Text="{Binding SupplierBalanceSummary.SuppliersWithOutstandingBalanceCount}" FontSize="20" FontWeight="Bold" Foreground="{StaticResource WarningBrush}"/>
+                                    </StackPanel>
+                                </Border>
+                            </UniformGrid>
+
+                            <Border Style="{StaticResource Card}">
+                                <DataGrid ItemsSource="{Binding FilteredSupplierBalances}" SelectedItem="{Binding SelectedSupplierBalance}" AutoGenerateColumns="False" IsReadOnly="True" Height="320">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="Supplier Name" Binding="{Binding SupplierName}" Width="*"/>
+                                        <DataGridTextColumn Header="Phone" Binding="{Binding Phone}" Width="130"/>
+                                        <DataGridTextColumn Header="Purchases" Binding="{Binding TotalPurchases, StringFormat=Rs. {0:N2}}" Width="140"/>
+                                        <DataGridTextColumn Header="Paid" Binding="{Binding TotalPaid, StringFormat=Rs. {0:N2}}" Width="140"/>
+                                        <DataGridTextColumn Header="Outstanding" Binding="{Binding CurrentBalance, StringFormat=Rs. {0:N2}}" Width="140"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </Border>
+                        </StackPanel>
+                    </ScrollViewer>
+
+                    <!-- Supplier Detail Drawer -->
+                    <Border Grid.Column="1" Width="300" Style="{StaticResource Card}" Padding="16"
+                            Visibility="{Binding SelectedSupplierBalance, Converter={StaticResource NotNullToVisibilityConverter}}">
+                        <StackPanel>
+                            <Grid Margin="0,0,0,12">
+                                <TextBlock Text="🏢 Supplier Detail" Style="{StaticResource H3}"/>
+                                <Button Content="✕" Style="{StaticResource SecondaryButton}" Command="{Binding ClearSupplierSelectionCommand}" Width="28" Height="28" HorizontalAlignment="Right" Padding="0"/>
+                            </Grid>
+
+                            <TextBlock Text="{Binding SelectedSupplierBalance.SupplierName}" FontWeight="Bold" FontSize="16" Margin="0,0,0,4"/>
+                            <TextBlock Text="{Binding SelectedSupplierBalance.Phone, StringFormat=Phone: {0}}" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" Margin="0,0,0,12"/>
+
+                            <Separator Margin="0,0,0,12"/>
+
+                            <Grid Margin="0,4">
+                                <TextBlock Text="Total Purchases:" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                <TextBlock Text="{Binding SelectedSupplierBalance.TotalPurchases, StringFormat=Rs. {0:N2}}" HorizontalAlignment="Right" FontWeight="Bold"/>
+                            </Grid>
+
+                            <Grid Margin="0,4">
+                                <TextBlock Text="Total Paid:" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                <TextBlock Text="{Binding SelectedSupplierBalance.TotalPaid, StringFormat=Rs. {0:N2}}" HorizontalAlignment="Right" FontWeight="Bold" Foreground="{StaticResource SuccessBrush}"/>
+                            </Grid>
+
+                            <Grid Margin="0,4">
+                                <TextBlock Text="Outstanding Balance:" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                <TextBlock Text="{Binding SelectedSupplierBalance.CurrentBalance, StringFormat=Rs. {0:N2}}" HorizontalAlignment="Right" FontWeight="Bold" Foreground="{StaticResource DangerBrush}"/>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </TabItem>
+
+            <!-- ============================================================
+                 TAB 7: CUSTOMER INSIGHTS
+                 ============================================================ -->
+            <TabItem>
+                <TabItem.Header>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="👥" Foreground="#0284C7" FontSize="13" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                        <TextBlock Text="Customer Insights" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </TabItem.Header>
+                <Grid Margin="0,8,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                        <StackPanel Margin="0,0,12,0">
+                            <UniformGrid Columns="3" Margin="0,0,0,16">
+                                <Border Style="{StaticResource Card}" Margin="0,0,8,0">
+                                    <StackPanel>
+                                        <TextBlock Text="Total Customers" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"/>
+                                        <TextBlock Text="{Binding CustomerSummary.TotalCustomersCount}" FontSize="20" FontWeight="Bold"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Style="{StaticResource Card}" Margin="4,0,4,0">
+                                    <StackPanel>
+                                        <TextBlock Text="Active Purchasing Buyers" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"/>
+                                        <TextBlock Text="{Binding CustomerSummary.ActiveCustomersCount}" FontSize="20" FontWeight="Bold" Foreground="{StaticResource PrimaryBrush}"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Style="{StaticResource Card}" Margin="8,0,0,0">
+                                    <StackPanel>
+                                        <TextBlock Text="Customer Generated Revenue" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"/>
+                                        <TextBlock Text="{Binding CustomerSummary.TotalCustomerRevenue, StringFormat=Rs. {0:N2}}" FontSize="20" FontWeight="Bold" Foreground="{StaticResource SuccessBrush}"/>
+                                    </StackPanel>
+                                </Border>
+                            </UniformGrid>
+
+                            <Border Style="{StaticResource Card}">
+                                <DataGrid ItemsSource="{Binding FilteredCustomerReports}" SelectedItem="{Binding SelectedCustomerReport}" AutoGenerateColumns="False" IsReadOnly="True" Height="320">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="Customer Name" Binding="{Binding Name}" Width="*"/>
+                                        <DataGridTextColumn Header="Phone" Binding="{Binding Phone}" Width="130"/>
+                                        <DataGridTextColumn Header="Type" Binding="{Binding CustomerType}" Width="110"/>
+                                        <DataGridTextColumn Header="Total Orders" Binding="{Binding TotalOrders}" Width="100"/>
+                                        <DataGridTextColumn Header="Total Spent" Binding="{Binding TotalSpent, StringFormat=Rs. {0:N2}}" Width="140"/>
+                                        <DataGridTextColumn Header="Avg Order" Binding="{Binding AverageOrderValue, StringFormat=Rs. {0:N2}}" Width="130"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </Border>
+                        </StackPanel>
+                    </ScrollViewer>
+
+                    <!-- Customer Detail Drawer -->
+                    <Border Grid.Column="1" Width="300" Style="{StaticResource Card}" Padding="16"
+                            Visibility="{Binding SelectedCustomerReport, Converter={StaticResource NotNullToVisibilityConverter}}">
+                        <StackPanel>
+                            <Grid Margin="0,0,0,12">
+                                <TextBlock Text="👤 Customer Detail" Style="{StaticResource H3}"/>
+                                <Button Content="✕" Style="{StaticResource SecondaryButton}" Command="{Binding ClearCustomerSelectionCommand}" Width="28" Height="28" HorizontalAlignment="Right" Padding="0"/>
+                            </Grid>
+
+                            <TextBlock Text="{Binding SelectedCustomerReport.Name}" FontWeight="Bold" FontSize="16" Margin="0,0,0,4"/>
+                            <TextBlock Text="{Binding SelectedCustomerReport.Phone, StringFormat=Phone: {0}}" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" Margin="0,0,0,12"/>
+
+                            <Separator Margin="0,0,0,12"/>
+
+                            <Grid Margin="0,4">
+                                <TextBlock Text="Customer Type:" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                <TextBlock Text="{Binding SelectedCustomerReport.CustomerType}" HorizontalAlignment="Right" FontWeight="SemiBold"/>
+                            </Grid>
+
+                            <Grid Margin="0,4">
+                                <TextBlock Text="Total Orders:" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                <TextBlock Text="{Binding SelectedCustomerReport.TotalOrders}" HorizontalAlignment="Right" FontWeight="Bold"/>
+                            </Grid>
+
+                            <Grid Margin="0,4">
+                                <TextBlock Text="Total Spent:" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                <TextBlock Text="{Binding SelectedCustomerReport.TotalSpent, StringFormat=Rs. {0:N2}}" HorizontalAlignment="Right" FontWeight="Bold" Foreground="{StaticResource SuccessBrush}"/>
+                            </Grid>
+
+                            <Grid Margin="0,4">
+                                <TextBlock Text="Average Order:" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                <TextBlock Text="{Binding SelectedCustomerReport.AverageOrderValue, StringFormat=Rs. {0:N2}}" HorizontalAlignment="Right" FontWeight="Bold"/>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </TabItem>
+        </TabControl>
     </Grid>
 </Page>

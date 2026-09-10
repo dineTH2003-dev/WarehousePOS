@@ -16,6 +16,10 @@
     <conv:BoolToStatusConverter      x:Key="BoolToStatusConverter" />
     <conv:BoolToToggleTextConverter  x:Key="BoolToToggleTextConverter" />
     <conv:IsEditingToTitleConverter  x:Key="IsEditingToTitleConverter" />
+    <conv:ValueToWidthConverter      x:Key="ValueToWidthConverter" />
+    <conv:ValueToHeightConverter     x:Key="ValueToHeightConverter" />
+    <conv:DecimalToPercentageConverter x:Key="DecimalToPercentageConverter" />
+    <conv:NotNullToVisibilityConverter x:Key="NotNullToVisibilityConverter" />
 
     <!-- ============================================================
          BUTTON STYLES
@@ -471,7 +475,7 @@
                                         <DropShadowEffect BlurRadius="12" ShadowDepth="3" Opacity="0.12" Color="Black" Direction="270" />
                                     </Border.Effect>
                                     <ScrollViewer Margin="2" SnapsToDevicePixels="True">
-                                        <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Contained" />
+                                        <StackPanel IsItemsHost="True" />
                                     </ScrollViewer>
                                 </Border>
                             </Grid>
