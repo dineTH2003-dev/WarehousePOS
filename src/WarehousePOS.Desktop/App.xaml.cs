@@ -249,15 +249,56 @@ public partial class App : System.Windows.Application
 
     // ── Global fallback handlers ──────────────────────────────────────
 
+    private static DateTime _lastErrorDialogTime = DateTime.MinValue;
+    private static string? _lastErrorMessage;
+    private static bool _isShowingErrorDialog;
+
     private void OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs ex)
     {
         try { Log.Fatal(ex.Exception, "Unhandled UI thread exception"); Log.CloseAndFlush(); } catch { }
-        MessageBox.Show(
-            $"An unexpected error occurred:{Environment.NewLine}{Environment.NewLine}{ex.Exception.Message}",
-            "WarehousePOS — Unexpected Error",
-            MessageBoxButton.OK,
-            MessageBoxImage.Error);
+
+        // Mark this event handled before opening a modal dialog. MessageBox.Show
+        // runs a nested dispatcher loop, so delaying this until after it closes
+        // can allow the same exception path to raise additional dialogs.
         ex.Handled = true;
+
+        // MessageBox.Show starts a nested dispatcher loop. Further failures from
+        // the same failed view must not create another modal error dialog.
+        if (_isShowingErrorDialog)
+        {
+            ex.Handled = true;
+            return;
+        }
+
+        var baseException = ex.Exception.GetBaseException();
+        string displayMessage = baseException != null && baseException != ex.Exception
+            ? $"{ex.Exception.Message}{Environment.NewLine}Details: {baseException.Message}"
+            : ex.Exception.Message;
+
+        var now = DateTime.UtcNow;
+        if (_lastErrorMessage == displayMessage && (now - _lastErrorDialogTime).TotalSeconds < 2)
+        {
+            ex.Handled = true;
+            return;
+        }
+
+        _lastErrorDialogTime = now;
+        _lastErrorMessage = displayMessage;
+
+        try
+        {
+            _isShowingErrorDialog = true;
+            MessageBox.Show(
+                $"An unexpected error occurred:{Environment.NewLine}{Environment.NewLine}{displayMessage}",
+                "WarehousePOS — Unexpected Error",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+        }
+        finally
+        {
+            _isShowingErrorDialog = false;
+            ex.Handled = true;
+        }
     }
 
     private static void OnDomainUnhandledException(object sender, UnhandledExceptionEventArgs ex)
