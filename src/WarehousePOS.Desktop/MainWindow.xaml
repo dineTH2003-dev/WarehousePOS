@@ -14,12 +14,13 @@
         <!-- Sidebar nav button style -->
         <Style x:Key="NavButton" TargetType="Button">
             <Setter Property="Background"        Value="Transparent"/>
-            <Setter Property="Foreground"        Value="#CBD5E1"/>
+            <Setter Property="Foreground"        Value="#1E293B"/>
             <Setter Property="BorderThickness"   Value="0"/>
-            <Setter Property="Padding"           Value="16,12"/>
+            <Setter Property="Padding"           Value="16,11"/>
             <Setter Property="HorizontalContentAlignment" Value="Left"/>
             <Setter Property="FontSize"          Value="14"/>
             <Setter Property="FontFamily"        Value="Segoe UI"/>
+            <Setter Property="FontWeight"        Value="SemiBold"/>
             <Setter Property="Cursor"            Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
@@ -32,10 +33,39 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="#2D3F55"/>
+                                <Setter TargetName="Bd" Property="Background" Value="#E8F7EE"/>
+                                <Setter Property="Foreground" Value="#0F7F4F"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="#1E4976"/>
+                                <Setter TargetName="Bd" Property="Background" Value="#D1F2DF"/>
+                                <Setter Property="Foreground" Value="#0A5C39"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Sidebar logout button style -->
+        <Style x:Key="LogoutNavButton" TargetType="Button" BasedOn="{StaticResource NavButton}">
+            <Setter Property="Foreground" Value="#DC2626"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}"
+                                CornerRadius="8" Margin="8,2">
+                            <ContentPresenter Margin="{TemplateBinding Padding}"
+                                              HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#FEE2E2"/>
+                                <Setter Property="Foreground" Value="#B91C1C"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#FECACA"/>
+                                <Setter Property="Foreground" Value="#991B1B"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -51,43 +81,42 @@
         </Grid.ColumnDefinitions>
 
         <!-- ── Sidebar ─────────────────────────────────────── -->
-        <Border Grid.Column="0" Background="{StaticResource SidebarBrush}">
+        <Border Grid.Column="0"
+                Background="{StaticResource SidebarBrush}"
+                BorderBrush="{StaticResource BorderBrush}"
+                BorderThickness="0,0,1,0">
             <DockPanel>
 
-                <!-- App logo / title -->
-                <StackPanel DockPanel.Dock="Top" Margin="16,24,16,20">
-                    <Image Source="{StaticResource HappyProductsLogo}"
-                           Width="150"
-                           Height="54"
-                           Stretch="Uniform"
-                           HorizontalAlignment="Left"
-                           Margin="0,0,0,8"
-                           SnapsToDevicePixels="True"
-                           UseLayoutRounding="True"
-                           RenderOptions.BitmapScalingMode="HighQuality" />
-                    <TextBlock Text="Warehouse POS"
-                               Foreground="White"
-                               FontSize="16"
-                               FontWeight="Bold"
-                               Margin="0,4,0,0"/>
+                <!-- App logo / user info -->
+                <StackPanel DockPanel.Dock="Top" Margin="16,18,16,16">
+                    <Border Width="180"
+                            MaxWidth="180"
+                            HorizontalAlignment="Left"
+                            Margin="0,0,0,6">
+                        <Image Source="{StaticResource HappyProductsLogo}"
+                               Stretch="Uniform"
+                               SnapsToDevicePixels="True"
+                               UseLayoutRounding="True"
+                               RenderOptions.BitmapScalingMode="HighQuality" />
+                    </Border>
                     <TextBlock x:Name="UserLabel"
-                               Foreground="#94A3B8"
+                               Foreground="{StaticResource TextSecondaryBrush}"
                                FontSize="12"
-                               Margin="0,2,0,0"/>
+                               FontWeight="SemiBold"
+                               Margin="2,2,0,0"/>
                 </StackPanel>
 
-                <Separator DockPanel.Dock="Top" Background="#2D3F55" Margin="16,0,16,12"/>
+                <Separator DockPanel.Dock="Top" Background="{StaticResource BorderBrush}" Margin="16,0,16,12"/>
 
                 <!-- Logout at bottom -->
                 <Button x:Name="BtnLogout"
                         DockPanel.Dock="Bottom"
                         Content="⬅  Logout"
-                        Style="{StaticResource NavButton}"
-                        Foreground="#F87171"
+                        Style="{StaticResource LogoutNavButton}"
                         Margin="0,0,0,16"
                         Click="BtnLogout_Click"/>
 
-                <Separator DockPanel.Dock="Bottom" Background="#2D3F55" Margin="16,0,16,8"/>
+                <Separator DockPanel.Dock="Bottom" Background="{StaticResource BorderBrush}" Margin="16,0,16,8"/>
 
                 <!-- Navigation items -->
                 <StackPanel>
@@ -112,7 +141,7 @@
                             Style="{StaticResource NavButton}"
                             Click="BtnCustomers_Click"/>
 
-                    <Separator Background="#2D3F55" Margin="16,8"/>
+                    <Separator Background="{StaticResource BorderBrush}" Margin="16,8"/>
 
                     <Button x:Name="BtnReports"
                             Content="📊  Reports"
@@ -127,7 +156,7 @@
                                 Style="{StaticResource NavButton}"
                                 Click="BtnUserManagement_Click"/>
 
-                    <Separator Background="#2D3F55" Margin="16,8"/>
+                    <Separator Background="{StaticResource BorderBrush}" Margin="16,8"/>
 
                     <Button x:Name="BtnSettings"
                             Content="⚙️  Settings"

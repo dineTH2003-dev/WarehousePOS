@@ -64,6 +64,10 @@
                                  GroupName="SettingsTabs"
                                  IsChecked="{Binding IsBackupTabActive, Mode=TwoWay}"
                                  Style="{StaticResource SettingsTabRadioStyle}"/>
+                    <RadioButton Content="🔔  Notifications (Email &amp; WhatsApp)"
+                                 GroupName="SettingsTabs"
+                                 IsChecked="{Binding IsNotificationTabActive, Mode=TwoWay}"
+                                 Style="{StaticResource SettingsTabRadioStyle}"/>
                 </StackPanel>
             </Border>
 
@@ -260,6 +264,171 @@
                                     <DataGridTextColumn Header="Date &amp; Time" Binding="{Binding DateDisplay}" Width="160"/>
                                 </DataGrid.Columns>
                             </DataGrid>
+                        </StackPanel>
+                    </Border>
+
+                </StackPanel>
+            </Grid>
+
+            <!-- ── Tab 3: Notifications (Email & WhatsApp) ────────── -->
+            <Grid Grid.Row="2" Visibility="{Binding IsNotificationTabActive, Converter={StaticResource BoolToVisibilityConverter}}">
+                <StackPanel MaxWidth="920" HorizontalAlignment="Left">
+
+                    <!-- Top Bar: Title & Save Button -->
+                    <Grid Margin="0,0,0,16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="Automated Alerts &amp; Owner Notifications" Style="{StaticResource H3}"/>
+                            <TextBlock Text="Receive instant low-stock alerts and end-of-month financial reports via Brevo Email and WhatsApp"
+                                       Style="{StaticResource CaptionText}" Margin="0,2,0,0"/>
+                        </StackPanel>
+                        <Button Grid.Column="1" Content="💾 Save Notification Settings" Style="{StaticResource PrimaryButton}"
+                                Command="{Binding SaveNotificationSettingsCommand}" Padding="16,8"/>
+                    </Grid>
+
+                    <!-- Status Notification Banner -->
+                    <Border Background="#EFF6FF" BorderBrush="#3B82F6" BorderThickness="1" CornerRadius="6" Padding="12" Margin="0,0,0,16"
+                            Visibility="{Binding NotificationStatusMessage, Converter={StaticResource NullToVisibilityConverter}}">
+                        <TextBlock Text="{Binding NotificationStatusMessage}" Foreground="#1D4ED8" FontWeight="SemiBold" FontSize="13"/>
+                    </Border>
+
+                    <!-- 1. Brevo Email Service Configuration Card -->
+                    <Border Style="{StaticResource Card}" Margin="0,0,0,16">
+                        <StackPanel>
+                            <Grid Margin="0,0,0,12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="📧" FontSize="26" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                    <TextBlock Text="Brevo Transactional Email (300 Free Emails / Day)" FontWeight="Bold" FontSize="14"/>
+                                    <TextBlock Text="Delivers rich HTML reports and instant inventory alerts directly to the business owner"
+                                               Style="{StaticResource CaptionText}" Margin="0,2,0,0"/>
+                                </StackPanel>
+                                <Button Grid.Column="2" Content="✉️ Send Test Email" Style="{StaticResource SecondaryButton}"
+                                        Command="{Binding SendTestEmailCommand}" Padding="12,6" FontSize="12"/>
+                            </Grid>
+
+                            <Separator Margin="0,4,0,16"/>
+
+                            <Grid Margin="0,0,0,12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="16"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="Brevo API Key" Style="{StaticResource FormLabel}"/>
+                                    <TextBox Text="{Binding BrevoApiKey, UpdateSourceTrigger=PropertyChanged}"
+                                             Style="{StaticResource FormTextBox}" FontSize="12"
+                                             ToolTip="Get your free API key at app.brevo.com -> SMTP &amp; API -> API Keys"/>
+                                    <TextBlock Text="Free tier API key from app.brevo.com" Style="{StaticResource CaptionText}" Margin="0,2,0,0"/>
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="Owner / Recipient Email Address" Style="{StaticResource FormLabel}"/>
+                                    <TextBox Text="{Binding OwnerEmail, UpdateSourceTrigger=PropertyChanged}"
+                                             Style="{StaticResource FormTextBox}" FontSize="12"/>
+                                    <TextBlock Text="Where stock alerts and monthly reports will be sent" Style="{StaticResource CaptionText}" Margin="0,2,0,0"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <Grid Margin="0,0,0,16">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="16"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="Sender Email (Verified in Brevo)" Style="{StaticResource FormLabel}"/>
+                                    <TextBox Text="{Binding BrevoSenderEmail, UpdateSourceTrigger=PropertyChanged}"
+                                             Style="{StaticResource FormTextBox}" FontSize="12"/>
+                                    <TextBlock Text="Must match a verified sender email in your Brevo account" Style="{StaticResource CaptionText}" Margin="0,2,0,0"/>
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="Sender Display Name" Style="{StaticResource FormLabel}"/>
+                                    <TextBox Text="{Binding BrevoSenderName, UpdateSourceTrigger=PropertyChanged}"
+                                             Style="{StaticResource FormTextBox}" FontSize="12"/>
+                                    <TextBlock Text="e.g. 'Warehouse POS Notifications'" Style="{StaticResource CaptionText}" Margin="0,2,0,0"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <!-- Notification Triggers Toggles -->
+                            <TextBlock Text="Email Notification Subscriptions:" FontWeight="SemiBold" FontSize="13" Margin="0,0,0,8"/>
+                            <CheckBox Content="Send Low Stock &amp; Depleted Inventory Alerts (when stock &lt;= reorder level)"
+                                      IsChecked="{Binding IsEmailLowStockAlertEnabled}" Margin="0,0,0,8" FontSize="13"/>
+                            <CheckBox Content="Send Executive Monthly Performance Report on the 1st of every month"
+                                      IsChecked="{Binding IsEmailMonthlyReportEnabled}" Margin="0,0,0,12" FontSize="13"/>
+
+                            <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                                <Button Content="📊 Send Monthly Report Now (Preview)" Style="{StaticResource SecondaryButton}"
+                                        Command="{Binding SendMonthlyReportNowCommand}" Padding="12,6" FontSize="12" Margin="0,0,10,0"/>
+                                <Button Content="🔍 Check &amp; Dispatch Stock Alerts Now" Style="{StaticResource SecondaryButton}"
+                                        Command="{Binding CheckLowStockAlertsNowCommand}" Padding="12,6" FontSize="12"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- 2. WhatsApp Gateway Configuration Card -->
+                    <Border Style="{StaticResource Card}" Margin="0,0,0,16">
+                        <StackPanel>
+                            <Grid Margin="0,0,0,12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="📱" FontSize="26" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                    <TextBlock Text="WhatsApp Messaging Gateway" FontWeight="Bold" FontSize="14"/>
+                                    <TextBlock Text="Instant mobile messages via Google Cloud Run (Evolution API / Baileys) or UltraMsg / Green-API"
+                                               Style="{StaticResource CaptionText}" Margin="0,2,0,0"/>
+                                </StackPanel>
+                                <Button Grid.Column="2" Content="📱 Send Test WhatsApp" Style="{StaticResource SecondaryButton}"
+                                        Command="{Binding SendTestWhatsAppCommand}" Padding="12,6" FontSize="12"/>
+                            </Grid>
+
+                            <Separator Margin="0,4,0,16"/>
+
+                            <CheckBox Content="Enable WhatsApp Notifications"
+                                      IsChecked="{Binding IsWhatsAppEnabled}" FontWeight="SemiBold" Margin="0,0,0,14" FontSize="13"/>
+
+                            <Grid Margin="0,0,0,12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="16"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="Owner Mobile Number (with country code)" Style="{StaticResource FormLabel}"/>
+                                    <TextBox Text="{Binding OwnerPhone, UpdateSourceTrigger=PropertyChanged}"
+                                             Style="{StaticResource FormTextBox}" FontSize="12"/>
+                                    <TextBlock Text="e.g. +94711435343 (digits with country code)" Style="{StaticResource CaptionText}" Margin="0,2,0,0"/>
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="Gateway Endpoint URL" Style="{StaticResource FormLabel}"/>
+                                    <TextBox Text="{Binding WhatsAppGatewayUrl, UpdateSourceTrigger=PropertyChanged}"
+                                             Style="{StaticResource FormTextBox}" FontSize="12"/>
+                                    <TextBlock Text="e.g. https://api.ultramsg.com/instance.../messages/chat or Cloud Run URL" Style="{StaticResource CaptionText}" Margin="0,2,0,0"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <StackPanel Margin="0,0,0,12">
+                                <TextBlock Text="Gateway API Key / Token" Style="{StaticResource FormLabel}"/>
+                                <TextBox Text="{Binding WhatsAppApiKey, UpdateSourceTrigger=PropertyChanged}"
+                                         Style="{StaticResource FormTextBox}" FontSize="12"/>
+                                <TextBlock Text="Bearer token or API key for authenticating to your WhatsApp gateway" Style="{StaticResource CaptionText}" Margin="0,2,0,0"/>
+                            </StackPanel>
                         </StackPanel>
                     </Border>
 

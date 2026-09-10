@@ -29,11 +29,14 @@
                         Style="{StaticResource SecondaryButton}"
                         Command="{Binding ManageCategoriesCommand}"
                         Margin="0,0,10,0"
-                        Padding="14,8"/>
+                        Height="38"
+                        Padding="14,0"/>
                 <Button Content="+ Add Product"
                         Style="{StaticResource PrimaryButton}"
                         Command="{Binding AddCommand}"
-                        Padding="16,8"/>
+                        Width="150"
+                        Height="38"
+                        Padding="0"/>
             </StackPanel>
         </Grid>
 
@@ -47,31 +50,21 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <!-- Search Input with Hover Card & Prefix -->
-                <Border Grid.Column="0" Style="{StaticResource SearchHoverCard}" Width="320" Margin="0,0,16,0" Padding="10,6">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Text="Product:" FontWeight="Bold" Foreground="{StaticResource PrimaryBrush}" VerticalAlignment="Center" Margin="0,0,6,0" FontSize="12"/>
-                        <TextBlock Grid.Column="1" Text="🔍" FontSize="13" VerticalAlignment="Center" Margin="0,0,6,0" Foreground="{StaticResource TextSecondaryBrush}"/>
-                        <Grid Grid.Column="1" Grid.ColumnSpan="2">
-                            <Path Style="{StaticResource SearchIcon}" />
-                            <TextBox Style="{StaticResource FormTextBox}"
-                                     Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                                     Padding="34,8,8,8"
-                                     Tag="Enter SKU, name or barcode..."
-                                     ToolTip="Search product catalog by name, SKU or barcode" />
-                        </Grid>
-                    </Grid>
-                </Border>
+                <!-- Search Input with Hover Card -->
+                <StackPanel Grid.Column="0" Width="340" Margin="0,0,16,0">
+                    <TextBlock Text="Product Search" Style="{StaticResource LabelText}" Margin="0,0,0,4"/>
+                    <Border Style="{StaticResource SearchHoverCard}" Width="340" Padding="0">
+                        <TextBox Style="{StaticResource SearchTextBox}"
+                                 Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                                 Tag="Enter SKU, name or barcode..."
+                                 ToolTip="Search product catalog by name, SKU or barcode" />
+                    </Border>
+                </StackPanel>
 
                 <!-- Category Filter -->
-                <StackPanel Grid.Column="1" Margin="0,0,20,0">
+                <StackPanel Grid.Column="1" Width="340" Margin="0,0,20,0">
                     <TextBlock Text="Category" Style="{StaticResource LabelText}" Margin="0,0,0,4"/>
-                    <ComboBox Width="200"
+                    <ComboBox Width="340"
                               SelectedValuePath="Id"
                               DisplayMemberPath="Name"
                               SelectedValue="{Binding FilterCategoryId}"
@@ -80,19 +73,19 @@
                     </ComboBox>
                 </StackPanel>
 
-                <!-- Modern Switch Toggle for Inactive Products -->
-                <StackPanel Grid.Column="2" VerticalAlignment="Bottom" Margin="0,0,16,6" HorizontalAlignment="Left">
+                <!-- Right-aligned Inactive Toggle and Reset Filters -->
+                <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Bottom" Margin="0,0,0,6">
                     <CheckBox Content="Show Inactive Products"
                               Style="{StaticResource ModernSwitch}"
                               IsChecked="{Binding ShowInactive}"
                               ToolTip="Toggle visibility of deactivated products"/>
+                    <Button Content="Reset Filters"
+                            Style="{StaticResource SecondaryButton}"
+                            Margin="16,0,0,0"
+                            Command="{Binding ClearFiltersCommand}"
+                            Padding="12,6" FontSize="12"
+                            ToolTip="Reset search and category filters"/>
                 </StackPanel>
-
-                <!-- Reset Filters Button -->
-                <Button Grid.Column="3" Content="Reset Filters"
-                        Style="{StaticResource SecondaryButton}"
-                        Command="{Binding ClearFiltersCommand}"
-                        VerticalAlignment="Bottom" Margin="0,0,0,2" Padding="10,6" FontSize="12"/>
             </Grid>
         </Border>
 
@@ -130,19 +123,28 @@
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
-                    <DataGridTextColumn Header="Status"          Binding="{Binding IsActive, Converter={StaticResource BoolToStatusConverter}}" Width="90"/>
-                    <DataGridTemplateColumn Header="Actions"     Width="160">
+                    <DataGridTemplateColumn Header="Status" Width="90">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Border Style="{StaticResource StatusBadge}">
+                                    <TextBlock Text="{Binding IsActive, Converter={StaticResource BoolToStatusConverter}}"
+                                               Style="{StaticResource StatusBadgeText}" />
+                                </Border>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    <DataGridTemplateColumn Header="Actions" Width="195">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <StackPanel Orientation="Horizontal">
                                     <Button Content="Edit"
-                                            Style="{StaticResource SecondaryButton}"
-                                            Padding="8,4" Margin="0,0,6,0"
+                                            Style="{StaticResource TableSecondaryButton}"
+                                            Width="60" Margin="0,0,8,0"
                                             Command="{Binding DataContext.EditCommand, RelativeSource={RelativeSource AncestorType=Page}}"
                                             CommandParameter="{Binding}"/>
                                     <Button Content="{Binding IsActive, Converter={StaticResource BoolToToggleTextConverter}}"
-                                            Style="{StaticResource SecondaryButton}"
-                                            Padding="8,4"
+                                            Style="{StaticResource TableSecondaryButton}"
+                                            Width="85"
                                             Command="{Binding DataContext.ToggleActiveCommand, RelativeSource={RelativeSource AncestorType=Page}}"
                                             CommandParameter="{Binding}"/>
                                 </StackPanel>

@@ -18,30 +18,46 @@
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
-            <TextBlock Text="Customer Directory" Style="{StaticResource H2}" VerticalAlignment="Center"/>
+            <StackPanel Grid.Column="0">
+                <TextBlock Text="Customer Directory" Style="{StaticResource H2}"/>
+                <TextBlock Text="Manage customer accounts, wholesale/retail pricing tiers, and track transaction history"
+                           Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" Margin="0,2,0,0"/>
+            </StackPanel>
             <Button Grid.Column="1" Content="+ Add Customer"
                     Style="{StaticResource PrimaryButton}"
-                    Command="{Binding AddCommand}"/>
+                    Command="{Binding AddCommand}"
+                    Width="150"
+                    Height="38"
+                    Padding="0"/>
         </Grid>
 
         <!-- Filters -->
-        <Border Grid.Row="1" Style="{StaticResource SearchHoverCard}" Margin="0,0,0,16" Padding="12,8" HorizontalAlignment="Left" Width="360">
+        <Border Grid.Row="1" Style="{StaticResource Card}" Margin="0,0,0,16" Padding="16,12">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <TextBlock Grid.Column="0" Text="Customer:" FontWeight="Bold" Foreground="{StaticResource PrimaryBrush}" VerticalAlignment="Center" Margin="0,0,8,0" FontSize="13"/>
-                <TextBlock Grid.Column="1" Text="🔍" FontSize="14" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="{StaticResource TextSecondaryBrush}"/>
-                <Grid Grid.Column="1" Grid.ColumnSpan="2">
-                    <Path Style="{StaticResource SearchIcon}" />
-                    <TextBox Style="{StaticResource FormTextBox}"
-                             Padding="34,8,8,8"
-                             Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                             Tag="Phone number or name"
-                             ToolTip="Search customer by name or phone number" />
-                </Grid>
+
+                <StackPanel Grid.Column="0" Width="340">
+                    <TextBlock Text="Customer Search" Style="{StaticResource LabelText}" Margin="0,0,0,4"/>
+                    <Border Style="{StaticResource SearchHoverCard}" Width="340" Padding="0">
+                        <TextBox Style="{StaticResource SearchTextBox}"
+                                 Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                                 Tag="Phone number or name"
+                                 ToolTip="Search customer by name or phone number" />
+                    </Border>
+                </StackPanel>
+
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Bottom" Margin="0,0,0,6">
+                    <CheckBox Content="Show Inactive Customers"
+                              Style="{StaticResource ModernSwitch}"
+                              IsChecked="{Binding ShowInactive}"
+                              ToolTip="Toggle visibility of deactivated customers"/>
+                    <Button Content="Refresh" Style="{StaticResource SecondaryButton}"
+                            Margin="16,0,0,0" Command="{Binding RefreshCommand}"/>
+                </StackPanel>
             </Grid>
         </Border>
 
@@ -53,17 +69,29 @@
                     <DataGridTextColumn Header="Type"          Binding="{Binding TypeLabel}" Width="100"/>
                     <DataGridTextColumn Header="Discount Rate" Binding="{Binding DiscountRate, StringFormat='{}{0:G29}%'}" Width="110"/>
                     <DataGridTextColumn Header="Phone"         Binding="{Binding Phone}"     Width="130"/>
-                    <DataGridTextColumn Header="Email"         Binding="{Binding Email}"     Width="180"/>
-                    <DataGridTemplateColumn Header="Actions" Width="170">
+                    <DataGridTextColumn Header="Email"         Binding="{Binding Email}"     Width="*"/>
+                    <DataGridTemplateColumn Header="Status" Width="90">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Border Style="{StaticResource StatusBadge}">
+                                    <TextBlock Text="{Binding IsActive, Converter={StaticResource BoolToStatusConverter}}"
+                                               Style="{StaticResource StatusBadgeText}" />
+                                </Border>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    <DataGridTemplateColumn Header="Actions" Width="195">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <StackPanel Orientation="Horizontal">
                                     <Button Content="Edit"
-                                            Style="{StaticResource SecondaryButton}" Padding="8,4" Margin="0,0,6,0"
+                                            Style="{StaticResource TableSecondaryButton}"
+                                            Width="60" Margin="0,0,8,0"
                                             Command="{Binding DataContext.EditCommand, RelativeSource={RelativeSource AncestorType=Page}}"
                                             CommandParameter="{Binding}"/>
                                     <Button Content="Purchased"
-                                            Style="{StaticResource PrimaryButton}" Padding="10,4"
+                                            Style="{StaticResource TablePrimaryButton}"
+                                            Width="85"
                                             Command="{Binding DataContext.PurchasedCommand, RelativeSource={RelativeSource AncestorType=Page}}"
                                             CommandParameter="{Binding}"/>
                                 </StackPanel>

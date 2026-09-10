@@ -24,6 +24,7 @@ public partial class MainWindow : Window
     private readonly SessionContext _session;
     private readonly WarehousePOS.Application.Common.IBackupService _backupService;
     private readonly WarehousePOS.Application.Common.ICloudBackupService _cloudService;
+    private readonly Microsoft.Extensions.DependencyInjection.IServiceScopeFactory _scopeFactory;
     private readonly HashSet<object> _initializedPages = [];
     private System.Windows.Threading.DispatcherTimer? _autoBackupTimer;
     private bool _shellInitialized;
@@ -32,13 +33,15 @@ public partial class MainWindow : Window
         INavigationService nav,
         SessionContext session,
         WarehousePOS.Application.Common.IBackupService backupService,
-        WarehousePOS.Application.Common.ICloudBackupService cloudService)
+        WarehousePOS.Application.Common.ICloudBackupService cloudService,
+        Microsoft.Extensions.DependencyInjection.IServiceScopeFactory scopeFactory)
     {
         InitializeComponent();
         _nav = nav;
         _session = session;
         _backupService = backupService;
         _cloudService = cloudService;
+        _scopeFactory = scopeFactory;
 
         // Wire the navigation service to the Frame inside this window
         if (_nav is Services.NavigationService ns)
@@ -142,6 +145,19 @@ public partial class MainWindow : Window
             if (zipPath is not null && await _cloudService.IsConnectedAsync())
             {
                 await _cloudService.UploadBackupAsync(zipPath);
+            }
+
+            // Check automated low-stock notifications and monthly reports in background
+            try
+            {
+                using var scope = _scopeFactory.CreateScope();
+                var orchestrator = scope.ServiceProvider.GetRequiredService<WarehousePOS.Application.Notifications.INotificationOrchestrator>();
+                await orchestrator.CheckAndSendLowStockAlertsAsync(force: false);
+                await orchestrator.CheckAndSendMonthlyReportAsync(force: false);
+            }
+            catch
+            {
+                // Silent catch on background thread — never disrupt the cashier or UI
             }
         }
         catch
