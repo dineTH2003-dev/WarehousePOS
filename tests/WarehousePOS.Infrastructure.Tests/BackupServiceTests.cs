@@ -31,7 +31,7 @@ public sealed class BackupServiceTests : IDisposable
     public async Task CreateBackupAsync_ShouldCreateZipFileWithDatabase()
     {
         // Arrange
-        var service = new BackupService(_dummyDbPath, NullLogger<BackupService>.Instance);
+        var service = new BackupService(_dummyDbPath, NullLogger<BackupService>.Instance, _tempDir);
 
         // Act
         var backupZipPath = await service.CreateBackupAsync();
@@ -60,7 +60,7 @@ public sealed class BackupServiceTests : IDisposable
     public async Task CreateBackupAsync_NonExistentDb_ShouldThrowFileNotFoundException()
     {
         // Arrange
-        var service = new BackupService(Path.Combine(_tempDir, "nonexistent.db"), NullLogger<BackupService>.Instance);
+        var service = new BackupService(Path.Combine(_tempDir, "nonexistent.db"), NullLogger<BackupService>.Instance, _tempDir);
 
         // Act & Assert
         await Assert.ThrowsAsync<FileNotFoundException>(() => service.CreateBackupAsync());
@@ -70,7 +70,7 @@ public sealed class BackupServiceTests : IDisposable
     public async Task CreateBackupAsync_MultipleRuns_ShouldAtomicallyUpdateSameMainZipFile()
     {
         // Arrange
-        var service = new BackupService(_dummyDbPath, NullLogger<BackupService>.Instance);
+        var service = new BackupService(_dummyDbPath, NullLogger<BackupService>.Instance, _tempDir);
 
         // Act - First run
         var firstBackupPath = await service.CreateBackupAsync();
