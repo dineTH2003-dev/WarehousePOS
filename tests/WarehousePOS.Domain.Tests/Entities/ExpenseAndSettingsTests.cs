@@ -42,6 +42,21 @@ public sealed class ExpenseAndSettingsTests
     }
 
     [Fact]
+    public void Update_Expense_ValidInputs_ShouldUpdateProperties()
+    {
+        var expense = Expense.Create(1, 1000m, "Original desc", 1);
+        var newDate = DateTime.UtcNow.AddDays(-1);
+        expense.Update(2, 2500.75m, "Updated desc", "REF-999", newDate);
+
+        expense.CategoryId.Should().Be(2);
+        expense.Amount.Should().Be(2500.75m);
+        expense.Description.Should().Be("Updated desc");
+        expense.ReferenceNo.Should().Be("REF-999");
+        expense.ExpenseDate.Should().Be(newDate);
+        expense.UpdatedAt.Should().NotBeNull();
+    }
+
+    [Fact]
     public void Create_StoreSetting_ShouldNormalizeKey()
     {
         var setting = StoreSetting.Create("store_name", "My Warehouse", "Store Name");
