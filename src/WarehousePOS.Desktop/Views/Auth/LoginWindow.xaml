@@ -35,9 +35,9 @@
                 <StackPanel>
 
                     <!-- Official Happy Products logo stored as a local resource. -->
-                    <Border MaxWidth="280"
+                    <Border MaxWidth="260"
                             HorizontalAlignment="Center"
-                            Margin="0,0,0,18">
+                            Margin="0,0,0,8">
                         <Image Source="{StaticResource HappyProductsLogo}"
                                Stretch="Uniform"
                                SnapsToDevicePixels="True"
@@ -45,15 +45,10 @@
                                RenderOptions.BitmapScalingMode="HighQuality" />
                     </Border>
 
-                    <TextBlock Text="Warehouse POS"
-                               Style="{StaticResource H2}"
-                               HorizontalAlignment="Center"
-                               FontSize="25"
-                               Margin="0,0,0,4" />
                     <TextBlock Text="Sign in to continue"
                                Style="{StaticResource CaptionText}"
                                HorizontalAlignment="Center"
-                               Margin="0,0,0,28" />
+                               Margin="0,0,0,20" />
 
                     <!-- Username -->
                     <StackPanel Margin="0,0,0,16">
@@ -108,7 +103,7 @@
             </Border>
         </Grid>
 
-        <TextBlock Text="Warehouse POS  |  Happy Products"
+        <TextBlock Text="© 2026 Happy Products • All Rights Reserved"
                    Foreground="#D9FFFFFF"
                    FontSize="12"
                    HorizontalAlignment="Center"
