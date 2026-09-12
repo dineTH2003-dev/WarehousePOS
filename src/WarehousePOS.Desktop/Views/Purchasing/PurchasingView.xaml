@@ -75,6 +75,7 @@
                     <StackPanel Grid.Column="4">
                         <TextBlock Text="Purchase Order Notes / Invoice No." Style="{StaticResource LabelText}" Margin="0,0,0,6"/>
                         <TextBox Width="340"
+                                 Height="38"
                                  Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}"
                                  Style="{StaticResource FormTextBox}"
                                  ToolTip="Optional reference notes or supplier invoice number"/>
@@ -96,6 +97,7 @@
                     <StackPanel Grid.Column="0">
                         <TextBlock Text="Paid Amount (Rs.) *" Style="{StaticResource LabelText}" Margin="0,0,0,6"/>
                         <TextBox Width="340"
+                                 Height="38"
                                  Text="{Binding PaidAmountText, UpdateSourceTrigger=PropertyChanged}"
                                  behaviors:DecimalOnlyBehavior.IsEnabled="True"
                                  Style="{StaticResource FormTextBox}"
@@ -107,7 +109,7 @@
                     <!-- Remaining Balance -->
                     <StackPanel Grid.Column="2">
                         <TextBlock Text="Remaining Balance" Style="{StaticResource LabelText}" Margin="0,0,0,6"/>
-                        <Border Width="340" Background="#FFFBEB" BorderBrush="#FCD34D" BorderThickness="1" CornerRadius="6" Padding="10,7">
+                        <Border Width="340" Height="38" MinHeight="38" Background="#FFFBEB" BorderBrush="#FCD34D" BorderThickness="1" CornerRadius="8" Padding="10,8">
                             <TextBlock Text="{Binding RemainingBalance, StringFormat='Rs. {0:N2}'}"
                                        FontWeight="Bold" Foreground="#B45309" FontSize="13" VerticalAlignment="Center"/>
                         </Border>
@@ -117,6 +119,7 @@
                     <StackPanel Grid.Column="4">
                         <TextBlock Text="Payment Reference / Details" Style="{StaticResource LabelText}" Margin="0,0,0,6"/>
                         <TextBox Width="340"
+                                 Height="38"
                                  Text="{Binding PaymentDetails, UpdateSourceTrigger=PropertyChanged}"
                                  Style="{StaticResource FormTextBox}"
                                  ToolTip="Optional cheque number, bank transaction ID, or payment notes"/>

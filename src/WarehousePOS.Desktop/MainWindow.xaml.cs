@@ -28,6 +28,7 @@ public partial class MainWindow : Window
     private readonly HashSet<object> _initializedPages = [];
     private System.Windows.Threading.DispatcherTimer? _autoBackupTimer;
     private bool _shellInitialized;
+    private Button? _activeNavButton;
 
     public MainWindow(
         INavigationService nav,
@@ -178,11 +179,13 @@ public partial class MainWindow : Window
 
             if (page is Views.Sales.PosView posView)
             {
+                SetActiveNav(BtnPos);
                 if (isFirstLoad)
                     await posView.InitAsync();
             }
             else if (page is Views.Products.ProductListView productView)
             {
+                SetActiveNav(BtnProducts);
                 if (isFirstLoad)
                     await productView.InitAsync();
                 else if (ProductListViewModel.PendingOpenAddProduct)
@@ -190,46 +193,55 @@ public partial class MainWindow : Window
             }
             else if (page is Views.Purchasing.PurchasingView purchasingView)
             {
+                SetActiveNav(BtnPurchasing);
                 if (isFirstLoad)
                     await purchasingView.InitAsync();
             }
             else if (page is Views.Products.CategoryManagementView catView)
             {
+                SetActiveNav(BtnProducts);
                 if (isFirstLoad)
                     await catView.InitAsync();
             }
             else if (page is Views.Suppliers.SupplierListView supplierView)
             {
+                SetActiveNav(BtnSuppliers);
                 if (isFirstLoad)
                     await supplierView.InitAsync();
             }
             else if (page is Views.Sales.CustomerListView customerView)
             {
+                SetActiveNav(BtnCustomers);
                 if (isFirstLoad)
                     await customerView.InitAsync();
             }
             else if (page is Views.Sales.CustomerPurchasedItemsView purchasedView)
             {
+                SetActiveNav(BtnCustomers);
                 if (isFirstLoad || CustomerPurchasedItemsViewModel.PendingCustomer is not null)
                     await purchasedView.InitAsync();
             }
             else if (page is Views.Reports.ReportsView reportsView)
             {
+                SetActiveNav(BtnReports);
                 if (isFirstLoad)
                     await reportsView.InitAsync();
             }
             else if (page is Views.Expenses.ExpenseListView expenseView)
             {
+                SetActiveNav(BtnExpenses);
                 if (isFirstLoad)
                     await expenseView.InitAsync();
             }
             else if (page is Views.Users.UserManagementView userView)
             {
+                SetActiveNav(BtnUserManagement);
                 if (isFirstLoad)
                     await userView.InitAsync();
             }
             else if (page is Views.Settings.StoreSettingsView settingsView)
             {
+                SetActiveNav(BtnSettings);
                 if (isFirstLoad)
                     await settingsView.InitAsync();
             }
@@ -241,6 +253,19 @@ public partial class MainWindow : Window
                 "WarehousePOS — Navigation Error",
                 MessageBoxButton.OK,
                 MessageBoxImage.Warning);
+        }
+    }
+
+    private void SetActiveNav(Button? btn)
+    {
+        if (_activeNavButton != null)
+        {
+            _activeNavButton.Tag = "";
+        }
+        _activeNavButton = btn;
+        if (_activeNavButton != null)
+        {
+            _activeNavButton.Tag = "Active";
         }
     }
 

@@ -1,6 +1,8 @@
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
+using System.Windows.Media;
 
 namespace WarehousePOS.Desktop.Behaviors;
 
@@ -40,14 +42,48 @@ public static class ArrowNavigationBehavior
         var focusedElement = Keyboard.FocusedElement as UIElement;
         if (focusedElement == null) return;
 
-        if (focusedElement is ComboBox comboBox && comboBox.IsDropDownOpen)
+        // Never intercept keyboard navigation inside tables/grids/lists
+        if (IsInsideDataGridOrList(focusedElement))
             return;
 
+        // Never intercept dropdown/selection in ComboBox
+        if (focusedElement is ComboBox comboBox)
+        {
+            if (comboBox.IsDropDownOpen || e.Key == Key.Up || e.Key == Key.Down)
+                return;
+        }
+
+        // Never intercept DatePicker when popup is open
+        if (focusedElement is DatePicker datePicker && datePicker.IsDropDownOpen)
+            return;
+
+        // Never intercept Calendar date picking controls
+        if (focusedElement is Calendar || focusedElement is CalendarDayButton || focusedElement is CalendarButton || focusedElement is CalendarItem)
+            return;
+
+        // Never intercept TabItem header switching
+        if (focusedElement is TabItem)
+            return;
+
+        // Never intercept Slider value changes
+        if (focusedElement is Slider)
+            return;
+
+        // Never intercept RadioButton group navigation
+        if (focusedElement is RadioButton)
+        {
+            if (e.Key == Key.Up || e.Key == Key.Down || e.Key == Key.Left || e.Key == Key.Right)
+                return;
+        }
+
+        // Enter key moves focus to next logical element
         if (e.Key == Key.Enter)
         {
             if (focusedElement is TextBox tb && tb.AcceptsReturn)
                 return;
             if (focusedElement is Button)
+                return;
+            if (focusedElement is ComboBox cb && cb.IsDropDownOpen)
                 return;
 
             focusedElement.MoveFocus(new TraversalRequest(FocusNavigationDirection.Next));
@@ -57,21 +93,25 @@ public static class ArrowNavigationBehavior
 
         if (focusedElement is TextBox textBox)
         {
+            // For multiline textboxes, preserve Up/Down arrow line navigation
+            if (textBox.AcceptsReturn)
+                return;
+
             if (e.Key == Key.Down)
             {
-                focusedElement.MoveFocus(new TraversalRequest(FocusNavigationDirection.Down));
+                MoveDown(focusedElement);
                 e.Handled = true;
             }
             else if (e.Key == Key.Up)
             {
-                focusedElement.MoveFocus(new TraversalRequest(FocusNavigationDirection.Up));
+                MoveUp(focusedElement);
                 e.Handled = true;
             }
             else if (e.Key == Key.Left)
             {
                 if (textBox.CaretIndex == 0 && textBox.SelectionLength == 0)
                 {
-                    focusedElement.MoveFocus(new TraversalRequest(FocusNavigationDirection.Left));
+                    MoveLeft(focusedElement);
                     e.Handled = true;
                 }
             }
@@ -79,23 +119,98 @@ public static class ArrowNavigationBehavior
             {
                 if (textBox.CaretIndex == (textBox.Text?.Length ?? 0) && textBox.SelectionLength == 0)
                 {
-                    focusedElement.MoveFocus(new TraversalRequest(FocusNavigationDirection.Right));
+                    MoveRight(focusedElement);
                     e.Handled = true;
                 }
             }
         }
-        else
+        else if (focusedElement is PasswordBox)
         {
-            if (e.Key == Key.Down || e.Key == Key.Right)
+            if (e.Key == Key.Down)
             {
-                focusedElement.MoveFocus(new TraversalRequest(FocusNavigationDirection.Next));
+                MoveDown(focusedElement);
                 e.Handled = true;
             }
-            else if (e.Key == Key.Up || e.Key == Key.Left)
+            else if (e.Key == Key.Up)
             {
-                focusedElement.MoveFocus(new TraversalRequest(FocusNavigationDirection.Previous));
+                MoveUp(focusedElement);
+                e.Handled = true;
+            }
+            else if (e.Key == Key.Right)
+            {
+                MoveRight(focusedElement);
+                e.Handled = true;
+            }
+            else if (e.Key == Key.Left)
+            {
+                MoveLeft(focusedElement);
                 e.Handled = true;
             }
         }
+        else
+        {
+            if (e.Key == Key.Down)
+            {
+                MoveDown(focusedElement);
+                e.Handled = true;
+            }
+            else if (e.Key == Key.Up)
+            {
+                MoveUp(focusedElement);
+                e.Handled = true;
+            }
+            else if (e.Key == Key.Right)
+            {
+                MoveRight(focusedElement);
+                e.Handled = true;
+            }
+            else if (e.Key == Key.Left)
+            {
+                MoveLeft(focusedElement);
+                e.Handled = true;
+            }
+        }
+    }
+
+    private static void MoveDown(UIElement element)
+    {
+        if (!element.MoveFocus(new TraversalRequest(FocusNavigationDirection.Down)))
+            element.MoveFocus(new TraversalRequest(FocusNavigationDirection.Next));
+    }
+
+    private static void MoveUp(UIElement element)
+    {
+        if (!element.MoveFocus(new TraversalRequest(FocusNavigationDirection.Up)))
+            element.MoveFocus(new TraversalRequest(FocusNavigationDirection.Previous));
+    }
+
+    private static void MoveRight(UIElement element)
+    {
+        if (!element.MoveFocus(new TraversalRequest(FocusNavigationDirection.Right)))
+            element.MoveFocus(new TraversalRequest(FocusNavigationDirection.Next));
+    }
+
+    private static void MoveLeft(UIElement element)
+    {
+        if (!element.MoveFocus(new TraversalRequest(FocusNavigationDirection.Left)))
+            element.MoveFocus(new TraversalRequest(FocusNavigationDirection.Previous));
+    }
+
+    private static bool IsInsideDataGridOrList(DependencyObject? element)
+    {
+        while (element != null)
+        {
+            if (element is DataGrid || element is DataGridCell || element is DataGridRow ||
+                element is ListBox || element is ListBoxItem)
+            {
+                return true;
+            }
+
+            if (element is Visual || element is System.Windows.Media.Media3D.Visual3D)
+                element = VisualTreeHelper.GetParent(element);
+            else
+                element = LogicalTreeHelper.GetParent(element);
+        }
+        return false;
     }
 }
