@@ -15,4 +15,14 @@ public partial class ReportsView : Page
     }
 
     public async Task InitAsync() => await _vm.LoadAllReportsAsync();
+
+    private void QuickThisMonth_Click(object sender, System.Windows.RoutedEventArgs e)
+    {
+        _vm.SelectedPreset = WarehousePOS.Application.Reports.DateRangePreset.ThisMonth;
+    }
+
+    private void QuickLast30Days_Click(object sender, System.Windows.RoutedEventArgs e)
+    {
+        _vm.SelectedPreset = WarehousePOS.Application.Reports.DateRangePreset.Last30Days;
+    }
 }

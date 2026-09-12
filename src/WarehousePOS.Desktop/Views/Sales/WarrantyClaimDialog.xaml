@@ -9,7 +9,7 @@
         Background="{StaticResource BackgroundBrush}">
 
     <Border Style="{StaticResource Card}" Margin="20" Padding="20">
-        <StackPanel>
+        <StackPanel behaviors:ArrowNavigationBehavior.IsEnabled="True">
             <!-- Header -->
             <StackPanel Margin="0,0,0,16">
                 <TextBlock Text="Submit Warranty Claim" Style="{StaticResource H3}"/>
