@@ -161,7 +161,8 @@ public partial class App : System.Windows.Application
                     var mainWindow = _host.Services.GetRequiredService<MainWindow>();
                     mainWindow.InitializeShell();
                     loginWindow.Content = mainWindow.TakeShellContent();
-                    loginWindow.Title = "Warehouse POS";
+                    loginWindow.Title = "Happy Products";
+                    loginWindow.Icon = mainWindow.Icon;
                     MainWindow = loginWindow;
                 }
             }

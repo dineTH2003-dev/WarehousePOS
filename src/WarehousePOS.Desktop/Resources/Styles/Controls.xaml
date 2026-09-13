@@ -194,11 +194,14 @@
     <Style x:Key="FormTextBox" TargetType="TextBox">
         <Setter Property="FontSize" Value="14" />
         <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
-        <Setter Property="Padding" Value="10,8" />
+        <Setter Property="Padding" Value="10,0" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
         <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="Background" Value="White" />
+        <Setter Property="MinHeight" Value="38" />
+        <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Hidden" />
+        <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Hidden" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="TextBox">
@@ -211,10 +214,14 @@
                                 Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="8"
                                 Padding="{TemplateBinding Padding}"
-                                CornerRadius="8">
-                            <Grid>
+                                SnapsToDevicePixels="True">
+                            <Grid VerticalAlignment="{TemplateBinding VerticalContentAlignment}">
                                 <ScrollViewer x:Name="PART_ContentHost"
+                                              Focusable="False"
+                                              HorizontalScrollBarVisibility="{TemplateBinding ScrollViewer.HorizontalScrollBarVisibility}"
+                                              VerticalScrollBarVisibility="{TemplateBinding ScrollViewer.VerticalScrollBarVisibility}"
                                               VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
                                 <TextBlock Text="{TemplateBinding Tag}"
                                            Foreground="{StaticResource TextMutedBrush}"
@@ -247,6 +254,11 @@
                         <Trigger Property="IsFocused" Value="True">
                             <Setter Property="BorderBrush" Value="{StaticResource PrimaryBrush}" />
                         </Trigger>
+                        <Trigger Property="AcceptsReturn" Value="True">
+                            <Setter Property="VerticalContentAlignment" Value="Top" />
+                            <Setter Property="Padding" Value="10,6" />
+                            <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto" />
+                        </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
@@ -259,12 +271,14 @@
     <Style x:Key="SearchTextBox" TargetType="TextBox">
         <Setter Property="FontSize" Value="13" />
         <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
-        <Setter Property="Padding" Value="12,8,10,8" />
+        <Setter Property="Padding" Value="12,0,10,0" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
         <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="Background" Value="White" />
         <Setter Property="MinHeight" Value="38" />
+        <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Hidden" />
+        <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Hidden" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="TextBox">
@@ -306,7 +320,10 @@
 
                             <!-- User Text Input Host (starts at 12px for immediate clean typing) -->
                             <ScrollViewer x:Name="PART_ContentHost"
+                                          Focusable="False"
                                           Margin="{TemplateBinding Padding}"
+                                          HorizontalScrollBarVisibility="{TemplateBinding ScrollViewer.HorizontalScrollBarVisibility}"
+                                          VerticalScrollBarVisibility="{TemplateBinding ScrollViewer.VerticalScrollBarVisibility}"
                                           VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
 
                             <!-- Placeholder / Search Methods Hint Text (Visible ONLY when unfocused AND text is empty) -->
@@ -745,19 +762,27 @@
     <Style x:Key="FormPasswordBox" TargetType="PasswordBox">
         <Setter Property="FontSize" Value="14" />
         <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
-        <Setter Property="Padding" Value="10,8" />
+        <Setter Property="Padding" Value="10,0" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
         <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="Background" Value="White" />
+        <Setter Property="MinHeight" Value="38" />
+        <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Hidden" />
+        <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Hidden" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="PasswordBox">
                     <Border Background="{TemplateBinding Background}"
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}"
-                            CornerRadius="6">
+                            CornerRadius="6"
+                            Padding="{TemplateBinding Padding}">
                         <ScrollViewer x:Name="PART_ContentHost"
-                                      Margin="{TemplateBinding Padding}" />
+                                      Focusable="False"
+                                      HorizontalScrollBarVisibility="{TemplateBinding ScrollViewer.HorizontalScrollBarVisibility}"
+                                      VerticalScrollBarVisibility="{TemplateBinding ScrollViewer.VerticalScrollBarVisibility}"
+                                      VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsFocused" Value="True">

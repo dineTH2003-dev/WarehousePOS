@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:behaviors="clr-namespace:WarehousePOS.Desktop.Behaviors"
         Title="Submit Warranty Liability Claim"
+        Icon="/Resources/Images/app-icon.png"
         SizeToContent="Height" Width="440"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize"
