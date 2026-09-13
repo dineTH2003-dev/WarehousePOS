@@ -19,7 +19,7 @@ public sealed class PurchasingViewModel : ViewModelBase
     private List<ProductDto> _allActiveProducts = [];
     private int? _selectedSupplierId;
     private string _notes = string.Empty;
-    private string _selectedPaymentMethod = "Cash";
+    private string? _selectedPaymentMethod;
     private string _paidAmountText = "0.00";
     private string _paymentDetails = string.Empty;
     private string _errorMessage = string.Empty;
@@ -50,7 +50,7 @@ public sealed class PurchasingViewModel : ViewModelBase
         set => SetField(ref _notes, value);
     }
 
-    public string SelectedPaymentMethod
+    public string? SelectedPaymentMethod
     {
         get => _selectedPaymentMethod;
         set => SetField(ref _selectedPaymentMethod, value);
@@ -103,9 +103,11 @@ public sealed class PurchasingViewModel : ViewModelBase
     public int TotalItemsCount => LineItems.Count;
 
     public event Action? CreateNewProductRequested;
+    public event Action? CreateNewSupplierRequested;
 
     public RelayCommand AddLineItemCommand       { get; }
     public RelayCommand CreateNewProductCommand  { get; }
+    public RelayCommand CreateNewSupplierCommand { get; }
     public RelayCommand SaveAndReceiveCommand    { get; }
     public RelayCommand ResetOrderCommand        { get; }
 
@@ -122,10 +124,11 @@ public sealed class PurchasingViewModel : ViewModelBase
         _nav             = nav;
         _session         = session;
 
-        AddLineItemCommand      = new RelayCommand(AddLineItem);
-        CreateNewProductCommand = new RelayCommand(() => CreateNewProductRequested?.Invoke());
-        SaveAndReceiveCommand   = new RelayCommand(async () => await SaveAndReceiveAsync(), () => !IsBusy);
-        ResetOrderCommand       = new RelayCommand(ResetOrder);
+        AddLineItemCommand       = new RelayCommand(AddLineItem);
+        CreateNewProductCommand  = new RelayCommand(() => CreateNewProductRequested?.Invoke());
+        CreateNewSupplierCommand = new RelayCommand(() => CreateNewSupplierRequested?.Invoke());
+        SaveAndReceiveCommand    = new RelayCommand(async () => await SaveAndReceiveAsync(), () => !IsBusy);
+        ResetOrderCommand        = new RelayCommand(ResetOrder);
 
         LineItems.CollectionChanged += (_, _) => UpdateOrderSummary();
     }
@@ -148,16 +151,14 @@ public sealed class PurchasingViewModel : ViewModelBase
             OnPropertyChanged(nameof(SelectedSupplierId));
             FilterProductsForSelectedSupplier();
         }
-        else if (SelectedSupplierId == null && Suppliers.Count > 0)
-        {
-            SelectedSupplierId = Suppliers[0].Id;
-        }
         else
         {
+            _selectedSupplierId = null;
+            OnPropertyChanged(nameof(SelectedSupplierId));
             FilterProductsForSelectedSupplier();
         }
 
-        if (LineItems.Count == 0 && AvailableProducts.Count > 0)
+        if (LineItems.Count == 0)
         {
             AddLineItem();
         }
@@ -180,25 +181,14 @@ public sealed class PurchasingViewModel : ViewModelBase
                                             t.Equals(p.SKU, StringComparison.OrdinalIgnoreCase)))
                 .ToList();
 
-            if (matchedProducts.Any())
-            {
-                foreach (var p in matchedProducts) AvailableProducts.Add(p);
-            }
-            else
-            {
-                foreach (var p in _allActiveProducts) AvailableProducts.Add(p);
-            }
-        }
-        else
-        {
-            foreach (var p in _allActiveProducts) AvailableProducts.Add(p);
+            foreach (var p in matchedProducts) AvailableProducts.Add(p);
         }
 
         foreach (var item in LineItems)
         {
-            if (item.Product is null && AvailableProducts.Count > 0)
+            if (item.Product is not null && !AvailableProducts.Any(p => p.Id == item.Product.Id))
             {
-                item.Product = AvailableProducts[0];
+                item.Product = null;
             }
         }
     }
@@ -206,10 +196,6 @@ public sealed class PurchasingViewModel : ViewModelBase
     public void AddLineItem()
     {
         var row = new PurchasingItemRowViewModel();
-        if (AvailableProducts.Count > 0)
-        {
-            row.Product = AvailableProducts[0];
-        }
 
         row.RemoveRequested += OnRowRemoveRequested;
         row.PropertyChanged += (_, _) => UpdateOrderSummary();
@@ -261,16 +247,27 @@ public sealed class PurchasingViewModel : ViewModelBase
 
     private void ResetOrder()
     {
-        LineItems.Clear();
+        _selectedSupplierId = null;
+        OnPropertyChanged(nameof(SelectedSupplierId));
+        OnPropertyChanged(nameof(SupplierError));
+
+        _selectedPaymentMethod = null;
+        OnPropertyChanged(nameof(SelectedPaymentMethod));
+
         Notes = string.Empty;
         PaymentDetails = string.Empty;
-        SelectedPaymentMethod = "Cash";
+        _paidAmountText = "0.00";
+        OnPropertyChanged(nameof(PaidAmountText));
+        OnPropertyChanged(nameof(PaidAmount));
+        OnPropertyChanged(nameof(RemainingBalance));
+
         _isPaidAmountUserModified = false;
         ErrorMessage = string.Empty;
-        if (AvailableProducts.Count > 0)
-        {
-            AddLineItem();
-        }
+
+        LineItems.Clear();
+        FilterProductsForSelectedSupplier();
+
+        AddLineItem();
         UpdateOrderSummary();
     }
 
@@ -281,6 +278,12 @@ public sealed class PurchasingViewModel : ViewModelBase
         if (!SelectedSupplierId.HasValue || SelectedSupplierId.Value <= 0)
         {
             ErrorMessage = "Please select a supplier.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(SelectedPaymentMethod))
+        {
+            ErrorMessage = "Please select a payment method.";
             return;
         }
 
@@ -322,7 +325,7 @@ public sealed class PurchasingViewModel : ViewModelBase
                 currentUserId,
                 string.IsNullOrWhiteSpace(Notes) ? null : Notes.Trim(),
                 itemRequests,
-                SelectedPaymentMethod,
+                SelectedPaymentMethod!,
                 PaidAmount,
                 string.IsNullOrWhiteSpace(PaymentDetails) ? null : PaymentDetails.Trim());
 

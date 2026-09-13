@@ -8,20 +8,23 @@ namespace WarehousePOS.Infrastructure.Repositories;
 
 public sealed class PurchaseRepository(AppDbContext db) : IPurchaseRepository
 {
-    private IQueryable<Purchase> WithIncludes() =>
+    private IQueryable<Purchase> WithIncludesNoTracking() =>
+        db.Purchases.AsNoTracking().Include(p => p.Supplier).Include(p => p.Items).ThenInclude(i => i.Product);
+
+    private IQueryable<Purchase> WithIncludesTracking() =>
         db.Purchases.Include(p => p.Supplier).Include(p => p.Items).ThenInclude(i => i.Product);
 
     public async Task<Purchase?> GetByIdAsync(int id, CancellationToken ct = default) =>
-        await WithIncludes().FirstOrDefaultAsync(p => p.Id == id, ct);
+        await WithIncludesTracking().FirstOrDefaultAsync(p => p.Id == id, ct);
 
     public async Task<IReadOnlyList<Purchase>> GetAllAsync(CancellationToken ct = default) =>
-        await WithIncludes().OrderByDescending(p => p.PurchaseDate).ToListAsync(ct);
+        await WithIncludesNoTracking().OrderByDescending(p => p.PurchaseDate).ToListAsync(ct);
 
     public async Task<IReadOnlyList<Purchase>> GetByStatusAsync(PurchaseStatus status, CancellationToken ct = default) =>
-        await WithIncludes().Where(p => p.Status == status).OrderByDescending(p => p.PurchaseDate).ToListAsync(ct);
+        await WithIncludesNoTracking().Where(p => p.Status == status).OrderByDescending(p => p.PurchaseDate).ToListAsync(ct);
 
     public async Task<IReadOnlyList<Purchase>> GetBySupplierAsync(int supplierId, CancellationToken ct = default) =>
-        await WithIncludes().Where(p => p.SupplierId == supplierId).OrderByDescending(p => p.PurchaseDate).ToListAsync(ct);
+        await WithIncludesNoTracking().Where(p => p.SupplierId == supplierId).OrderByDescending(p => p.PurchaseDate).ToListAsync(ct);
 
     public async Task AddAsync(Purchase purchase, CancellationToken ct = default)
     {
@@ -31,7 +34,11 @@ public sealed class PurchaseRepository(AppDbContext db) : IPurchaseRepository
 
     public async Task UpdateAsync(Purchase purchase, CancellationToken ct = default)
     {
-        db.Purchases.Update(purchase);
+        var entry = db.ChangeTracker.Entries<Purchase>().FirstOrDefault(e => e.Entity.Id == purchase.Id);
+        if (entry is null)
+        {
+            db.Entry(purchase).State = EntityState.Modified;
+        }
         await db.SaveChangesAsync(ct);
     }
 }
