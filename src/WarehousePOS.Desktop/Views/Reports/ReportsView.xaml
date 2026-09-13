@@ -306,13 +306,17 @@
                                 <ItemsControl ItemsSource="{Binding SalesTrend}">
                                     <ItemsControl.ItemsPanel>
                                         <ItemsPanelTemplate>
-                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Bottom" Height="140"/>
+                                            <UniformGrid Rows="1" Height="160" VerticalAlignment="Bottom"/>
                                         </ItemsPanelTemplate>
                                     </ItemsControl.ItemsPanel>
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
-                                            <StackPanel Width="40" Margin="4,0" VerticalAlignment="Bottom" HorizontalAlignment="Center" ToolTipService.ShowDuration="10000">
-                                                <StackPanel.ToolTip>
+                                            <Grid VerticalAlignment="Bottom" HorizontalAlignment="Stretch" ToolTipService.ShowDuration="10000">
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="*"/>
+                                                    <RowDefinition Height="Auto"/>
+                                                </Grid.RowDefinitions>
+                                                <Grid.ToolTip>
                                                     <ToolTip>
                                                         <StackPanel>
                                                             <TextBlock Text="{Binding DateLabel}" FontWeight="Bold"/>
@@ -320,10 +324,10 @@
                                                             <TextBlock Text="{Binding TransactionCount, StringFormat=Transactions: {0}}"/>
                                                         </StackPanel>
                                                     </ToolTip>
-                                                </StackPanel.ToolTip>
+                                                </Grid.ToolTip>
 
                                                 <!-- Bar Element -->
-                                                <Border Background="{StaticResource PrimaryBrush}" CornerRadius="4,4,0,0" HorizontalAlignment="Center" Width="24">
+                                                <Border Grid.Row="0" Background="{StaticResource PrimaryBrush}" CornerRadius="4,4,0,0" HorizontalAlignment="Center" Width="28" VerticalAlignment="Bottom">
                                                     <Border.Height>
                                                         <MultiBinding Converter="{StaticResource ValueToHeightConverter}">
                                                             <Binding Path="Revenue"/>
@@ -332,8 +336,8 @@
                                                     </Border.Height>
                                                 </Border>
 
-                                                <TextBlock Text="{Binding DateLabel}" FontSize="9" Foreground="{StaticResource TextSecondaryBrush}" HorizontalAlignment="Center" Margin="0,4,0,0"/>
-                                            </StackPanel>
+                                                <TextBlock Grid.Row="1" Text="{Binding DateLabel}" FontSize="10" Foreground="{StaticResource TextSecondaryBrush}" HorizontalAlignment="Center" Margin="0,6,0,0"/>
+                                            </Grid>
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>
                                 </ItemsControl>
@@ -454,13 +458,17 @@
                                 <ItemsControl ItemsSource="{Binding HourlySales}">
                                     <ItemsControl.ItemsPanel>
                                         <ItemsPanelTemplate>
-                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Bottom" Height="150"/>
+                                            <UniformGrid Rows="1" Height="160" VerticalAlignment="Bottom"/>
                                         </ItemsPanelTemplate>
                                     </ItemsControl.ItemsPanel>
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
-                                            <StackPanel Width="42" Margin="3,0" VerticalAlignment="Bottom" HorizontalAlignment="Center" ToolTipService.ShowDuration="10000">
-                                                <StackPanel.ToolTip>
+                                            <Grid VerticalAlignment="Bottom" HorizontalAlignment="Stretch" ToolTipService.ShowDuration="10000">
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="*"/>
+                                                    <RowDefinition Height="Auto"/>
+                                                </Grid.RowDefinitions>
+                                                <Grid.ToolTip>
                                                     <ToolTip>
                                                         <StackPanel>
                                                             <TextBlock Text="{Binding HourLabel}" FontWeight="Bold"/>
@@ -468,9 +476,9 @@
                                                             <TextBlock Text="{Binding TransactionCount, StringFormat=Transactions: {0}}"/>
                                                         </StackPanel>
                                                     </ToolTip>
-                                                </StackPanel.ToolTip>
+                                                </Grid.ToolTip>
 
-                                                <Border Background="{StaticResource PrimaryBrush}" CornerRadius="4,4,0,0" HorizontalAlignment="Center" Width="26">
+                                                <Border Grid.Row="0" Background="{StaticResource PrimaryBrush}" CornerRadius="4,4,0,0" HorizontalAlignment="Center" Width="28" VerticalAlignment="Bottom">
                                                     <Border.Height>
                                                         <MultiBinding Converter="{StaticResource ValueToHeightConverter}">
                                                             <Binding Path="Revenue"/>
@@ -479,8 +487,8 @@
                                                     </Border.Height>
                                                 </Border>
 
-                                                <TextBlock Text="{Binding HourLabel}" FontSize="9" Foreground="{StaticResource TextSecondaryBrush}" HorizontalAlignment="Center" Margin="0,4,0,0"/>
-                                            </StackPanel>
+                                                <TextBlock Grid.Row="1" Text="{Binding HourLabel}" FontSize="10" Foreground="{StaticResource TextSecondaryBrush}" HorizontalAlignment="Center" Margin="0,6,0,0"/>
+                                            </Grid>
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>
                                 </ItemsControl>
