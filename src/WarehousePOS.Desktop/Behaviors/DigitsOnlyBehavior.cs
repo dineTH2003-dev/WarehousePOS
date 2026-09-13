@@ -25,12 +25,33 @@ public static class DigitsOnlyBehavior
         if ((bool)args.NewValue)
         {
             textBox.PreviewTextInput += OnPreviewTextInput;
+            textBox.GotFocus         += OnGotFocus;
+            textBox.PreviewMouseLeftButtonDown += OnPreviewMouseLeftButtonDown;
             DataObject.AddPastingHandler(textBox, OnPasting);
         }
         else
         {
             textBox.PreviewTextInput -= OnPreviewTextInput;
+            textBox.GotFocus         -= OnGotFocus;
+            textBox.PreviewMouseLeftButtonDown -= OnPreviewMouseLeftButtonDown;
             DataObject.RemovePastingHandler(textBox, OnPasting);
+        }
+    }
+
+    private static void OnGotFocus(object sender, RoutedEventArgs e)
+    {
+        if (sender is TextBox textBox)
+        {
+            textBox.SelectAll();
+        }
+    }
+
+    private static void OnPreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is TextBox textBox && !textBox.IsKeyboardFocusWithin)
+        {
+            e.Handled = true;
+            textBox.Focus();
         }
     }
 

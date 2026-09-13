@@ -57,12 +57,22 @@ public sealed class ProductFormViewModel : ViewModelBase
 
     public string Barcode           { get => _barcode;           set => SetField(ref _barcode, value); }
     public string Description       { get => _description;       set => SetField(ref _description, value); }
-    public string RetailPriceText   { get => _retailPriceText;   set => SetField(ref _retailPriceText, value); }
-    public string WholesalePriceText{ get => _wholesalePriceText;set => SetField(ref _wholesalePriceText, value); }
-    public string StockQuantityText { get => _stockQuantityText; set { if (SetField(ref _stockQuantityText, value)) RefreshStockValidation(); } }
-    public string WarrantyYearsText { get => _warrantyYearsText; set { if (SetField(ref _warrantyYearsText, value)) RefreshWarrantyValidation(); } }
-    public string WarrantyMonthsText{ get => _warrantyMonthsText;set { if (SetField(ref _warrantyMonthsText, value)) RefreshWarrantyValidation(); } }
-    public string WarrantyDaysText  { get => _warrantyDaysText;  set { if (SetField(ref _warrantyDaysText, value)) RefreshWarrantyValidation(); } }
+    public string RetailPriceText   { get => _retailPriceText;   set => SetField(ref _retailPriceText, NormalizeNumberInput(value, "0.00")); }
+    public string WholesalePriceText{ get => _wholesalePriceText;set => SetField(ref _wholesalePriceText, NormalizeNumberInput(value, "0.00")); }
+    public string StockQuantityText { get => _stockQuantityText; set { if (SetField(ref _stockQuantityText, NormalizeNumberInput(value))) RefreshStockValidation(); } }
+    public string WarrantyYearsText { get => _warrantyYearsText; set { if (SetField(ref _warrantyYearsText, NormalizeNumberInput(value))) RefreshWarrantyValidation(); } }
+    public string WarrantyMonthsText{ get => _warrantyMonthsText;set { if (SetField(ref _warrantyMonthsText, NormalizeNumberInput(value))) RefreshWarrantyValidation(); } }
+    public string WarrantyDaysText  { get => _warrantyDaysText;  set { if (SetField(ref _warrantyDaysText, NormalizeNumberInput(value))) RefreshWarrantyValidation(); } }
+
+    private static string NormalizeNumberInput(string value, string defaultVal = "0")
+    {
+        if (!string.IsNullOrEmpty(value) && value.Length > 1 && value.StartsWith("0") && !value.StartsWith("0.") && !value.StartsWith("0,"))
+        {
+            value = value.TrimStart('0');
+            if (string.IsNullOrEmpty(value)) value = defaultVal;
+        }
+        return value;
+    }
     public string CategoryIdText    { get => _categoryId.ToString(); }
     public int    CategoryId        { get => _categoryId;         set { if (SetField(ref _categoryId, value)) OnPropertyChanged(nameof(CategoryError)); } }
     public int    ReorderLevel      { get => _reorderLevel;       set { if (SetField(ref _reorderLevel, value)) OnPropertyChanged(nameof(ReorderLevelError)); } }
