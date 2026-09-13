@@ -1,6 +1,7 @@
 <Page x:Class="WarehousePOS.Desktop.Views.Settings.StoreSettingsView"
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:behaviors="clr-namespace:WarehousePOS.Desktop.Behaviors"
       Title="System &amp; Store Settings"
       KeepAlive="True"
       Background="{StaticResource BackgroundBrush}">
@@ -13,11 +14,13 @@
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Padding" Value="18,10"/>
             <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="RadioButton">
                         <Border x:Name="Bd" Background="{TemplateBinding Background}"
-                                CornerRadius="6" Padding="{TemplateBinding Padding}">
+                                CornerRadius="6" Padding="{TemplateBinding Padding}"
+                                BorderBrush="Transparent" BorderThickness="1">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
@@ -31,6 +34,10 @@
                                 <Setter TargetName="Bd" Property="BorderBrush" Value="#CBD5E1"/>
                                 <Setter TargetName="Bd" Property="BorderThickness" Value="1"/>
                             </Trigger>
+                            <Trigger Property="IsFocused" Value="True">
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource PrimaryBrush}"/>
+                                <Setter TargetName="Bd" Property="BorderThickness" Value="1"/>
+                            </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
@@ -38,75 +45,76 @@
         </Style>
     </Page.Resources>
 
-    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-        <Grid Margin="28">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
-            </Grid.RowDefinitions>
+    <Grid Margin="28" behaviors:ArrowNavigationBehavior.IsEnabled="True">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
 
-            <!-- ── Header ─────────────────────────────────────────── -->
-            <StackPanel Grid.Row="0" Margin="0,0,0,16">
-                <TextBlock Text="System &amp; Store Settings" Style="{StaticResource H2}"/>
-                <TextBlock Text="Configure store details for sales receipts, manage database backups, and connect Google Drive cloud sync"
-                           Style="{StaticResource CaptionText}" Margin="0,4,0,0"/>
+        <!-- ── Header ─────────────────────────────────────────── -->
+        <StackPanel Grid.Row="0" Margin="0,0,0,16">
+            <TextBlock Text="System &amp; Store Settings" Style="{StaticResource H2}"/>
+            <TextBlock Text="Configure store details for sales receipts, manage database backups, and connect Google Drive cloud sync"
+                       Style="{StaticResource CaptionText}" Margin="0,4,0,0"/>
+        </StackPanel>
+
+        <!-- ── In-Page Navigation Tabs ────────────────────────── -->
+        <Border Grid.Row="1" Background="#F1F5F9" CornerRadius="8" Padding="4" HorizontalAlignment="Left" Margin="0,0,0,20">
+            <StackPanel Orientation="Horizontal">
+                <RadioButton Content="🏪  Receipt &amp; Store Information"
+                             GroupName="SettingsTabs"
+                             IsChecked="{Binding IsStoreTabActive, Mode=TwoWay}"
+                             Style="{StaticResource SettingsTabRadioStyle}"/>
+                <RadioButton Content="💾  Database Backup &amp; Google Drive"
+                             GroupName="SettingsTabs"
+                             IsChecked="{Binding IsBackupTabActive, Mode=TwoWay}"
+                             Style="{StaticResource SettingsTabRadioStyle}"/>
+                <RadioButton Content="🔔  Notifications (Email &amp; WhatsApp)"
+                             GroupName="SettingsTabs"
+                             IsChecked="{Binding IsNotificationTabActive, Mode=TwoWay}"
+                             Style="{StaticResource SettingsTabRadioStyle}"/>
             </StackPanel>
+        </Border>
 
-            <!-- ── In-Page Navigation Tabs ────────────────────────── -->
-            <Border Grid.Row="1" Background="#F1F5F9" CornerRadius="8" Padding="4" HorizontalAlignment="Left" Margin="0,0,0,24">
-                <StackPanel Orientation="Horizontal">
-                    <RadioButton Content="🏪  Receipt &amp; Store Information"
-                                 GroupName="SettingsTabs"
-                                 IsChecked="{Binding IsStoreTabActive, Mode=TwoWay}"
-                                 Style="{StaticResource SettingsTabRadioStyle}"/>
-                    <RadioButton Content="💾  Database Backup &amp; Google Drive"
-                                 GroupName="SettingsTabs"
-                                 IsChecked="{Binding IsBackupTabActive, Mode=TwoWay}"
-                                 Style="{StaticResource SettingsTabRadioStyle}"/>
-                    <RadioButton Content="🔔  Notifications (Email &amp; WhatsApp)"
-                                 GroupName="SettingsTabs"
-                                 IsChecked="{Binding IsNotificationTabActive, Mode=TwoWay}"
-                                 Style="{StaticResource SettingsTabRadioStyle}"/>
+        <!-- ── Tab 1: Store & Receipt Settings ─────────────────── -->
+        <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
+                      Visibility="{Binding IsStoreTabActive, Converter={StaticResource BoolToVisibilityConverter}}">
+            <Border Style="{StaticResource Card}" VerticalAlignment="Top" MaxWidth="640" HorizontalAlignment="Left">
+                <StackPanel>
+                    <TextBlock Text="Receipt Header &amp; Store Information" Style="{StaticResource H3}" Margin="0,0,0,4"/>
+                    <TextBlock Text="Printed at the top and bottom of customer sales receipts"
+                               Style="{StaticResource CaptionText}" Margin="0,0,0,16"/>
+
+                    <TextBlock Text="{Binding StatusMessage}" Foreground="{StaticResource SuccessBrush}" FontWeight="SemiBold" Margin="0,0,0,12"
+                               Visibility="{Binding StatusMessage, Converter={StaticResource NullToVisibilityConverter}}"/>
+
+                    <TextBlock Text="Store / Business Name" Style="{StaticResource FormLabel}"/>
+                    <TextBox Text="{Binding StoreName, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource FormTextBox}" Margin="0,0,0,12"/>
+
+                    <TextBlock Text="Store Address" Style="{StaticResource FormLabel}"/>
+                    <TextBox Text="{Binding StoreAddress, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource FormTextBox}" Margin="0,0,0,12"/>
+
+                    <TextBlock Text="Contact Telephone Numbers" Style="{StaticResource FormLabel}"/>
+                    <TextBox Text="{Binding StorePhone, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource FormTextBox}" Margin="0,0,0,12"/>
+
+                    <TextBlock Text="VAT / Tax Registration Number" Style="{StaticResource FormLabel}"/>
+                    <TextBox Text="{Binding TaxRegNo, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource FormTextBox}" Margin="0,0,0,12"/>
+
+                    <Separator Margin="0,6,0,14"/>
+
+                    <TextBlock Text="Receipt Footer Message" Style="{StaticResource FormLabel}"/>
+                    <TextBox Text="{Binding FooterMessage, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource FormTextBox}" Margin="0,0,0,20"/>
+
+                    <Button Content="Save Receipt Settings" Style="{StaticResource PrimaryButton}" Command="{Binding SaveCommand}" HorizontalAlignment="Right"/>
                 </StackPanel>
             </Border>
+        </ScrollViewer>
 
-            <!-- ── Tab 1: Store & Receipt Settings ─────────────────── -->
-            <Grid Grid.Row="2" Visibility="{Binding IsStoreTabActive, Converter={StaticResource BoolToVisibilityConverter}}">
-                <Border Style="{StaticResource Card}" VerticalAlignment="Top" MaxWidth="640" HorizontalAlignment="Left">
-                    <StackPanel>
-                        <TextBlock Text="Receipt Header &amp; Store Information" Style="{StaticResource H3}" Margin="0,0,0,4"/>
-                        <TextBlock Text="Printed at the top and bottom of customer sales receipts"
-                                   Style="{StaticResource CaptionText}" Margin="0,0,0,16"/>
-
-                        <TextBlock Text="{Binding StatusMessage}" Foreground="{StaticResource SuccessBrush}" FontWeight="SemiBold" Margin="0,0,0,12"
-                                   Visibility="{Binding StatusMessage, Converter={StaticResource NullToVisibilityConverter}}"/>
-
-                        <TextBlock Text="Store / Business Name" Style="{StaticResource FormLabel}"/>
-                        <TextBox Text="{Binding StoreName, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource FormTextBox}" Margin="0,0,0,12"/>
-
-                        <TextBlock Text="Store Address" Style="{StaticResource FormLabel}"/>
-                        <TextBox Text="{Binding StoreAddress, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource FormTextBox}" Margin="0,0,0,12"/>
-
-                        <TextBlock Text="Contact Telephone Numbers" Style="{StaticResource FormLabel}"/>
-                        <TextBox Text="{Binding StorePhone, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource FormTextBox}" Margin="0,0,0,12"/>
-
-                        <TextBlock Text="VAT / Tax Registration Number" Style="{StaticResource FormLabel}"/>
-                        <TextBox Text="{Binding TaxRegNo, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource FormTextBox}" Margin="0,0,0,12"/>
-
-                        <Separator Margin="0,6,0,14"/>
-
-                        <TextBlock Text="Receipt Footer Message" Style="{StaticResource FormLabel}"/>
-                        <TextBox Text="{Binding FooterMessage, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource FormTextBox}" Margin="0,0,0,20"/>
-
-                        <Button Content="Save Receipt Settings" Style="{StaticResource PrimaryButton}" Command="{Binding SaveCommand}" HorizontalAlignment="Right"/>
-                    </StackPanel>
-                </Border>
-            </Grid>
-
-            <!-- ── Tab 2: Database Backup & Google Drive Cloud ─────── -->
-            <Grid Grid.Row="2" Visibility="{Binding IsBackupTabActive, Converter={StaticResource BoolToVisibilityConverter}}">
-                <StackPanel MaxWidth="920" HorizontalAlignment="Left">
+        <!-- ── Tab 2: Database Backup & Google Drive Cloud ─────── -->
+        <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
+                      Visibility="{Binding IsBackupTabActive, Converter={StaticResource BoolToVisibilityConverter}}">
+            <StackPanel MaxWidth="920" HorizontalAlignment="Left">
 
                     <!-- Top Bar: Title & Refresh Button -->
                     <Grid Margin="0,0,0,16">
@@ -268,10 +276,11 @@
                     </Border>
 
                 </StackPanel>
-            </Grid>
+            </ScrollViewer>
 
             <!-- ── Tab 3: Notifications (Email & WhatsApp) ────────── -->
-            <Grid Grid.Row="2" Visibility="{Binding IsNotificationTabActive, Converter={StaticResource BoolToVisibilityConverter}}">
+            <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
+                          Visibility="{Binding IsNotificationTabActive, Converter={StaticResource BoolToVisibilityConverter}}">
                 <StackPanel MaxWidth="920" HorizontalAlignment="Left">
 
                     <!-- Top Bar: Title & Save Button -->
@@ -433,7 +442,6 @@
                     </Border>
 
                 </StackPanel>
-            </Grid>
+            </ScrollViewer>
         </Grid>
-    </ScrollViewer>
 </Page>

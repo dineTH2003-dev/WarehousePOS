@@ -27,6 +27,7 @@ public partial class MainWindow : Window
     private readonly Microsoft.Extensions.DependencyInjection.IServiceScopeFactory _scopeFactory;
     private System.Windows.Threading.DispatcherTimer? _autoBackupTimer;
     private bool _shellInitialized;
+    private Button? _activeNavButton;
 
     public MainWindow(
         INavigationService nav,
@@ -225,6 +226,19 @@ public partial class MainWindow : Window
                 "WarehousePOS — Navigation Error",
                 MessageBoxButton.OK,
                 MessageBoxImage.Warning);
+        }
+    }
+
+    private void SetActiveNav(Button? btn)
+    {
+        if (_activeNavButton != null)
+        {
+            _activeNavButton.Tag = "";
+        }
+        _activeNavButton = btn;
+        if (_activeNavButton != null)
+        {
+            _activeNavButton.Tag = "Active";
         }
     }
 

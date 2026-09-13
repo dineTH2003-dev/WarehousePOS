@@ -28,12 +28,40 @@ public partial class LoginWindow : Window
         _vm.LoginCommand.Execute(PasswordBox.Password);
     }
 
+    private void UsernameBox_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter || e.Key == Key.Down)
+        {
+            PasswordBox.Focus();
+            e.Handled = true;
+        }
+    }
+
     private void PasswordBox_KeyDown(object sender, KeyEventArgs e)
     {
+        if (e.Key == Key.Up)
+        {
+            UsernameBox.Focus();
+            e.Handled = true;
+        }
+        else if (e.Key == Key.Down)
+        {
+            LoginButton.Focus();
+            e.Handled = true;
+        }
         // Allow pressing Enter in the password box to submit
-        if (e.Key == Key.Enter)
+        else if (e.Key == Key.Enter)
         {
             _vm.LoginCommand.Execute(PasswordBox.Password);
+            e.Handled = true;
+        }
+    }
+
+    private void LoginButton_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Up)
+        {
+            PasswordBox.Focus();
             e.Handled = true;
         }
     }

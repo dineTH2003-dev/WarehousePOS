@@ -32,10 +32,14 @@
         <Setter Property="Padding" Value="16,8" />
         <Setter Property="BorderThickness" Value="0" />
         <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
-                    <Border Background="{TemplateBinding Background}"
+                    <Border x:Name="Bd"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="Transparent"
+                            BorderThickness="2"
                             CornerRadius="8"
                             Padding="{TemplateBinding Padding}">
                         <ContentPresenter HorizontalAlignment="Center"
@@ -47,6 +51,9 @@
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
                             <Setter Property="Background" Value="{StaticResource SecondaryBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsFocused" Value="True">
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource SecondaryDarkBrush}" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter Property="Opacity" Value="0.5" />
@@ -72,10 +79,12 @@
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="Padding" Value="16,8" />
         <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
-                    <Border Background="{TemplateBinding Background}"
+                    <Border x:Name="Bd"
+                            Background="{TemplateBinding Background}"
                             BorderBrush="{StaticResource PrimaryBrush}"
                             BorderThickness="1.5"
                             CornerRadius="8"
@@ -86,6 +95,10 @@
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter Property="Background" Value="{StaticResource SurfaceAltBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsFocused" Value="True">
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource PrimaryDarkBrush}" />
+                            <Setter TargetName="Bd" Property="BorderThickness" Value="2.5" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -101,10 +114,12 @@
         <Setter Property="Padding" Value="8,4" />
         <Setter Property="MinHeight" Value="28" />
         <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
-                    <Border Background="{TemplateBinding Background}"
+                    <Border x:Name="Bd"
+                            Background="{TemplateBinding Background}"
                             BorderBrush="{StaticResource PrimaryBrush}"
                             BorderThickness="1"
                             CornerRadius="6"
@@ -118,6 +133,10 @@
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
                             <Setter Property="Background" Value="#DCFCE7" />
+                        </Trigger>
+                        <Trigger Property="IsFocused" Value="True">
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource PrimaryDarkBrush}" />
+                            <Setter TargetName="Bd" Property="BorderThickness" Value="2" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter Property="Opacity" Value="0.5" />
@@ -137,10 +156,14 @@
         <Setter Property="MinHeight" Value="28" />
         <Setter Property="BorderThickness" Value="0" />
         <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
-                    <Border Background="{TemplateBinding Background}"
+                    <Border x:Name="Bd"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="Transparent"
+                            BorderThickness="1.5"
                             CornerRadius="6"
                             Padding="{TemplateBinding Padding}">
                         <ContentPresenter HorizontalAlignment="Center"
@@ -152,6 +175,9 @@
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
                             <Setter Property="Background" Value="{StaticResource SecondaryBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsFocused" Value="True">
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource SecondaryDarkBrush}" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter Property="Opacity" Value="0.5" />
@@ -549,8 +575,53 @@
         <Setter Property="SnapsToDevicePixels" Value="True" />
     </Style>
 
+    <Style TargetType="{x:Type DatePickerTextBox}">
+        <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="Padding" Value="10,0,4,0" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type DatePickerTextBox}">
+                    <Grid VerticalAlignment="Center">
+                        <ScrollViewer x:Name="PART_ContentHost"
+                                      HorizontalScrollBarVisibility="Hidden"
+                                      VerticalScrollBarVisibility="Hidden"
+                                      VerticalAlignment="Center"
+                                      VerticalContentAlignment="Center"
+                                      Focusable="False"
+                                      Margin="0"
+                                      Padding="{TemplateBinding Padding}" />
+                        <ContentControl x:Name="PART_Watermark"
+                                        Focusable="False"
+                                        IsHitTestVisible="False"
+                                        VerticalAlignment="Center"
+                                        VerticalContentAlignment="Center"
+                                        Margin="0"
+                                        Padding="{TemplateBinding Padding}"
+                                        Foreground="{StaticResource TextMutedBrush}"
+                                        Content="{TemplateBinding Tag}"
+                                        Visibility="Collapsed" />
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <MultiDataTrigger>
+                            <MultiDataTrigger.Conditions>
+                                <Condition Binding="{Binding Text, RelativeSource={RelativeSource Self}}" Value="" />
+                                <Condition Binding="{Binding IsKeyboardFocused, RelativeSource={RelativeSource Self}}" Value="False" />
+                            </MultiDataTrigger.Conditions>
+                            <Setter TargetName="PART_Watermark" Property="Visibility" Value="Visible" />
+                        </MultiDataTrigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <ControlTemplate x:Key="DatePickerButtonTemplate" TargetType="Button">
-        <Border x:Name="BtnBd" Background="Transparent" Padding="6,4" Cursor="Hand">
+        <Border x:Name="BtnBd" Background="Transparent" Padding="6,0,8,0" Cursor="Hand" VerticalAlignment="Stretch">
             <Path x:Name="CalendarIcon"
                   Data="M2,5 H14 M2,3 C2,2.4 2.4,2 3,2 H13 C13.6,2 14,2.4 14,3 V14 C14,14.6 13.6,15 13,15 H3 C2.4,15 2,14.6 2,14 Z M5,1 V3 M11,1 V3 M5,8 H7 M9,8 H11 M5,11 H7 M9,11 H11"
                   Stroke="{StaticResource TextSecondaryBrush}"
@@ -576,8 +647,11 @@
         <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="FontSize" Value="13" />
-        <Setter Property="MinHeight" Value="38" />
-        <Setter Property="Padding" Value="10,0,6,0" />
+        <Setter Property="Height" Value="36" />
+        <Setter Property="MinHeight" Value="36" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="Padding" Value="10,0,4,0" />
         <Setter Property="IsTodayHighlighted" Value="True" />
         <Setter Property="SelectedDateFormat" Value="Short" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
@@ -588,9 +662,11 @@
                             Background="{TemplateBinding Background}"
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}"
-                            CornerRadius="8">
-                        <Grid x:Name="PART_Root" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
-                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}">
+                            CornerRadius="8"
+                            SnapsToDevicePixels="True">
+                        <Grid x:Name="PART_Root"
+                              HorizontalAlignment="Stretch"
+                              VerticalAlignment="Stretch">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
@@ -602,14 +678,16 @@
                                                Background="Transparent"
                                                BorderThickness="0"
                                                Padding="{TemplateBinding Padding}"
+                                               HorizontalContentAlignment="Stretch"
                                                VerticalContentAlignment="Center"
+                                               VerticalAlignment="Center"
                                                Focusable="{TemplateBinding Focusable}" />
                             <Button x:Name="PART_Button"
                                     Grid.Column="1"
                                     Template="{StaticResource DatePickerButtonTemplate}"
                                     Focusable="False"
-                                    VerticalAlignment="Center"
-                                    Margin="0,0,4,0" />
+                                    VerticalAlignment="Stretch"
+                                    HorizontalAlignment="Center" />
                             <Popup x:Name="PART_Popup"
                                    AllowsTransparency="True"
                                    Placement="Bottom"

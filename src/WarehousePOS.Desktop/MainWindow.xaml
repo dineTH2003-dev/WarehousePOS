@@ -1,6 +1,7 @@
 <Window x:Class="WarehousePOS.Desktop.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:behaviors="clr-namespace:WarehousePOS.Desktop.Behaviors"
         Title="Warehouse POS"
         Height="768"
         Width="1280"
@@ -22,15 +23,24 @@
             <Setter Property="FontFamily"        Value="Segoe UI"/>
             <Setter Property="FontWeight"        Value="SemiBold"/>
             <Setter Property="Cursor"            Value="Hand"/>
+            <Setter Property="FocusVisualStyle"  Value="{x:Null}"/>
+            <Setter Property="Tag"               Value=""/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="Bd" Background="{TemplateBinding Background}"
-                                CornerRadius="8" Margin="8,2">
-                            <ContentPresenter Margin="{TemplateBinding Padding}"
-                                              HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
-                                              VerticalAlignment="Center"/>
-                        </Border>
+                        <Grid>
+                            <!-- Left accent bar for active state -->
+                            <Border x:Name="AccentBar" Width="3" HorizontalAlignment="Left"
+                                    Background="{StaticResource PrimaryBrush}" CornerRadius="0,2,2,0"
+                                    Margin="0,6" Visibility="Collapsed"/>
+                            <Border x:Name="Bd" Background="{TemplateBinding Background}"
+                                    CornerRadius="8" Margin="8,2"
+                                    BorderBrush="Transparent" BorderThickness="1.5">
+                                <ContentPresenter Margin="{TemplateBinding Padding}"
+                                                  HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                  VerticalAlignment="Center"/>
+                            </Border>
+                        </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="Bd" Property="Background" Value="#E8F7EE"/>
@@ -39,6 +49,17 @@
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter TargetName="Bd" Property="Background" Value="#D1F2DF"/>
                                 <Setter Property="Foreground" Value="#0A5C39"/>
+                            </Trigger>
+                            <!-- Keyboard focus ring -->
+                            <Trigger Property="IsFocused" Value="True">
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource PrimaryBrush}"/>
+                            </Trigger>
+                            <!-- Active page state (set via Tag="Active" from code-behind) -->
+                            <Trigger Property="Tag" Value="Active">
+                                <Setter TargetName="Bd" Property="Background" Value="#E8F7EE"/>
+                                <Setter Property="Foreground" Value="#0F7F4F"/>
+                                <Setter Property="FontWeight" Value="Bold"/>
+                                <Setter TargetName="AccentBar" Property="Visibility" Value="Visible"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -49,11 +70,13 @@
         <!-- Sidebar logout button style -->
         <Style x:Key="LogoutNavButton" TargetType="Button" BasedOn="{StaticResource NavButton}">
             <Setter Property="Foreground" Value="#DC2626"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
                         <Border x:Name="Bd" Background="{TemplateBinding Background}"
-                                CornerRadius="8" Margin="8,2">
+                                CornerRadius="8" Margin="8,2"
+                                BorderBrush="Transparent" BorderThickness="1.5">
                             <ContentPresenter Margin="{TemplateBinding Padding}"
                                               HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                                               VerticalAlignment="Center"/>
@@ -66,6 +89,9 @@
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter TargetName="Bd" Property="Background" Value="#FECACA"/>
                                 <Setter Property="Foreground" Value="#991B1B"/>
+                            </Trigger>
+                            <Trigger Property="IsFocused" Value="True">
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="#DC2626"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -85,7 +111,7 @@
                 Background="{StaticResource SidebarBrush}"
                 BorderBrush="{StaticResource BorderBrush}"
                 BorderThickness="0,0,1,0">
-            <DockPanel>
+            <DockPanel behaviors:ArrowNavigationBehavior.IsEnabled="True">
 
                 <!-- App logo / user info -->
                 <StackPanel DockPanel.Dock="Top" Margin="16,18,16,16">
