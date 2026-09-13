@@ -218,7 +218,9 @@
                     <Grid Margin="0,0,0,6">
                         <TextBlock Text="Discount (Rs.):" FontSize="14" Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center"/>
                         <TextBox Text="{Binding OverallDiscountText, UpdateSourceTrigger=PropertyChanged}" Width="100" HorizontalAlignment="Right" Style="{StaticResource FormTextBox}"
-                                 behaviors:IntegerOnlyBehavior.IsEnabled="True"/>
+                                 behaviors:IntegerOnlyBehavior.IsEnabled="True"
+                                 GotFocus="TextBox_GotFocus"
+                                 PreviewMouseLeftButtonDown="TextBox_PreviewMouseLeftButtonDown"/>
                     </Grid>
 
                     <Grid Margin="0,0,0,10">
@@ -228,8 +230,10 @@
 
                     <Grid Margin="0,0,0,10">
                         <TextBlock Text="Amount Paid (Rs.):" FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                        <TextBox Text="{Binding AmountPaid, UpdateSourceTrigger=PropertyChanged}" Width="130" HorizontalAlignment="Right" Style="{StaticResource FormTextBox}" FontSize="16" FontWeight="Bold"
-                                 behaviors:IntegerOnlyBehavior.IsEnabled="True"/>
+                        <TextBox Text="{Binding AmountPaidText, UpdateSourceTrigger=PropertyChanged}" Width="130" HorizontalAlignment="Right" Style="{StaticResource FormTextBox}" FontSize="16" FontWeight="Bold"
+                                 behaviors:IntegerOnlyBehavior.IsEnabled="True"
+                                 GotFocus="TextBox_GotFocus"
+                                 PreviewMouseLeftButtonDown="TextBox_PreviewMouseLeftButtonDown"/>
                     </Grid>
 
                     <Grid Margin="0,0,0,14">
