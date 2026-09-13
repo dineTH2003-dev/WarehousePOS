@@ -25,14 +25,35 @@ public static class DecimalOnlyBehavior
         if ((bool)args.NewValue)
         {
             textBox.PreviewTextInput += OnPreviewTextInput;
+            textBox.GotFocus         += OnGotFocus;
+            textBox.PreviewMouseLeftButtonDown += OnPreviewMouseLeftButtonDown;
             DataObject.AddPastingHandler(textBox, OnPasting);
             textBox.LostFocus += OnLostFocus;
         }
         else
         {
             textBox.PreviewTextInput -= OnPreviewTextInput;
+            textBox.GotFocus         -= OnGotFocus;
+            textBox.PreviewMouseLeftButtonDown -= OnPreviewMouseLeftButtonDown;
             DataObject.RemovePastingHandler(textBox, OnPasting);
             textBox.LostFocus -= OnLostFocus;
+        }
+    }
+
+    private static void OnGotFocus(object sender, RoutedEventArgs e)
+    {
+        if (sender is TextBox textBox)
+        {
+            textBox.SelectAll();
+        }
+    }
+
+    private static void OnPreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is TextBox textBox && !textBox.IsKeyboardFocusWithin)
+        {
+            e.Handled = true;
+            textBox.Focus();
         }
     }
 
