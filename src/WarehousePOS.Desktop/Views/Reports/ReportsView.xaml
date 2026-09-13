@@ -222,7 +222,7 @@
                     </StackPanel>
                 </TabItem.Header>
                 <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" HorizontalContentAlignment="Stretch">
-                    <StackPanel Margin="0,8,0,0" Width="{Binding ViewportWidth, RelativeSource={RelativeSource AncestorType=ScrollViewer}}">
+                    <StackPanel Margin="0,8,0,0">
                         <!-- KPI Row 1: Revenue & Financial Summaries (Clickable) -->
                         <UniformGrid Columns="4" Margin="0,0,0,16">
                             <!-- Total Revenue Card -->
@@ -418,7 +418,7 @@
                     </StackPanel>
                 </TabItem.Header>
                 <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" HorizontalContentAlignment="Stretch">
-                    <StackPanel Margin="0,8,0,0" Width="{Binding ViewportWidth, RelativeSource={RelativeSource AncestorType=ScrollViewer}}">
+                    <StackPanel Margin="0,8,0,0">
                         <!-- KPI Row -->
                         <UniformGrid Columns="4" Margin="0,0,0,16">
                             <Border Style="{StaticResource Card}" Margin="0,0,8,0">
@@ -521,7 +521,7 @@
                     </Grid.ColumnDefinitions>
 
                     <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" HorizontalContentAlignment="Stretch">
-                        <StackPanel Margin="0,0,12,0" Width="{Binding ViewportWidth, RelativeSource={RelativeSource AncestorType=ScrollViewer}}">
+                        <StackPanel Margin="0,0,12,0">
                             <!-- Stock KPIs -->
                             <UniformGrid Columns="4" Margin="0,0,0,16">
                                 <Border Style="{StaticResource Card}" Margin="0,0,8,0">
@@ -685,7 +685,7 @@
                     </StackPanel>
                 </TabItem.Header>
                 <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" HorizontalContentAlignment="Stretch">
-                    <StackPanel Margin="0,8,0,0" Width="{Binding ViewportWidth, RelativeSource={RelativeSource AncestorType=ScrollViewer}}">
+                    <StackPanel Margin="0,8,0,0">
                         <UniformGrid Columns="4" Margin="0,0,0,16">
                             <Border Style="{StaticResource Card}" Margin="0,0,8,0">
                                 <StackPanel>
@@ -770,7 +770,7 @@
                     </Grid.ColumnDefinitions>
 
                     <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto" HorizontalContentAlignment="Stretch">
-                        <StackPanel Margin="0,0,12,0" Width="{Binding ViewportWidth, RelativeSource={RelativeSource AncestorType=ScrollViewer}}">
+                        <StackPanel Margin="0,0,12,0">
                             <UniformGrid Columns="4" Margin="0,0,0,16">
                                 <Border Style="{StaticResource Card}" Margin="0,0,8,0">
                                     <StackPanel>
@@ -876,7 +876,7 @@
                     </StackPanel>
                 </TabItem.Header>
                 <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" HorizontalContentAlignment="Stretch">
-                    <StackPanel Margin="0,8,0,0" Width="{Binding ViewportWidth, RelativeSource={RelativeSource AncestorType=ScrollViewer}}">
+                    <StackPanel Margin="0,8,0,0">
                         <UniformGrid Columns="4" Margin="0,0,0,16">
                             <Border Style="{StaticResource Card}" Margin="0,0,8,0">
                                 <StackPanel>
@@ -940,7 +940,7 @@
                     </Grid.ColumnDefinitions>
 
                     <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto" HorizontalContentAlignment="Stretch">
-                        <StackPanel Margin="0,0,12,0" Width="{Binding ViewportWidth, RelativeSource={RelativeSource AncestorType=ScrollViewer}}">
+                        <StackPanel Margin="0,0,12,0">
                             <UniformGrid Columns="3" Margin="0,0,0,16">
                                 <Border Style="{StaticResource Card}" Margin="0,0,8,0">
                                     <StackPanel>
