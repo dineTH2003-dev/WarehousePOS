@@ -496,6 +496,15 @@
                                           Margin="{TemplateBinding Padding}"
                                           VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
                                           HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" />
+                        <TextBlock x:Name="PlaceholderText"
+                                   Text="{TemplateBinding Tag}"
+                                   Foreground="{StaticResource TextMutedBrush}"
+                                   Margin="{TemplateBinding Padding}"
+                                   VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                   HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                   IsHitTestVisible="False"
+                                   FontSize="{TemplateBinding FontSize}"
+                                   Visibility="Collapsed" />
                         <Popup x:Name="Popup"
                                Placement="Bottom"
                                IsOpen="{TemplateBinding IsDropDownOpen}"
@@ -524,6 +533,9 @@
                         </Popup>
                     </Grid>
                     <ControlTemplate.Triggers>
+                        <Trigger Property="SelectedItem" Value="{x:Null}">
+                            <Setter TargetName="PlaceholderText" Property="Visibility" Value="Visible" />
+                        </Trigger>
                         <Trigger Property="HasItems" Value="False">
                             <Setter TargetName="DropDownBorder" Property="MinHeight" Value="95" />
                         </Trigger>

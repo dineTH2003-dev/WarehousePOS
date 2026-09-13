@@ -71,16 +71,6 @@
                     <DataGridTextColumn Header="Discount Rate" Binding="{Binding DiscountRate, StringFormat='{}{0:G29}%'}" Width="110"/>
                     <DataGridTextColumn Header="Phone"         Binding="{Binding Phone}"     Width="130"/>
                     <DataGridTextColumn Header="Email"         Binding="{Binding Email}"     Width="*"/>
-                    <DataGridTemplateColumn Header="Status" Width="90">
-                        <DataGridTemplateColumn.CellTemplate>
-                            <DataTemplate>
-                                <Border Style="{StaticResource StatusBadge}">
-                                    <TextBlock Text="{Binding IsActive, Converter={StaticResource BoolToStatusConverter}}"
-                                               Style="{StaticResource StatusBadgeText}" />
-                                </Border>
-                            </DataTemplate>
-                        </DataGridTemplateColumn.CellTemplate>
-                    </DataGridTemplateColumn>
                     <DataGridTemplateColumn Header="Actions" Width="195">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>

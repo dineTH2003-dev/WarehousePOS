@@ -89,8 +89,8 @@ public sealed class Purchase : AggregateRoot
 
     public void Receive()
     {
-        if (Status != PurchaseStatus.Confirmed)
-            throw new BusinessRuleViolationException("InvalidStatus", "Only Confirmed purchases can be received.");
+        if (Status != PurchaseStatus.Confirmed && Status != PurchaseStatus.Draft)
+            throw new BusinessRuleViolationException("InvalidStatus", "Only Draft or Confirmed purchases can be received.");
         Status       = PurchaseStatus.Received;
         ReceivedDate = DateTime.UtcNow;
         SetUpdatedAt();

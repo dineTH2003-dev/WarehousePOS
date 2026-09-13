@@ -6,7 +6,7 @@ namespace WarehousePOS.Desktop.ViewModels.Purchasing;
 public sealed class PurchasingItemRowViewModel : ViewModelBase
 {
     private ProductDto? _product;
-    private int _quantity = 1;
+    private int _quantity = 0;
     private int _freeQuantity = 0;
     private int _claimedQuantityReceived = 0;
     private string _unitCostText = "0.00";
@@ -52,7 +52,7 @@ public sealed class PurchasingItemRowViewModel : ViewModelBase
     }
 
     public string? ProductError   => Product == null ? "Product is required." : null;
-    public string? QuantityError  => (Quantity <= 0 && FreeQuantity <= 0 && ClaimedQuantityReceived <= 0) ? "Qty must be > 0." : null;
+    public string? QuantityError  => null;
     public string? ClaimedQtyError => ClaimedQuantityReceived > (Product?.ClaimedQuantity ?? 0) ? $"Max claim: {Product?.ClaimedQuantity ?? 0}." : null;
     public string? UnitCostError  => (Quantity > 0 && UnitCost <= 0) ? "Unit cost must be > 0." : null;
 
