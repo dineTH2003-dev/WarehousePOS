@@ -25,7 +25,6 @@ public partial class MainWindow : Window
     private readonly WarehousePOS.Application.Common.IBackupService _backupService;
     private readonly WarehousePOS.Application.Common.ICloudBackupService _cloudService;
     private readonly Microsoft.Extensions.DependencyInjection.IServiceScopeFactory _scopeFactory;
-    private readonly HashSet<object> _initializedPages = [];
     private System.Windows.Threading.DispatcherTimer? _autoBackupTimer;
     private bool _shellInitialized;
 
@@ -174,64 +173,49 @@ public partial class MainWindow : Window
             var page = e.Content;
             if (page is null) return;
 
-            bool isFirstLoad = _initializedPages.Add(page);
-
             if (page is Views.Sales.PosView posView)
             {
-                if (isFirstLoad)
-                    await posView.InitAsync();
+                await posView.InitAsync();
             }
             else if (page is Views.Products.ProductListView productView)
             {
-                if (isFirstLoad)
-                    await productView.InitAsync();
-                else if (ProductListViewModel.PendingOpenAddProduct)
-                    productView.HandlePendingOpenAddProduct();
+                await productView.InitAsync();
             }
             else if (page is Views.Purchasing.PurchasingView purchasingView)
             {
-                if (isFirstLoad)
-                    await purchasingView.InitAsync();
+                await purchasingView.InitAsync();
             }
             else if (page is Views.Products.CategoryManagementView catView)
             {
-                if (isFirstLoad)
-                    await catView.InitAsync();
+                await catView.InitAsync();
             }
             else if (page is Views.Suppliers.SupplierListView supplierView)
             {
-                if (isFirstLoad)
-                    await supplierView.InitAsync();
+                await supplierView.InitAsync();
             }
             else if (page is Views.Sales.CustomerListView customerView)
             {
-                if (isFirstLoad)
-                    await customerView.InitAsync();
+                await customerView.InitAsync();
             }
             else if (page is Views.Sales.CustomerPurchasedItemsView purchasedView)
             {
-                if (isFirstLoad || CustomerPurchasedItemsViewModel.PendingCustomer is not null)
-                    await purchasedView.InitAsync();
+                await purchasedView.InitAsync();
             }
             else if (page is Views.Reports.ReportsView reportsView)
             {
-                if (isFirstLoad)
-                    await reportsView.InitAsync();
+                await reportsView.InitAsync();
             }
             else if (page is Views.Expenses.ExpenseListView expenseView)
             {
-                if (isFirstLoad)
-                    await expenseView.InitAsync();
+                await expenseView.InitAsync();
             }
             else if (page is Views.Users.UserManagementView userView)
             {
-                if (isFirstLoad)
-                    await userView.InitAsync();
+                await userView.InitAsync();
             }
             else if (page is Views.Settings.StoreSettingsView settingsView)
             {
-                if (isFirstLoad)
-                    await settingsView.InitAsync();
+                await settingsView.InitAsync();
             }
         }
         catch (Exception ex)
@@ -296,7 +280,6 @@ public partial class MainWindow : Window
     private void BtnLogout_Click(object sender, RoutedEventArgs e)
     {
         _nav.ClearCache();
-        _initializedPages.Clear();
         _session.Clear();
         var processPath = System.Diagnostics.Process.GetCurrentProcess().MainModule?.FileName;
         if (!string.IsNullOrEmpty(processPath))
