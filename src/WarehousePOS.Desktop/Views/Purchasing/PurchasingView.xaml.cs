@@ -2,7 +2,9 @@ using System.Windows.Controls;
 using WarehousePOS.Application.Products;
 using WarehousePOS.Desktop.ViewModels.Products;
 using WarehousePOS.Desktop.ViewModels.Purchasing;
+using WarehousePOS.Desktop.ViewModels.Suppliers;
 using WarehousePOS.Desktop.Views.Products;
+using WarehousePOS.Desktop.Views.Suppliers;
 
 namespace WarehousePOS.Desktop.Views.Purchasing;
 
@@ -10,25 +12,41 @@ public partial class PurchasingView : Page
 {
     private readonly PurchasingViewModel _vm;
     private readonly ProductFormViewModel _productFormVm;
+    private readonly SupplierFormViewModel _supplierFormVm;
     private readonly ICategoryService _categoryService;
 
     public PurchasingView(
         PurchasingViewModel vm,
         ProductFormViewModel productFormVm,
+        SupplierFormViewModel supplierFormVm,
         ICategoryService categoryService)
     {
         InitializeComponent();
         _vm = vm;
         _productFormVm = productFormVm;
+        _supplierFormVm = supplierFormVm;
         _categoryService = categoryService;
         DataContext = vm;
 
         vm.CreateNewProductRequested += OnCreateNewProductRequested;
+        vm.CreateNewSupplierRequested += OnCreateNewSupplierRequested;
     }
 
     public async Task InitAsync()
     {
         await _vm.LoadAsync();
+    }
+
+    private async void OnCreateNewSupplierRequested()
+    {
+        await _supplierFormVm.LoadAsync(null);
+        var window = System.Windows.Window.GetWindow(this);
+        var supplierDialog = new SupplierFormView(_supplierFormVm, _productFormVm, _categoryService) { Owner = window };
+
+        if (supplierDialog.ShowDialog() == true)
+        {
+            await _vm.LoadAsync();
+        }
     }
 
     private async void OnCreateNewProductRequested()
