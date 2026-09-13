@@ -75,18 +75,17 @@ public sealed class PurchaseService(
                 var before = product.StockQuantity;
                 var totalQuantityToAdd = item.Quantity + item.FreeQuantity;
 
-                if (totalQuantityToAdd > 0)
+                if (item.RetailPrice > 0 || item.WholesalePrice > 0)
+                {
+                    product.ReceiveInboundStock(totalQuantityToAdd, item.RetailPrice, item.WholesalePrice);
+                }
+                else if (totalQuantityToAdd > 0)
+                {
                     product.AddStock(totalQuantityToAdd);
+                }
 
                 if (item.ClaimedQuantityReceived > 0)
                     product.FulfillClaim(item.ClaimedQuantityReceived);
-
-                if (item.RetailPrice > 0 || item.WholesalePrice > 0)
-                {
-                    var retail = item.RetailPrice > 0 ? item.RetailPrice : product.RetailPrice;
-                    var wholesale = item.WholesalePrice > 0 ? item.WholesalePrice : product.WholesalePrice;
-                    product.UpdatePricing(retail, wholesale);
-                }
 
                 await productRepo.UpdateAsync(product, ct);
 

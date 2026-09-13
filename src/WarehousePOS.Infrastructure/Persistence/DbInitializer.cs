@@ -182,6 +182,18 @@ public static class DbInitializer
                 {
                     await db.Database.ExecuteSqlRawAsync("ALTER TABLE Products ADD COLUMN ClaimedQuantity INTEGER NOT NULL DEFAULT 0;");
                 }
+                if (!productColumns.Contains("PendingHigherPriceStockQuantity", StringComparer.OrdinalIgnoreCase))
+                {
+                    await db.Database.ExecuteSqlRawAsync("ALTER TABLE Products ADD COLUMN PendingHigherPriceStockQuantity INTEGER NOT NULL DEFAULT 0;");
+                }
+                if (!productColumns.Contains("PendingNewRetailPrice", StringComparer.OrdinalIgnoreCase))
+                {
+                    await db.Database.ExecuteSqlRawAsync("ALTER TABLE Products ADD COLUMN PendingNewRetailPrice TEXT NULL;");
+                }
+                if (!productColumns.Contains("PendingNewWholesalePrice", StringComparer.OrdinalIgnoreCase))
+                {
+                    await db.Database.ExecuteSqlRawAsync("ALTER TABLE Products ADD COLUMN PendingNewWholesalePrice TEXT NULL;");
+                }
             }
         }
         catch (Exception ex)
