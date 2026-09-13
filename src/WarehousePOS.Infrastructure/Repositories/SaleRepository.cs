@@ -9,18 +9,18 @@ namespace WarehousePOS.Infrastructure.Repositories;
 public sealed class CustomerRepository(AppDbContext db) : ICustomerRepository
 {
     public async Task<Customer?> GetByIdAsync(int id, CancellationToken ct = default) =>
-        await db.Customers.FirstOrDefaultAsync(c => c.Id == id, ct);
+        await db.Customers.AsNoTracking().FirstOrDefaultAsync(c => c.Id == id, ct);
 
     public async Task<IReadOnlyList<Customer>> GetAllAsync(CancellationToken ct = default) =>
-        await db.Customers.OrderBy(c => c.Name).ToListAsync(ct);
+        await db.Customers.AsNoTracking().OrderBy(c => c.Name).ToListAsync(ct);
 
     public async Task<IReadOnlyList<Customer>> GetActiveAsync(CancellationToken ct = default) =>
-        await db.Customers.Where(c => c.IsActive).OrderBy(c => c.Name).ToListAsync(ct);
+        await db.Customers.AsNoTracking().Where(c => c.IsActive).OrderBy(c => c.Name).ToListAsync(ct);
 
     public async Task<IReadOnlyList<Customer>> SearchAsync(string term, CancellationToken ct = default)
     {
         var query = term.Trim().ToLower();
-        return await db.Customers
+        return await db.Customers.AsNoTracking()
             .Where(c => c.Name.ToLower().Contains(query) ||
                         (c.Phone != null && c.Phone.Contains(query)))
             .OrderBy(c => c.Name)
@@ -28,7 +28,7 @@ public sealed class CustomerRepository(AppDbContext db) : ICustomerRepository
     }
 
     public async Task<IReadOnlyList<Customer>> GetByTypeAsync(SaleType type, CancellationToken ct = default) =>
-        await db.Customers.Where(c => c.Type == type && c.IsActive).OrderBy(c => c.Name).ToListAsync(ct);
+        await db.Customers.AsNoTracking().Where(c => c.Type == type && c.IsActive).OrderBy(c => c.Name).ToListAsync(ct);
 
     public async Task AddAsync(Customer customer, CancellationToken ct = default)
     {
@@ -47,6 +47,7 @@ public sealed class SaleRepository(AppDbContext db) : ISaleRepository
 {
     private IQueryable<Sale> WithIncludes() =>
         db.Sales
+          .AsNoTracking()
           .Include(s => s.Customer)
           .Include(s => s.Items)
           .ThenInclude(i => i.Product);
