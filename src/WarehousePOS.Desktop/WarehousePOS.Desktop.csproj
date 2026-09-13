@@ -13,6 +13,7 @@
     <SelfContained>true</SelfContained>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <ApplicationIcon>Resources\Images\app-icon.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
@@ -23,6 +24,8 @@
   <ItemGroup>
     <Resource Include="Resources\Images\happy-products-logo.png" />
     <Resource Include="Resources\Images\pos-retail-background.jpg" />
+    <Resource Include="Resources\Images\app-icon.ico" />
+    <Resource Include="Resources\Images\app-icon.png" />
   </ItemGroup>
 
   <ItemGroup>
