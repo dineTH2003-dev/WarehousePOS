@@ -49,7 +49,7 @@
 
                     <!-- Supplier Selection -->
                     <StackPanel Grid.Column="0">
-                        <Grid Width="340" Margin="0,0,0,6">
+                        <Grid Width="340" Height="24" Margin="0,0,0,6">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
@@ -62,6 +62,7 @@
                                     ToolTip="Add a new supplier to the system"/>
                         </Grid>
                         <ComboBox Width="340"
+                                  Height="38"
                                   ItemsSource="{Binding Suppliers}"
                                   SelectedValuePath="Id"
                                   DisplayMemberPath="DisplayName"
@@ -75,8 +76,11 @@
 
                     <!-- Payment Method -->
                     <StackPanel Grid.Column="2">
-                        <TextBlock Text="Payment Method *" Style="{StaticResource LabelText}" Margin="0,0,0,6"/>
+                        <Grid Width="340" Height="24" Margin="0,0,0,6">
+                            <TextBlock Text="Payment Method *" Style="{StaticResource LabelText}" VerticalAlignment="Center"/>
+                        </Grid>
                         <ComboBox Width="340"
+                                  Height="38"
                                   ItemsSource="{Binding PaymentMethods}"
                                   SelectedItem="{Binding SelectedPaymentMethod}"
                                   Tag="Select Payment Method">
@@ -86,10 +90,12 @@
 
                     <!-- Purchase Notes -->
                     <StackPanel Grid.Column="4">
-                        <TextBlock Text="Purchase Order Notes / Invoice No." Style="{StaticResource LabelText}" Margin="0,0,0,6"/>
+                        <Grid Width="340" Height="24" Margin="0,0,0,6">
+                            <TextBlock Text="Purchase Order Notes / Invoice No." Style="{StaticResource LabelText}" VerticalAlignment="Center"/>
+                        </Grid>
                         <TextBox Width="340"
+                                 Height="38"
                                  MinHeight="38"
-                                 Padding="10,6"
                                  Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}"
                                  Tag="Ex: INV-2026-001 or supplier invoice #"
                                  Style="{StaticResource FormTextBox}"
@@ -110,10 +116,12 @@
 
                     <!-- Paid Amount -->
                     <StackPanel Grid.Column="0">
-                        <TextBlock Text="Paid Amount (Rs.) *" Style="{StaticResource LabelText}" Margin="0,0,0,6"/>
+                        <Grid Width="340" Height="20" Margin="0,0,0,6">
+                            <TextBlock Text="Paid Amount (Rs.) *" Style="{StaticResource LabelText}" VerticalAlignment="Center"/>
+                        </Grid>
                         <TextBox Width="340"
+                                 Height="38"
                                  MinHeight="38"
-                                 Padding="10,6"
                                  Text="{Binding PaidAmountText, UpdateSourceTrigger=PropertyChanged}"
                                  behaviors:DecimalOnlyBehavior.IsEnabled="True"
                                  Style="{StaticResource FormTextBox}"
@@ -124,8 +132,10 @@
 
                     <!-- Remaining Balance -->
                     <StackPanel Grid.Column="2">
-                        <TextBlock Text="Remaining Balance" Style="{StaticResource LabelText}" Margin="0,0,0,6"/>
-                        <Border Width="340" Height="38" MinHeight="38" Background="#FFFBEB" BorderBrush="#FCD34D" BorderThickness="1" CornerRadius="8" Padding="10,8">
+                        <Grid Width="340" Height="20" Margin="0,0,0,6">
+                            <TextBlock Text="Remaining Balance" Style="{StaticResource LabelText}" VerticalAlignment="Center"/>
+                        </Grid>
+                        <Border Width="340" Height="38" MinHeight="38" Background="#FFFBEB" BorderBrush="#FCD34D" BorderThickness="1" CornerRadius="8" Padding="10,0">
                             <TextBlock Text="{Binding RemainingBalance, StringFormat='Rs. {0:N2}'}"
                                        FontWeight="Bold" Foreground="#B45309" FontSize="13" VerticalAlignment="Center"/>
                         </Border>
@@ -133,10 +143,12 @@
 
                     <!-- Payment Details -->
                     <StackPanel Grid.Column="4">
-                        <TextBlock Text="Payment Reference / Details" Style="{StaticResource LabelText}" Margin="0,0,0,6"/>
+                        <Grid Width="340" Height="20" Margin="0,0,0,6">
+                            <TextBlock Text="Payment Reference / Details" Style="{StaticResource LabelText}" VerticalAlignment="Center"/>
+                        </Grid>
                         <TextBox Width="340"
+                                 Height="38"
                                  MinHeight="38"
-                                 Padding="10,6"
                                  Text="{Binding PaymentDetails, UpdateSourceTrigger=PropertyChanged}"
                                  Tag="Ex: Cheque #12345, Bank Ref ABC..."
                                  Style="{StaticResource FormTextBox}"
@@ -214,6 +226,7 @@
                                             <TextBlock Text="Product *" Style="{StaticResource LabelText}" FontSize="11" Margin="0,0,0,4"/>
                                             <ComboBox ItemsSource="{Binding DataContext.AvailableProducts, RelativeSource={RelativeSource AncestorType=Page}}"
                                                       SelectedItem="{Binding Product}"
+                                                      Height="38"
                                                       DisplayMemberPath="Name"
                                                       Tag="Select Product">
                                                 <ComboBox.ToolTip>Select product to purchase</ComboBox.ToolTip>
@@ -292,11 +305,15 @@
                                         </StackPanel>
 
                                         <!-- Delete Button -->
-                                        <Button Grid.Column="16" Content="✕"
-                                                Style="{StaticResource SecondaryButton}"
-                                                Command="{Binding RemoveCommand}"
-                                                VerticalAlignment="Bottom" Padding="10,6" Margin="0,0,0,1" FontSize="12"
-                                                ToolTip="Remove this item from purchase order"/>
+                                        <StackPanel Grid.Column="16">
+                                            <TextBlock Text=" " Style="{StaticResource LabelText}" FontSize="11" Margin="0,0,0,4"/>
+                                            <Button Content="✕"
+                                                    Style="{StaticResource SecondaryButton}"
+                                                    Command="{Binding RemoveCommand}"
+                                                    Height="38" MinWidth="38" Padding="8,0" FontSize="12"
+                                                    VerticalAlignment="Top"
+                                                    ToolTip="Remove this item from purchase order"/>
+                                        </StackPanel>
                                     </Grid>
                                 </Border>
                             </DataTemplate>
