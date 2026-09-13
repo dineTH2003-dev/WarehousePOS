@@ -76,9 +76,11 @@ public sealed class PosViewModel : ViewModelBase
     private decimal     _overallDiscount;
     private string      _overallDiscountText = string.Empty;
     private decimal     _amountPaid;
+    private string      _amountPaidText = "0";
     private string      _errorMessage   = string.Empty;
     private bool        _isBusy;
     private string      _successMessage = string.Empty;
+    private CancellationTokenSource? _successMessageCts;
 
     public ObservableCollection<ProductDto>  SearchResults => _searchResults;
     public ObservableCollection<CustomerDto> Customers     => _customers;
@@ -109,11 +111,15 @@ public sealed class PosViewModel : ViewModelBase
         }
     }
 
+    private bool _isRefreshingCustomers;
+
     public CustomerDto? SelectedCustomer
     {
         get => _selectedCustomer;
         set
         {
+            if (_isRefreshingCustomers) return;
+
             if (SetField(ref _selectedCustomer, value))
             {
                 _isDiscountManuallyOverridden = false;
@@ -127,6 +133,8 @@ public sealed class PosViewModel : ViewModelBase
                 }
                 else
                 {
+                    _customerSearchQuery = string.Empty;
+                    OnPropertyChanged(nameof(CustomerSearchQuery));
                     _overallDiscount = 0;
                     _overallDiscountText = string.Empty;
                     OnPropertyChanged(nameof(OverallDiscount));
@@ -194,8 +202,42 @@ public sealed class PosViewModel : ViewModelBase
         {
             if (SetField(ref _amountPaid, value))
             {
+                _amountPaidText = value == 0 ? "0" : value.ToString(CultureInfo.InvariantCulture);
+                OnPropertyChanged(nameof(AmountPaidText));
                 RecalculateTotals();
             }
+        }
+    }
+
+    public string AmountPaidText
+    {
+        get => _amountPaidText;
+        set
+        {
+            if (!string.IsNullOrEmpty(value) && value.Length > 1 && value.StartsWith("0") && !value.StartsWith("0.") && !value.StartsWith("0,"))
+            {
+                value = value.TrimStart('0');
+                if (string.IsNullOrEmpty(value)) value = "0";
+            }
+
+            if (!SetField(ref _amountPaidText, value))
+                return;
+
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                _amountPaid = 0;
+            }
+            else if (decimal.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out var paid) ||
+                     decimal.TryParse(value, NumberStyles.Any, CultureInfo.CurrentCulture, out paid))
+            {
+                _amountPaid = Math.Max(0, paid);
+            }
+            else
+            {
+                _amountPaid = 0;
+            }
+
+            RecalculateTotals();
         }
     }
 
@@ -210,7 +252,37 @@ public sealed class PosViewModel : ViewModelBase
 
     public string ErrorMessage   { get => _errorMessage;   set { SetField(ref _errorMessage, value); OnPropertyChanged(nameof(HasError)); } }
     public bool HasError         => !string.IsNullOrEmpty(ErrorMessage);
-    public string SuccessMessage { get => _successMessage; set { SetField(ref _successMessage, value); OnPropertyChanged(nameof(HasSuccess)); } }
+    public string SuccessMessage
+    {
+        get => _successMessage;
+        set
+        {
+            if (SetField(ref _successMessage, value))
+            {
+                OnPropertyChanged(nameof(HasSuccess));
+                if (!string.IsNullOrEmpty(value))
+                {
+                    _successMessageCts?.Cancel();
+                    _successMessageCts = new CancellationTokenSource();
+                    var token = _successMessageCts.Token;
+
+                    Task.Delay(3000, token).ContinueWith(t =>
+                    {
+                        if (!t.IsCanceled && !token.IsCancellationRequested)
+                        {
+                            System.Windows.Application.Current?.Dispatcher?.Invoke(() =>
+                            {
+                                if (!token.IsCancellationRequested && _successMessage == value)
+                                {
+                                    SuccessMessage = string.Empty;
+                                }
+                            });
+                        }
+                    }, TaskScheduler.Default);
+                }
+            }
+        }
+    }
     public bool HasSuccess       => !string.IsNullOrEmpty(SuccessMessage);
     public bool IsBusy           { get => _isBusy;           set => SetField(ref _isBusy, value); }
 
@@ -240,10 +312,55 @@ public sealed class PosViewModel : ViewModelBase
 
     public async Task InitializeAsync()
     {
-        var custs = await _customerService.GetActiveAsync();
-        _customers.Clear();
-        foreach (var c in custs) _customers.Add(c);
-        FilterCustomers();
+        var prevSelectedId = SelectedCustomer?.Id;
+        var prevCustomerQuery = CustomerSearchQuery;
+        var prevDiscountOverridden = _isDiscountManuallyOverridden;
+        var prevDiscount = OverallDiscount;
+        var prevDiscountText = OverallDiscountText;
+
+        try
+        {
+            _isRefreshingCustomers = true;
+            var custs = await _customerService.GetActiveAsync();
+            _customers.Clear();
+            foreach (var c in custs) _customers.Add(c);
+            FilterCustomers();
+        }
+        finally
+        {
+            _isRefreshingCustomers = false;
+        }
+
+        if (prevSelectedId.HasValue)
+        {
+            var matchedCustomer = _customers.FirstOrDefault(c => c.Id == prevSelectedId.Value);
+            if (matchedCustomer is not null)
+            {
+                _selectedCustomer = matchedCustomer;
+                _customerSearchQuery = matchedCustomer.DisplayName;
+                OnPropertyChanged(nameof(SelectedCustomer));
+                OnPropertyChanged(nameof(CustomerSearchQuery));
+
+                if (prevDiscountOverridden)
+                {
+                    _isDiscountManuallyOverridden = true;
+                    _overallDiscount = prevDiscount;
+                    _overallDiscountText = prevDiscountText;
+                    OnPropertyChanged(nameof(OverallDiscount));
+                    OnPropertyChanged(nameof(OverallDiscountText));
+                }
+                else
+                {
+                    ApplyCustomerDiscountRate();
+                }
+                IsCustomerDropDownOpen = false;
+                RecalculateTotals();
+            }
+        }
+        else
+        {
+            IsCustomerDropDownOpen = false;
+        }
 
         await PerformSearchAsync();
     }
@@ -262,9 +379,13 @@ public sealed class PosViewModel : ViewModelBase
             FilteredCustomers.Add(c);
         }
 
-        if (!string.IsNullOrWhiteSpace(query) && FilteredCustomers.Any())
+        if (!string.IsNullOrWhiteSpace(query) && FilteredCustomers.Any() && SelectedCustomer is null)
         {
             IsCustomerDropDownOpen = true;
+        }
+        else
+        {
+            IsCustomerDropDownOpen = false;
         }
     }
 
@@ -432,8 +553,15 @@ public sealed class PosViewModel : ViewModelBase
         _cartItems.Clear();
         _isDiscountManuallyOverridden = false;
         OverallDiscount  = 0;
-        AmountPaid       = 0;
+        _amountPaid       = 0;
+        _amountPaidText   = "0";
+        OnPropertyChanged(nameof(AmountPaidText));
         SelectedCustomer = null;
+        SearchQuery      = string.Empty;
+        SaleType         = SaleType.Retail;
+        ErrorMessage     = string.Empty;
+        IsCustomerDropDownOpen = false;
+        FilterCustomers();
         RecalculateTotals();
     }
 }
