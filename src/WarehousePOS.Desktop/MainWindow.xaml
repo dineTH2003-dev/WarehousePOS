@@ -2,7 +2,8 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:behaviors="clr-namespace:WarehousePOS.Desktop.Behaviors"
-        Title="Warehouse POS"
+        Title="Happy Products"
+        Icon="/Resources/Images/app-icon.png"
         Height="768"
         Width="1280"
         WindowState="Maximized"
@@ -43,11 +44,11 @@
                         </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="#E8F7EE"/>
+                                <Setter TargetName="Bd" Property="Background" Value="#F1F5F9"/>
                                 <Setter Property="Foreground" Value="#0F7F4F"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="#D1F2DF"/>
+                                <Setter TargetName="Bd" Property="Background" Value="#E2E8F0"/>
                                 <Setter Property="Foreground" Value="#0A5C39"/>
                             </Trigger>
                             <!-- Keyboard focus ring -->
@@ -57,7 +58,8 @@
                             <!-- Active page state (set via Tag="Active" from code-behind) -->
                             <Trigger Property="Tag" Value="Active">
                                 <Setter TargetName="Bd" Property="Background" Value="#E8F7EE"/>
-                                <Setter Property="Foreground" Value="#0F7F4F"/>
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="#C6EBD5"/>
+                                <Setter Property="Foreground" Value="#0A5C39"/>
                                 <Setter Property="FontWeight" Value="Bold"/>
                                 <Setter TargetName="AccentBar" Property="Visibility" Value="Visible"/>
                             </Trigger>

@@ -21,7 +21,7 @@ public sealed class CategoryAnalyticsItemViewModel
     public decimal TotalAmount { get; init; }
     public string TotalAmountFormatted => $"Rs. {TotalAmount:N2}";
     public double Percentage { get; init; }
-    public string PercentageFormatted => $"{Percentage:F0}%";
+    public string PercentageFormatted => Percentage > 0.0 && Percentage < 1.0 ? "<1%" : $"{Percentage:F0}%";
     public int Count { get; init; }
     public Brush ColorBrush { get; init; } = Brushes.Gray;
 }

@@ -176,46 +176,57 @@ public partial class MainWindow : Window
 
             if (page is Views.Sales.PosView posView)
             {
+                SetActiveNav(BtnPos);
                 await posView.InitAsync();
             }
             else if (page is Views.Products.ProductListView productView)
             {
+                SetActiveNav(BtnProducts);
                 await productView.InitAsync();
             }
             else if (page is Views.Purchasing.PurchasingView purchasingView)
             {
+                SetActiveNav(BtnPurchasing);
                 await purchasingView.InitAsync();
             }
             else if (page is Views.Products.CategoryManagementView catView)
             {
+                SetActiveNav(BtnProducts);
                 await catView.InitAsync();
             }
             else if (page is Views.Suppliers.SupplierListView supplierView)
             {
+                SetActiveNav(BtnSuppliers);
                 await supplierView.InitAsync();
             }
             else if (page is Views.Sales.CustomerListView customerView)
             {
+                SetActiveNav(BtnCustomers);
                 await customerView.InitAsync();
             }
             else if (page is Views.Sales.CustomerPurchasedItemsView purchasedView)
             {
+                SetActiveNav(BtnCustomers);
                 await purchasedView.InitAsync();
             }
             else if (page is Views.Reports.ReportsView reportsView)
             {
+                SetActiveNav(BtnReports);
                 await reportsView.InitAsync();
             }
             else if (page is Views.Expenses.ExpenseListView expenseView)
             {
+                SetActiveNav(BtnExpenses);
                 await expenseView.InitAsync();
             }
             else if (page is Views.Users.UserManagementView userView)
             {
+                SetActiveNav(BtnUserManagement);
                 await userView.InitAsync();
             }
             else if (page is Views.Settings.StoreSettingsView settingsView)
             {
+                SetActiveNav(BtnSettings);
                 await settingsView.InitAsync();
             }
         }
