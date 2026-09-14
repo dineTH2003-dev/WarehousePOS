@@ -78,6 +78,32 @@ public sealed class CustomerTests
         var c = Customer.Create("Test", discountRate: 12.5m);
         c.DiscountRate.Should().Be(12.5m);
     }
+
+    [Fact]
+    public void IncreaseOutstandingBalance_ValidAmount_ShouldIncreaseBalance()
+    {
+        var c = Customer.Create("Test Customer");
+        c.IncreaseOutstandingBalance(1500m);
+        c.OutstandingBalance.Should().Be(1500m);
+    }
+
+    [Fact]
+    public void DecreaseOutstandingBalance_ValidAmount_ShouldDecreaseBalance()
+    {
+        var c = Customer.Create("Test Customer");
+        c.IncreaseOutstandingBalance(2000m);
+        c.DecreaseOutstandingBalance(500m);
+        c.OutstandingBalance.Should().Be(1500m);
+    }
+
+    [Fact]
+    public void DecreaseOutstandingBalance_MoreThanCurrent_ShouldCapAtZero()
+    {
+        var c = Customer.Create("Test Customer");
+        c.IncreaseOutstandingBalance(500m);
+        c.DecreaseOutstandingBalance(1000m);
+        c.OutstandingBalance.Should().Be(0m);
+    }
 }
 
 public sealed class SaleTests
@@ -161,14 +187,27 @@ public sealed class SaleTests
     }
 
     [Fact]
-    public void RecordPayment_InsufficientPayment_ShouldThrow()
+    public void RecordPayment_WalkInInsufficientPayment_ShouldThrow()
     {
-        var sale = Sale.Create(SaleType.Retail, createdByUserId: 1);
+        var sale = Sale.Create(SaleType.Retail, createdByUserId: 1, customerId: null);
         var product = CreateTestProduct(1, "Item", retail: 100, wholesale: 90);
         sale.AddItem(product, quantity: 3, unitPrice: 100); // 300
 
-        var action = () => sale.RecordPayment(250);
-        action.Should().Throw<BusinessRuleViolationException>();
+        var action = () => sale.RecordPayment(250, isRegisteredCustomer: false);
+        action.Should().Throw<BusinessRuleViolationException>().WithMessage("*must pay in full*");
+    }
+
+    [Fact]
+    public void RecordPayment_RegisteredCustomerCreditSale_ShouldSucceedAndCalculateUnpaidBalance()
+    {
+        var sale = Sale.Create(SaleType.Retail, createdByUserId: 1, customerId: 10);
+        var product = CreateTestProduct(1, "Item", retail: 100, wholesale: 90);
+        sale.AddItem(product, quantity: 3, unitPrice: 100); // 300
+
+        sale.RecordPayment(100, isRegisteredCustomer: true);
+        sale.AmountPaid.Should().Be(100);
+        sale.UnpaidAmount.Should().Be(200);
+        sale.Change.Should().Be(0);
     }
 
     [Fact]

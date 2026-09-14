@@ -60,5 +60,5 @@ public sealed class CustomerService(
     }
 
     private static CustomerDto Map(Customer c) =>
-        new(c.Id, c.Name, c.Type, c.Type.ToString(), c.Phone, c.Email, c.Address, c.DiscountRate, c.IsActive);
+        new(c.Id, c.Name, c.Type, c.Type.ToString(), c.Phone, c.Email, c.Address, c.DiscountRate, c.IsActive, c.OutstandingBalance);
 }

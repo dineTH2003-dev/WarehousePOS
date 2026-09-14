@@ -15,8 +15,9 @@ public sealed class Customer : AggregateRoot
     public string? Email       { get; private set; }
     public string? Address     { get; private set; }
     public SaleType Type       { get; private set; } = SaleType.Retail;
-    public decimal DiscountRate{ get; private set; } = 0m;
-    public bool IsActive       { get; private set; } = true;
+    public decimal DiscountRate       { get; private set; } = 0m;
+    public decimal OutstandingBalance { get; private set; } = 0m;
+    public bool IsActive              { get; private set; } = true;
 
     public static Customer Create(
         string name,
@@ -51,6 +52,22 @@ public sealed class Customer : AggregateRoot
         Email        = email?.Trim();
         Address      = address?.Trim();
         DiscountRate = discountRate;
+        SetUpdatedAt();
+    }
+
+    public void IncreaseOutstandingBalance(decimal amount)
+    {
+        if (amount <= 0)
+            throw new ArgumentOutOfRangeException(nameof(amount), "Amount must be positive.");
+        OutstandingBalance += amount;
+        SetUpdatedAt();
+    }
+
+    public void DecreaseOutstandingBalance(decimal amount)
+    {
+        if (amount <= 0)
+            throw new ArgumentOutOfRangeException(nameof(amount), "Amount must be positive.");
+        OutstandingBalance = Math.Max(0m, OutstandingBalance - amount);
         SetUpdatedAt();
     }
 
