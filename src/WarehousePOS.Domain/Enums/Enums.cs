@@ -21,9 +21,10 @@ public enum SaleType
 public enum PaymentMethod
 {
     Cash = 1,
-    BankTransfer = 2,
+    Card = 2,
     Cheque = 3,
-    Other = 4
+    BankTransfer = 4,
+    Other = 5
 }
 
 /// <summary>Direction of an inventory movement.</summary>

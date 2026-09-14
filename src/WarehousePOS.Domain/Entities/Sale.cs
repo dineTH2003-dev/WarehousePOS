@@ -22,7 +22,9 @@ public sealed class Sale : AggregateRoot
     public decimal DiscountAmount  { get; private set; }
     public decimal TotalAmount     { get; private set; }   // SubTotal - Discount
     public decimal AmountPaid      { get; private set; }
-    public decimal Change          => AmountPaid - TotalAmount;
+    public decimal Change          => Math.Max(0m, AmountPaid - TotalAmount);
+    public decimal UnpaidAmount    => Math.Max(0m, TotalAmount - AmountPaid);
+    public PaymentMethod PaymentMethod { get; private set; } = PaymentMethod.Cash;
     public string? Notes           { get; private set; }
     public DateTime SaleDate       { get; private set; }
     public int CreatedByUserId     { get; private set; }
@@ -33,7 +35,8 @@ public sealed class Sale : AggregateRoot
         SaleType saleType,
         int createdByUserId,
         int? customerId = null,
-        string? notes   = null)
+        string? notes   = null,
+        PaymentMethod paymentMethod = PaymentMethod.Cash)
     {
         return new Sale
         {
@@ -41,7 +44,8 @@ public sealed class Sale : AggregateRoot
             CustomerId      = customerId,
             CreatedByUserId = createdByUserId,
             Notes           = notes?.Trim(),
-            SaleDate        = DateTime.UtcNow
+            SaleDate        = DateTime.UtcNow,
+            PaymentMethod   = paymentMethod
         };
     }
 
@@ -84,11 +88,15 @@ public sealed class Sale : AggregateRoot
         TotalAmount    = SubTotal - DiscountAmount;
     }
 
-    public void RecordPayment(decimal amountPaid)
+    public void RecordPayment(decimal amountPaid, bool isRegisteredCustomer = false)
     {
-        if (amountPaid < TotalAmount)
+        if (amountPaid < 0)
+            throw new ArgumentOutOfRangeException(nameof(amountPaid), "Amount paid cannot be negative.");
+
+        if (!isRegisteredCustomer && amountPaid < TotalAmount)
             throw new BusinessRuleViolationException("InsufficientPayment",
-                $"Amount paid (Rs. {amountPaid:N2}) is less than total (Rs. {TotalAmount:N2}).");
+                $"Unregistered customers must pay in full. Amount paid (Rs. {amountPaid:N2}) is less than total (Rs. {TotalAmount:N2}).");
+
         AmountPaid = amountPaid;
     }
 
