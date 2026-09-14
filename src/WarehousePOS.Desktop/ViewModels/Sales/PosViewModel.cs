@@ -8,6 +8,8 @@ using WarehousePOS.Domain.Enums;
 
 namespace WarehousePOS.Desktop.ViewModels.Sales;
 
+public sealed record PaymentMethodOption(PaymentMethod Method, string DisplayName);
+
 public sealed class PosCartItem : ViewModelBase
 {
     private int _quantity;
@@ -112,6 +114,23 @@ public sealed class PosViewModel : ViewModelBase
     }
 
     private bool _isRefreshingCustomers;
+    private PaymentMethod _selectedPaymentMethod = PaymentMethod.Cash;
+
+    public IReadOnlyList<PaymentMethodOption> PaymentMethodOptions { get; } = new List<PaymentMethodOption>
+    {
+        new(PaymentMethod.Cash, "Cash"),
+        new(PaymentMethod.Card, "Credit / Debit Card"),
+        new(PaymentMethod.Cheque, "Cheque"),
+        new(PaymentMethod.BankTransfer, "Bank Transfer")
+    };
+
+    public PaymentMethod SelectedPaymentMethod
+    {
+        get => _selectedPaymentMethod;
+        set => SetField(ref _selectedPaymentMethod, value);
+    }
+
+    public bool IsRegisteredCustomer => SelectedCustomer is not null;
 
     public CustomerDto? SelectedCustomer
     {
@@ -140,6 +159,7 @@ public sealed class PosViewModel : ViewModelBase
                     OnPropertyChanged(nameof(OverallDiscount));
                     OnPropertyChanged(nameof(OverallDiscountText));
                 }
+                OnPropertyChanged(nameof(IsRegisteredCustomer));
                 RecalculateTotals();
             }
         }
@@ -241,14 +261,27 @@ public sealed class PosViewModel : ViewModelBase
         }
     }
 
-    public decimal SubTotal    => _cartItems.Sum(i => i.LineTotal);
-    public decimal TotalAmount => Math.Max(0, SubTotal - OverallDiscount);
-    public decimal ChangeAmount=> Math.Max(0, AmountPaid - TotalAmount);
-    public bool IsDeficit      => AmountPaid < TotalAmount && _cartItems.Count > 0;
-    public decimal Balance     => AmountPaid - TotalAmount;
-    public string BalanceLabel => IsDeficit ? "Deficit:" : "Change:";
-    public string BalanceDisplay => IsDeficit ? $"-Rs. {Math.Abs(Balance):N2}" : $"Rs. {ChangeAmount:N2}";
-    public string BalanceColor => IsDeficit ? "#DC2626" : "#16A34A";
+    public decimal SubTotal      => _cartItems.Sum(i => i.LineTotal);
+    public decimal TotalAmount   => Math.Max(0, SubTotal - OverallDiscount);
+    public decimal ChangeAmount  => Math.Max(0, AmountPaid - TotalAmount);
+    public decimal UnpaidBalance => Math.Max(0, TotalAmount - AmountPaid);
+    public bool IsDeficit        => AmountPaid < TotalAmount && _cartItems.Count > 0;
+    public decimal Balance       => AmountPaid - TotalAmount;
+
+    public string BalanceLabel =>
+        IsDeficit
+            ? (IsRegisteredCustomer ? "Credit Amount:" : "Deficit (Full Payment Required):")
+            : "Change:";
+
+    public string BalanceDisplay =>
+        IsDeficit
+            ? (IsRegisteredCustomer ? $"Rs. {UnpaidBalance:N2}" : $"-Rs. {UnpaidBalance:N2}")
+            : $"Rs. {ChangeAmount:N2}";
+
+    public string BalanceColor =>
+        IsDeficit
+            ? (IsRegisteredCustomer ? "#D97706" : "#DC2626")
+            : "#16A34A";
 
     public string ErrorMessage   { get => _errorMessage;   set { SetField(ref _errorMessage, value); OnPropertyChanged(nameof(HasError)); } }
     public bool HasError         => !string.IsNullOrEmpty(ErrorMessage);
@@ -305,9 +338,21 @@ public sealed class PosViewModel : ViewModelBase
 
         AddToCartCommand              = new RelayCommand<ProductDto>(AddToCart);
         RemoveFromCartCommand         = new RelayCommand<PosCartItem>(RemoveFromCart);
-        ProcessSaleCommand            = new RelayCommand(async () => await ProcessSaleAsync(), () => !IsBusy && _cartItems.Count > 0 && !IsDeficit);
+        ProcessSaleCommand            = new RelayCommand(async () => await ProcessSaleAsync(), CanProcessSale);
         ClearCartCommand              = new RelayCommand(ClearCart);
         ClearCustomerSelectionCommand = new RelayCommand(ClearCustomerSelection);
+    }
+
+    private bool CanProcessSale()
+    {
+        if (IsBusy || _cartItems.Count == 0)
+            return false;
+
+        // Unregistered walk-in customers MUST pay in full
+        if (SelectedCustomer is null && AmountPaid < TotalAmount)
+            return false;
+
+        return true;
     }
 
     public async Task InitializeAsync()
@@ -509,9 +554,9 @@ public sealed class PosViewModel : ViewModelBase
             return;
         }
 
-        if (AmountPaid < TotalAmount)
+        if (SelectedCustomer is null && AmountPaid < TotalAmount)
         {
-            ErrorMessage = $"Amount paid (Rs. {AmountPaid:N2}) must be at least total amount (Rs. {TotalAmount:N2}).";
+            ErrorMessage = $"Unregistered walk-in customers cannot make credit purchases. Amount paid (Rs. {AmountPaid:N2}) must be at least total amount (Rs. {TotalAmount:N2}).";
             return;
         }
 
@@ -529,14 +574,24 @@ public sealed class PosViewModel : ViewModelBase
                 SelectedCustomer?.Id,
                 OverallDiscount,
                 AmountPaid,
-                "POS Cash Transaction",
-                items);
+                $"POS {SelectedPaymentMethod} Transaction",
+                items,
+                SelectedPaymentMethod);
 
             var sale = await _saleService.ProcessSaleAsync(req);
-            SuccessMessage = $"Sale #{sale.Id} completed! Change: Rs. {sale.Change:N2}";
+
+            if (sale.AmountPaid < sale.TotalAmount && sale.CustomerId.HasValue)
+            {
+                decimal unpaid = sale.TotalAmount - sale.AmountPaid;
+                SuccessMessage = $"Sale #{sale.Id} processed on credit! Outstanding added: Rs. {unpaid:N2}";
+            }
+            else
+            {
+                SuccessMessage = $"Sale #{sale.Id} completed! Change: Rs. {sale.Change:N2}";
+            }
 
             ClearCart();
-            await PerformSearchAsync(); // Refresh product stock levels
+            await InitializeAsync(); // Refresh active customers & products
         }
         catch (Exception ex)
         {
@@ -555,6 +610,7 @@ public sealed class PosViewModel : ViewModelBase
         OverallDiscount  = 0;
         _amountPaid       = 0;
         _amountPaidText   = "0";
+        SelectedPaymentMethod = PaymentMethod.Cash;
         OnPropertyChanged(nameof(AmountPaidText));
         SelectedCustomer = null;
         SearchQuery      = string.Empty;

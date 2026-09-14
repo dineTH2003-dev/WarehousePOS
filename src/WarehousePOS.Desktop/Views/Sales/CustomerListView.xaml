@@ -66,11 +66,12 @@
         <Border Grid.Row="2" Style="{StaticResource Card}" Padding="0">
             <DataGrid ItemsSource="{Binding Customers}" SelectedItem="{Binding SelectedCustomer}" RowStyle="{StaticResource InactiveDataGridRow}">
                 <DataGrid.Columns>
-                    <DataGridTextColumn Header="Name"          Binding="{Binding Name}"      Width="*"/>
-                    <DataGridTextColumn Header="Type"          Binding="{Binding TypeLabel}" Width="100"/>
-                    <DataGridTextColumn Header="Discount Rate" Binding="{Binding DiscountRate, StringFormat='{}{0:G29}%'}" Width="110"/>
-                    <DataGridTextColumn Header="Phone"         Binding="{Binding Phone}"     Width="130"/>
-                    <DataGridTextColumn Header="Email"         Binding="{Binding Email}"     Width="*"/>
+                    <DataGridTextColumn Header="Name"                Binding="{Binding Name}"      Width="*"/>
+                    <DataGridTextColumn Header="Type"                Binding="{Binding TypeLabel}" Width="100"/>
+                    <DataGridTextColumn Header="Discount Rate"       Binding="{Binding DiscountRate, StringFormat='{}{0:G29}%'}" Width="110"/>
+                    <DataGridTextColumn Header="Outstanding Balance" Binding="{Binding OutstandingBalance, StringFormat=Rs. {0:N2}}" Width="150"/>
+                    <DataGridTextColumn Header="Phone"               Binding="{Binding Phone}"     Width="130"/>
+                    <DataGridTextColumn Header="Email"               Binding="{Binding Email}"     Width="*"/>
                     <DataGridTemplateColumn Header="Actions" Width="195">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>

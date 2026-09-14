@@ -98,7 +98,8 @@
                             <TextBox x:Name="TxtCustomerSearch" Style="{StaticResource SearchTextBox}"
                                      Text="{Binding CustomerSearchQuery, UpdateSourceTrigger=PropertyChanged}"
                                      Tag="Phone number or name"
-                                     ToolTip="Search customer by phone number or name"/>
+                                     ToolTip="Search customer by phone number or name"
+                                     PreviewKeyDown="TxtCustomerSearch_PreviewKeyDown"/>
                         </Border>
                         <Button Grid.Column="1" Content="✕" Margin="6,0,0,0" Padding="10,6"
                                 Style="{StaticResource SecondaryButton}" BorderThickness="0" Foreground="#EF4444" FontWeight="Bold"
@@ -118,32 +119,65 @@
                                 <Border.Effect>
                                     <DropShadowEffect BlurRadius="12" ShadowDepth="3" Opacity="0.12" Color="Black" Direction="270"/>
                                 </Border.Effect>
-                                <ListBox ItemsSource="{Binding FilteredCustomers}"
-                                         SelectedItem="{Binding SelectedCustomer}"
+                                <ListBox x:Name="LstCustomerResults" ItemsSource="{Binding FilteredCustomers}"
                                          DisplayMemberPath="DisplayName"
                                          BorderThickness="0" Background="Transparent"
-                                         ScrollViewer.VerticalScrollBarVisibility="Auto">
+                                         ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                         PreviewMouseLeftButtonUp="LstCustomerResults_PreviewMouseLeftButtonUp">
                                     <ListBox.ItemContainerStyle>
                                         <Style TargetType="ListBoxItem">
-                                            <Setter Property="Padding" Value="12,8"/>
+                                            <Setter Property="Padding" Value="12,10"/>
                                             <Setter Property="FontSize" Value="13"/>
+                                            <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
                                             <Setter Property="Cursor" Value="Hand"/>
-                                            <Style.Triggers>
-                                                <Trigger Property="IsMouseOver" Value="True">
-                                                    <Setter Property="Background" Value="#E8F7EE"/>
-                                                    <Setter Property="Foreground" Value="{StaticResource PrimaryDarkBrush}"/>
-                                                </Trigger>
-                                                <Trigger Property="IsSelected" Value="True">
-                                                    <Setter Property="Background" Value="{StaticResource PrimaryBrush}"/>
-                                                    <Setter Property="Foreground" Value="White"/>
-                                                </Trigger>
-                                            </Style.Triggers>
+                                            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="ListBoxItem">
+                                                        <Border x:Name="Bd"
+                                                                Background="Transparent"
+                                                                CornerRadius="6"
+                                                                Padding="{TemplateBinding Padding}"
+                                                                Margin="2,1">
+                                                            <ContentPresenter HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                                        </Border>
+                                                        <ControlTemplate.Triggers>
+                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource SurfaceAltBrush}"/>
+                                                                <Setter Property="Foreground" Value="{StaticResource PrimaryDarkBrush}"/>
+                                                            </Trigger>
+                                                            <Trigger Property="IsSelected" Value="True">
+                                                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource PrimaryBrush}"/>
+                                                                <Setter Property="Foreground" Value="White"/>
+                                                                <Setter Property="FontWeight" Value="SemiBold"/>
+                                                            </Trigger>
+                                                            <MultiTrigger>
+                                                                <MultiTrigger.Conditions>
+                                                                    <Condition Property="IsSelected" Value="True"/>
+                                                                    <Condition Property="IsMouseOver" Value="True"/>
+                                                                </MultiTrigger.Conditions>
+                                                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource PrimaryDarkBrush}"/>
+                                                                <Setter Property="Foreground" Value="White"/>
+                                                            </MultiTrigger>
+                                                        </ControlTemplate.Triggers>
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
                                         </Style>
                                     </ListBox.ItemContainerStyle>
                                  </ListBox>
                             </Border>
                         </Popup>
                     </Grid>
+
+                    <!-- Selected Customer Outstanding Balance Badge -->
+                    <Border Background="#FEF2F2" BorderBrush="#FCA5A5" BorderThickness="1" CornerRadius="6" Padding="10,6" Margin="0,0,0,10"
+                            Visibility="{Binding IsRegisteredCustomer, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <Grid HorizontalAlignment="Stretch">
+                            <TextBlock Text="Outstanding Balance:" FontSize="13" FontWeight="SemiBold" Foreground="#991B1B" VerticalAlignment="Center"/>
+                            <TextBlock Text="{Binding SelectedCustomer.OutstandingBalance, StringFormat=Rs. {0:N2}}" HorizontalAlignment="Right" FontSize="13" FontWeight="Bold" Foreground="#DC2626" VerticalAlignment="Center"/>
+                        </Grid>
+                    </Border>
 
                     <Grid>
                         <Grid.ColumnDefinitions>
@@ -226,6 +260,15 @@
                     <Grid Margin="0,0,0,10">
                         <TextBlock Text="TOTAL:" FontSize="18" FontWeight="Bold" Foreground="{StaticResource PrimaryBrush}"/>
                         <TextBlock Text="{Binding TotalAmount, StringFormat=Rs. {0:N2}}" HorizontalAlignment="Right" FontSize="20" FontWeight="Bold" Foreground="{StaticResource PrimaryBrush}"/>
+                    </Grid>
+
+                    <Grid Margin="0,0,0,10">
+                        <TextBlock Text="Payment Method:" FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                        <ComboBox ItemsSource="{Binding PaymentMethodOptions}"
+                                  SelectedValue="{Binding SelectedPaymentMethod}"
+                                  SelectedValuePath="Method"
+                                  DisplayMemberPath="DisplayName"
+                                  Width="160" HorizontalAlignment="Right" Height="32"/>
                     </Grid>
 
                     <Grid Margin="0,0,0,10">

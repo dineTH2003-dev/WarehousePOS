@@ -53,6 +53,10 @@ public static class ArrowNavigationBehavior
                 return;
         }
 
+        // Never intercept TextBox when a Popup is open in its hierarchy
+        if (focusedElement is TextBox && HasOpenPopup(focusedElement))
+            return;
+
         // Never intercept DatePicker when popup is open
         if (focusedElement is DatePicker datePicker && datePicker.IsDropDownOpen)
             return;
@@ -210,6 +214,26 @@ public static class ArrowNavigationBehavior
                 element = VisualTreeHelper.GetParent(element);
             else
                 element = LogicalTreeHelper.GetParent(element);
+        }
+        return false;
+    }
+
+    private static bool HasOpenPopup(DependencyObject? element)
+    {
+        while (element != null)
+        {
+            var parent = VisualTreeHelper.GetParent(element);
+            if (parent != null)
+            {
+                int count = VisualTreeHelper.GetChildrenCount(parent);
+                for (int i = 0; i < count; i++)
+                {
+                    var child = VisualTreeHelper.GetChild(parent, i);
+                    if (child is Popup popup && popup.IsOpen)
+                        return true;
+                }
+            }
+            element = parent;
         }
         return false;
     }
