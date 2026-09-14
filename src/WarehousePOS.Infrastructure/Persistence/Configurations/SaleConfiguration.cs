@@ -29,6 +29,10 @@ public sealed class CustomerConfiguration : IEntityTypeConfiguration<Customer>
         builder.Property(c => c.DiscountRate)
                .HasColumnType("decimal(18,2)")
                .HasDefaultValue(0m);
+
+        builder.Property(c => c.OutstandingBalance)
+               .HasColumnType("decimal(18,2)")
+               .HasDefaultValue(0m);
     }
 }
 
@@ -40,6 +44,7 @@ public sealed class SaleConfiguration : IEntityTypeConfiguration<Sale>
 
         builder.Property(s => s.SaleType).HasConversion<int>();
         builder.Property(s => s.Status).HasConversion<int>();
+        builder.Property(s => s.PaymentMethod).HasConversion<string>();
 
         builder.Property(s => s.SubTotal).HasColumnType("decimal(18,2)");
         builder.Property(s => s.DiscountAmount).HasColumnType("decimal(18,2)");
