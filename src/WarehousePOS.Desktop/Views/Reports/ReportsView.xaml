@@ -222,7 +222,7 @@
                     </StackPanel>
                 </TabItem.Header>
                 <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" HorizontalContentAlignment="Stretch">
-                    <StackPanel Margin="0,8,0,0" Width="{Binding ViewportWidth, RelativeSource={RelativeSource AncestorType=ScrollViewer}}">
+                    <StackPanel Margin="0,8,0,0">
                         <!-- KPI Row 1: Revenue & Financial Summaries (Clickable) -->
                         <UniformGrid Columns="4" Margin="0,0,0,16">
                             <!-- Total Revenue Card -->
@@ -306,13 +306,17 @@
                                 <ItemsControl ItemsSource="{Binding SalesTrend}">
                                     <ItemsControl.ItemsPanel>
                                         <ItemsPanelTemplate>
-                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Bottom" Height="140"/>
+                                            <UniformGrid Rows="1" Height="160" VerticalAlignment="Bottom"/>
                                         </ItemsPanelTemplate>
                                     </ItemsControl.ItemsPanel>
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
-                                            <StackPanel Width="40" Margin="4,0" VerticalAlignment="Bottom" HorizontalAlignment="Center" ToolTipService.ShowDuration="10000">
-                                                <StackPanel.ToolTip>
+                                            <Grid VerticalAlignment="Bottom" HorizontalAlignment="Stretch" ToolTipService.ShowDuration="10000">
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="*"/>
+                                                    <RowDefinition Height="Auto"/>
+                                                </Grid.RowDefinitions>
+                                                <Grid.ToolTip>
                                                     <ToolTip>
                                                         <StackPanel>
                                                             <TextBlock Text="{Binding DateLabel}" FontWeight="Bold"/>
@@ -320,10 +324,10 @@
                                                             <TextBlock Text="{Binding TransactionCount, StringFormat=Transactions: {0}}"/>
                                                         </StackPanel>
                                                     </ToolTip>
-                                                </StackPanel.ToolTip>
+                                                </Grid.ToolTip>
 
                                                 <!-- Bar Element -->
-                                                <Border Background="{StaticResource PrimaryBrush}" CornerRadius="4,4,0,0" HorizontalAlignment="Center" Width="24">
+                                                <Border Grid.Row="0" Background="{StaticResource PrimaryBrush}" CornerRadius="4,4,0,0" HorizontalAlignment="Center" Width="28" VerticalAlignment="Bottom">
                                                     <Border.Height>
                                                         <MultiBinding Converter="{StaticResource ValueToHeightConverter}">
                                                             <Binding Path="Revenue"/>
@@ -332,8 +336,8 @@
                                                     </Border.Height>
                                                 </Border>
 
-                                                <TextBlock Text="{Binding DateLabel}" FontSize="9" Foreground="{StaticResource TextSecondaryBrush}" HorizontalAlignment="Center" Margin="0,4,0,0"/>
-                                            </StackPanel>
+                                                <TextBlock Grid.Row="1" Text="{Binding DateLabel}" FontSize="10" Foreground="{StaticResource TextSecondaryBrush}" HorizontalAlignment="Center" Margin="0,6,0,0"/>
+                                            </Grid>
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>
                                 </ItemsControl>
@@ -418,7 +422,7 @@
                     </StackPanel>
                 </TabItem.Header>
                 <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" HorizontalContentAlignment="Stretch">
-                    <StackPanel Margin="0,8,0,0" Width="{Binding ViewportWidth, RelativeSource={RelativeSource AncestorType=ScrollViewer}}">
+                    <StackPanel Margin="0,8,0,0">
                         <!-- KPI Row -->
                         <UniformGrid Columns="4" Margin="0,0,0,16">
                             <Border Style="{StaticResource Card}" Margin="0,0,8,0">
@@ -454,13 +458,17 @@
                                 <ItemsControl ItemsSource="{Binding HourlySales}">
                                     <ItemsControl.ItemsPanel>
                                         <ItemsPanelTemplate>
-                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Bottom" Height="150"/>
+                                            <UniformGrid Rows="1" Height="160" VerticalAlignment="Bottom"/>
                                         </ItemsPanelTemplate>
                                     </ItemsControl.ItemsPanel>
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
-                                            <StackPanel Width="42" Margin="3,0" VerticalAlignment="Bottom" HorizontalAlignment="Center" ToolTipService.ShowDuration="10000">
-                                                <StackPanel.ToolTip>
+                                            <Grid VerticalAlignment="Bottom" HorizontalAlignment="Stretch" ToolTipService.ShowDuration="10000">
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="*"/>
+                                                    <RowDefinition Height="Auto"/>
+                                                </Grid.RowDefinitions>
+                                                <Grid.ToolTip>
                                                     <ToolTip>
                                                         <StackPanel>
                                                             <TextBlock Text="{Binding HourLabel}" FontWeight="Bold"/>
@@ -468,9 +476,9 @@
                                                             <TextBlock Text="{Binding TransactionCount, StringFormat=Transactions: {0}}"/>
                                                         </StackPanel>
                                                     </ToolTip>
-                                                </StackPanel.ToolTip>
+                                                </Grid.ToolTip>
 
-                                                <Border Background="{StaticResource PrimaryBrush}" CornerRadius="4,4,0,0" HorizontalAlignment="Center" Width="26">
+                                                <Border Grid.Row="0" Background="{StaticResource PrimaryBrush}" CornerRadius="4,4,0,0" HorizontalAlignment="Center" Width="28" VerticalAlignment="Bottom">
                                                     <Border.Height>
                                                         <MultiBinding Converter="{StaticResource ValueToHeightConverter}">
                                                             <Binding Path="Revenue"/>
@@ -479,8 +487,8 @@
                                                     </Border.Height>
                                                 </Border>
 
-                                                <TextBlock Text="{Binding HourLabel}" FontSize="9" Foreground="{StaticResource TextSecondaryBrush}" HorizontalAlignment="Center" Margin="0,4,0,0"/>
-                                            </StackPanel>
+                                                <TextBlock Grid.Row="1" Text="{Binding HourLabel}" FontSize="10" Foreground="{StaticResource TextSecondaryBrush}" HorizontalAlignment="Center" Margin="0,6,0,0"/>
+                                            </Grid>
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>
                                 </ItemsControl>
@@ -521,7 +529,7 @@
                     </Grid.ColumnDefinitions>
 
                     <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" HorizontalContentAlignment="Stretch">
-                        <StackPanel Margin="0,0,12,0" Width="{Binding ViewportWidth, RelativeSource={RelativeSource AncestorType=ScrollViewer}}">
+                        <StackPanel Margin="0,0,12,0">
                             <!-- Stock KPIs -->
                             <UniformGrid Columns="4" Margin="0,0,0,16">
                                 <Border Style="{StaticResource Card}" Margin="0,0,8,0">
@@ -685,7 +693,7 @@
                     </StackPanel>
                 </TabItem.Header>
                 <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" HorizontalContentAlignment="Stretch">
-                    <StackPanel Margin="0,8,0,0" Width="{Binding ViewportWidth, RelativeSource={RelativeSource AncestorType=ScrollViewer}}">
+                    <StackPanel Margin="0,8,0,0">
                         <UniformGrid Columns="4" Margin="0,0,0,16">
                             <Border Style="{StaticResource Card}" Margin="0,0,8,0">
                                 <StackPanel>
@@ -770,7 +778,7 @@
                     </Grid.ColumnDefinitions>
 
                     <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto" HorizontalContentAlignment="Stretch">
-                        <StackPanel Margin="0,0,12,0" Width="{Binding ViewportWidth, RelativeSource={RelativeSource AncestorType=ScrollViewer}}">
+                        <StackPanel Margin="0,0,12,0">
                             <UniformGrid Columns="4" Margin="0,0,0,16">
                                 <Border Style="{StaticResource Card}" Margin="0,0,8,0">
                                     <StackPanel>
@@ -876,7 +884,7 @@
                     </StackPanel>
                 </TabItem.Header>
                 <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" HorizontalContentAlignment="Stretch">
-                    <StackPanel Margin="0,8,0,0" Width="{Binding ViewportWidth, RelativeSource={RelativeSource AncestorType=ScrollViewer}}">
+                    <StackPanel Margin="0,8,0,0">
                         <UniformGrid Columns="4" Margin="0,0,0,16">
                             <Border Style="{StaticResource Card}" Margin="0,0,8,0">
                                 <StackPanel>
@@ -940,7 +948,7 @@
                     </Grid.ColumnDefinitions>
 
                     <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto" HorizontalContentAlignment="Stretch">
-                        <StackPanel Margin="0,0,12,0" Width="{Binding ViewportWidth, RelativeSource={RelativeSource AncestorType=ScrollViewer}}">
+                        <StackPanel Margin="0,0,12,0">
                             <UniformGrid Columns="3" Margin="0,0,0,16">
                                 <Border Style="{StaticResource Card}" Margin="0,0,8,0">
                                     <StackPanel>
