@@ -44,16 +44,17 @@ public sealed class SaleService(
         if (!req.Items.Any())
             throw new BusinessRuleViolationException("EmptySale", "Cannot process a sale with no items.");
 
+        Customer? customer = null;
         if (req.CustomerId.HasValue)
         {
-            _ = await customerRepo.GetByIdAsync(req.CustomerId.Value, ct)
+            customer = await customerRepo.GetByIdAsync(req.CustomerId.Value, ct)
                 ?? throw new EntityNotFoundException(nameof(Customer), req.CustomerId.Value);
         }
 
         Sale sale = null!;
         await unitOfWork.ExecuteInTransactionAsync(async () =>
         {
-            sale = Sale.Create(req.SaleType, req.CreatedByUserId, req.CustomerId, req.Notes);
+            sale = Sale.Create(req.SaleType, req.CreatedByUserId, req.CustomerId, req.Notes, req.PaymentMethod);
 
             foreach (var itemReq in req.Items)
             {
@@ -85,7 +86,14 @@ public sealed class SaleService(
             if (req.DiscountAmount > 0)
                 sale.ApplyDiscount(req.DiscountAmount);
 
-            sale.RecordPayment(req.AmountPaid);
+            sale.RecordPayment(req.AmountPaid, isRegisteredCustomer: req.CustomerId.HasValue);
+
+            if (customer is not null && req.AmountPaid < sale.TotalAmount)
+            {
+                decimal unpaidBalance = sale.TotalAmount - req.AmountPaid;
+                customer.IncreaseOutstandingBalance(unpaidBalance);
+                await customerRepo.UpdateAsync(customer, ct);
+            }
 
             await saleRepo.AddAsync(sale, ct);
         }, ct);
@@ -102,6 +110,17 @@ public sealed class SaleService(
         await unitOfWork.ExecuteInTransactionAsync(async () =>
         {
             sale.Cancel();
+
+            if (sale.CustomerId.HasValue && sale.AmountPaid < sale.TotalAmount)
+            {
+                var customer = await customerRepo.GetByIdAsync(sale.CustomerId.Value, ct);
+                if (customer is not null)
+                {
+                    decimal unpaidBalance = sale.TotalAmount - sale.AmountPaid;
+                    customer.DecreaseOutstandingBalance(unpaidBalance);
+                    await customerRepo.UpdateAsync(customer, ct);
+                }
+            }
 
             // Revert stock for all items
             foreach (var item in sale.Items)
@@ -216,5 +235,6 @@ public sealed class SaleService(
             i.Product?.WarrantyYears ?? 0,
             i.Product?.WarrantyMonths ?? 0,
             i.Product?.WarrantyDays ?? 0,
-            i.ClaimedQuantity)).ToList());
+            i.ClaimedQuantity)).ToList(),
+        s.PaymentMethod);
 }

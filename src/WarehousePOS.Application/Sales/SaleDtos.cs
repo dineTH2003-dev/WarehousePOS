@@ -13,7 +13,8 @@ public sealed record CustomerDto(
     string? Email,
     string? Address,
     decimal DiscountRate,
-    bool IsActive)
+    bool IsActive,
+    decimal OutstandingBalance = 0m)
 {
     public string DisplayName => string.IsNullOrWhiteSpace(Phone) ? Name : $"{Name} ({Phone})";
 };
@@ -65,7 +66,8 @@ public sealed record SaleDto(
     decimal Change,
     string? Notes,
     DateTime SaleDate,
-    IReadOnlyList<SaleItemDto> Items);
+    IReadOnlyList<SaleItemDto> Items,
+    PaymentMethod PaymentMethod = PaymentMethod.Cash);
 
 public sealed record CreateSaleRequest(
     SaleType SaleType,
@@ -74,7 +76,8 @@ public sealed record CreateSaleRequest(
     decimal DiscountAmount,
     decimal AmountPaid,
     string? Notes,
-    IReadOnlyList<CreateSaleItemRequest> Items);
+    IReadOnlyList<CreateSaleItemRequest> Items,
+    PaymentMethod PaymentMethod = PaymentMethod.Cash);
 
 public sealed record CreateSaleItemRequest(
     int ProductId,
