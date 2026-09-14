@@ -310,8 +310,31 @@ public sealed class ReportsViewModel : ViewModelBase
     public GeneralAnalyticsDto? GeneralAnalytics
     {
         get => _generalAnalytics;
-        private set => SetField(ref _generalAnalytics, value);
+        private set
+        {
+            if (SetField(ref _generalAnalytics, value))
+            {
+                OnPropertyChanged(nameof(CashPaymentPercentage));
+                OnPropertyChanged(nameof(CardPaymentPercentage));
+                OnPropertyChanged(nameof(BankPaymentPercentage));
+                OnPropertyChanged(nameof(ChequePaymentPercentage));
+                OnPropertyChanged(nameof(CreditSalesPercentage));
+                OnPropertyChanged(nameof(RetailSalesPercentage));
+                OnPropertyChanged(nameof(WholesaleSalesPercentage));
+            }
+        }
     }
+
+    // Computed Analytics Percentages for UI Visualization
+    public decimal CashPaymentPercentage => GeneralAnalytics?.NetRevenue > 0 ? Math.Round((GeneralAnalytics.CashPaymentTotal / GeneralAnalytics.NetRevenue) * 100m, 1) : 0m;
+    public decimal CardPaymentPercentage => GeneralAnalytics?.NetRevenue > 0 ? Math.Round((GeneralAnalytics.CardPaymentTotal / GeneralAnalytics.NetRevenue) * 100m, 1) : 0m;
+    public decimal BankPaymentPercentage => GeneralAnalytics?.NetRevenue > 0 ? Math.Round((GeneralAnalytics.BankPaymentTotal / GeneralAnalytics.NetRevenue) * 100m, 1) : 0m;
+    public decimal ChequePaymentPercentage => GeneralAnalytics?.NetRevenue > 0 ? Math.Round((GeneralAnalytics.ChequePaymentTotal / GeneralAnalytics.NetRevenue) * 100m, 1) : 0m;
+    public decimal CreditSalesPercentage => GeneralAnalytics?.NetRevenue > 0 ? Math.Round((GeneralAnalytics.CreditSalesTotal / GeneralAnalytics.NetRevenue) * 100m, 1) : 0m;
+
+    public decimal RetailSalesPercentage => GeneralAnalytics?.NetRevenue > 0 ? Math.Round((GeneralAnalytics.RetailSalesRevenue / GeneralAnalytics.NetRevenue) * 100m, 1) : 0m;
+    public decimal WholesaleSalesPercentage => GeneralAnalytics?.NetRevenue > 0 ? Math.Round((GeneralAnalytics.WholesaleSalesRevenue / GeneralAnalytics.NetRevenue) * 100m, 1) : 0m;
+
 
     public DailySalesReportDto? DailySales
     {
@@ -767,25 +790,43 @@ public sealed class ReportsViewModel : ViewModelBase
         {
             var retailShare = (GeneralAnalytics.RetailSalesRevenue / GeneralAnalytics.TotalRevenue) * 100m;
             if (retailShare >= 50)
-                _businessInsights.Add($"✓ Retail sales generated {retailShare:F1}% of overall revenue.");
+                _businessInsights.Add($"✓ Retail sales generated {retailShare:F1}% of overall revenue ({GeneralAnalytics.RetailSalesCount} transactions).");
             else
-                _businessInsights.Add($"✓ Wholesale sales generated {(100m - retailShare):F1}% of overall revenue.");
+                _businessInsights.Add($"✓ Wholesale sales generated {(100m - retailShare):F1}% of overall revenue ({GeneralAnalytics.WholesaleSalesCount} transactions).");
         }
 
-        if (GeneralAnalytics.NetProfit > 0)
+        if (GeneralAnalytics.NetProfit != 0)
         {
             var profitMargin = GeneralAnalytics.TotalRevenue > 0 ? (GeneralAnalytics.NetProfit / GeneralAnalytics.TotalRevenue) * 100m : 0m;
-            _businessInsights.Add($"📈 Net Profit margin stands at {profitMargin:F1}% for the selected period.");
+            if (GeneralAnalytics.NetProfit > 0)
+                _businessInsights.Add($"📈 Net Profit margin stands at {profitMargin:F1}% (Rs. {GeneralAnalytics.NetProfit:N2}) for the selected period.");
+            else
+                _businessInsights.Add($"📉 Period operates at a net margin deficit of {Math.Abs(profitMargin):F1}% (Rs. {GeneralAnalytics.NetProfit:N2}).");
+        }
+
+        if (!string.IsNullOrEmpty(GeneralAnalytics.TopCategoryName) && GeneralAnalytics.TopCategoryName != "N/A")
+        {
+            _businessInsights.Add($"🏆 Top performing category is '{GeneralAnalytics.TopCategoryName}' generating Rs. {GeneralAnalytics.TopCategoryRevenue:N2}.");
+        }
+
+        if (!string.IsNullOrEmpty(GeneralAnalytics.TopProductName) && GeneralAnalytics.TopProductName != "N/A")
+        {
+            _businessInsights.Add($"⭐ Highest moving item is '{GeneralAnalytics.TopProductName}' with {GeneralAnalytics.TopProductQty} units sold.");
+        }
+
+        if (GeneralAnalytics.CreditSalesTotal > 0)
+        {
+            _businessInsights.Add($"💳 Unpaid customer credit issued in period totals Rs. {GeneralAnalytics.CreditSalesTotal:N2}.");
+        }
+
+        if (GeneralAnalytics.TotalCustomerOutstanding > 0)
+        {
+            _businessInsights.Add($"👥 Total outstanding customer debt balance across all accounts is Rs. {GeneralAnalytics.TotalCustomerOutstanding:N2}.");
         }
 
         if (StockValuation != null && StockValuation.LowStockCount > 0)
         {
             _businessInsights.Add($"⚠️ {StockValuation.LowStockCount} products are approaching or below reorder level.");
-        }
-
-        if (SupplierBalanceSummary != null && SupplierBalanceSummary.TotalSupplierPayables > 0)
-        {
-            _businessInsights.Add($"🏢 Outstanding supplier payables total Rs. {SupplierBalanceSummary.TotalSupplierPayables:N2}.");
         }
     }
 
