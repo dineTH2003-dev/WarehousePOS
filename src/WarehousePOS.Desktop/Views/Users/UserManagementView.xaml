@@ -92,7 +92,64 @@
                     <TextBox Text="{Binding FullName, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource FormTextBox}" Margin="0,0,0,12"/>
 
                     <TextBlock Text="Password" Style="{StaticResource FormLabel}"/>
-                    <PasswordBox x:Name="PasswordBox" PasswordChanged="PasswordBox_PasswordChanged" Style="{StaticResource FormPasswordBox}" Margin="0,0,0,12"/>
+                    <Border x:Name="PasswordContainer"
+                            Height="38"
+                            Background="White"
+                            BorderBrush="{StaticResource BorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="6"
+                            Margin="0,0,0,12">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Masked Password -->
+                            <PasswordBox x:Name="PasswordBox"
+                                         Grid.Column="0"
+                                         FontSize="14"
+                                         Foreground="{StaticResource TextPrimaryBrush}"
+                                         Background="Transparent"
+                                         BorderThickness="0"
+                                         Padding="10,0"
+                                         VerticalContentAlignment="Center"
+                                         PasswordChanged="PasswordBox_PasswordChanged"
+                                         GotFocus="PasswordControl_GotFocus"
+                                         LostFocus="PasswordControl_LostFocus" />
+
+                            <!-- Plain Text Password (when eye icon toggled) -->
+                            <TextBox x:Name="PasswordTextBox"
+                                     Grid.Column="0"
+                                     FontSize="14"
+                                     Foreground="{StaticResource TextPrimaryBrush}"
+                                     Background="Transparent"
+                                     BorderThickness="0"
+                                     Padding="10,0"
+                                     VerticalContentAlignment="Center"
+                                     Visibility="Collapsed"
+                                     TextChanged="PasswordTextBox_TextChanged"
+                                     GotFocus="PasswordControl_GotFocus"
+                                     LostFocus="PasswordControl_LostFocus" />
+
+                            <!-- Eye Icon Toggle Button -->
+                            <Button x:Name="TogglePasswordButton"
+                                    Grid.Column="1"
+                                    Style="{StaticResource PasswordEyeToggleButtonStyle}"
+                                    Width="34"
+                                    Height="34"
+                                    Margin="0,0,2,0"
+                                    ToolTip="Show password"
+                                    Click="TogglePasswordButton_Click">
+                                <Path x:Name="EyeIconPath"
+                                      Data="{StaticResource EyeOpenIcon}"
+                                      Fill="{StaticResource TextSecondaryBrush}"
+                                      Width="16"
+                                      Height="16"
+                                      Stretch="Uniform" />
+                            </Button>
+                        </Grid>
+                    </Border>
 
                     <TextBlock Text="Role *" Style="{StaticResource FormLabel}"/>
                     <ComboBox ItemsSource="{Binding Roles}" SelectedItem="{Binding Role}" Margin="0,0,0,20"/>
