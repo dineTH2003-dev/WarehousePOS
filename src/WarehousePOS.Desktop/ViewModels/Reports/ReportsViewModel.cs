@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Media;
+using WarehousePOS.Application.Printing;
 using WarehousePOS.Application.Reports;
 using WarehousePOS.Application.Suppliers;
 using WarehousePOS.Desktop.Services;
@@ -12,6 +13,15 @@ public sealed class ReportsViewModel : ViewModelBase
     private readonly IReportService _reportService;
     private readonly ISupplierService _supplierService;
     private readonly SessionContext _session;
+    private readonly IReceiptPrinter? _printer;
+
+    private bool _isPrinting;
+    private string? _printStatusMessage;
+
+    public bool IsPrinting { get => _isPrinting; private set => SetField(ref _isPrinting, value); }
+    public string? PrintStatusMessage { get => _printStatusMessage; private set { SetField(ref _printStatusMessage, value); OnPropertyChanged(nameof(HasPrintStatus)); } }
+    public bool HasPrintStatus => !string.IsNullOrWhiteSpace(PrintStatusMessage);
+    public RelayCommand PrintCurrentReportCommand { get; }
 
     private CancellationTokenSource? _cts;
 
@@ -432,7 +442,8 @@ public sealed class ReportsViewModel : ViewModelBase
     public ReportsViewModel(
         IReportService reportService,
         ISupplierService supplierService,
-        SessionContext session)
+        SessionContext session,
+        IReceiptPrinter? printer = null)
     {
         if (!session.IsAdmin)
             throw new UnauthorizedAccessException("Only an Admin can access Reports.");
@@ -440,6 +451,7 @@ public sealed class ReportsViewModel : ViewModelBase
         _reportService = reportService;
         _supplierService = supplierService;
         _session = session;
+        _printer = printer;
 
         ApplyFilterCommand = new RelayCommand(async () => await LoadAllReportsAsync(), () => IsValidDateRange);
         RefreshCommand = new RelayCommand(async () => await LoadAllReportsAsync(), () => IsValidDateRange);
@@ -456,6 +468,7 @@ public sealed class ReportsViewModel : ViewModelBase
         SelectClaimCommand = new RelayCommand<ClaimRecordDto>(claim => SelectedClaimRecord = claim);
         ClearSupplierSelectionCommand = new RelayCommand(() => SelectedSupplierBalance = null);
         ClearCustomerSelectionCommand = new RelayCommand(() => SelectedCustomerReport = null);
+        PrintCurrentReportCommand = new RelayCommand(async () => await PrintCurrentReportAsync(), () => !IsPrinting && _printer is not null);
 
         _ = InitialiseAsync();
     }
@@ -932,6 +945,146 @@ public sealed class ReportsViewModel : ViewModelBase
     {
         if (!_session.IsAdmin)
             throw new UnauthorizedAccessException("Only an Admin can access Reports.");
+    }
+
+    public async Task PrintCurrentReportAsync()
+    {
+        if (_printer is null || IsPrinting) return;
+        IsPrinting = true;
+        PrintStatusMessage = "🖨️ Sending report to Epson LQ-310...";
+        try
+        {
+            var (title, content) = BuildActiveReportText();
+            await _printer.PrintReportAsync(title, content);
+            PrintStatusMessage = $"✅ Report '{title}' printed successfully!";
+        }
+        catch (Exception ex)
+        {
+            PrintStatusMessage = $"❌ Print error: {ex.Message}";
+        }
+        finally
+        {
+            IsPrinting = false;
+        }
+    }
+
+    private (string Title, string Content) BuildActiveReportText()
+    {
+        var sb = new System.Text.StringBuilder();
+
+        switch (SelectedTabIndex)
+        {
+            case 1: // Daily Sales
+                if (_dailySales is not null)
+                {
+                    sb.AppendLine($"Date                     : {Today:yyyy-MM-dd}");
+                    sb.AppendLine($"Gross Sales Revenue      : Rs. {_dailySales.TotalRevenue:N2}");
+                    sb.AppendLine($"Total Invoices Processed : {_dailySales.TotalSalesCount}");
+                    sb.AppendLine($"Discounts Granted        : Rs. {_dailySales.TotalDiscounts:N2}");
+                    sb.AppendLine($"Net Revenue (after disc) : Rs. {_dailySales.NetSales:N2}");
+                    sb.AppendLine("--------------------------------------------------------------------------------");
+                    sb.AppendLine("TENDER / PAYMENT BREAKDOWN:");
+                    sb.AppendLine($"Cash Collections         : Rs. {_dailySales.CashSales:N2}");
+                    sb.AppendLine($"Bank Transfers           : Rs. {_dailySales.BankSales:N2}");
+                    sb.AppendLine($"Retail Sales             : Rs. {_dailySales.RetailSales:N2}");
+                    sb.AppendLine($"Wholesale Sales          : Rs. {_dailySales.WholesaleSales:N2}");
+                    return ("Daily Sales Report", sb.ToString());
+                }
+                break;
+
+            case 2: // Stock Valuation & Low Stock
+                if (_stockValuation is not null)
+                {
+                    sb.AppendLine($"Stock Valuation at Cost  : Rs. {_stockValuation.TotalCostValue:N2}");
+                    sb.AppendLine($"Stock Valuation at Retail: Rs. {_stockValuation.TotalRetailValuation:N2}");
+                    sb.AppendLine($"Projected Gross Profit % : {_stockValuation.PotentialProfitMargin:N2}%");
+                    sb.AppendLine($"Low Stock Items          : {_stockValuation.LowStockCount}");
+                    sb.AppendLine($"Out of Stock Items       : {_stockValuation.OutOfStockCount}");
+                    sb.AppendLine("--------------------------------------------------------------------------------");
+                    sb.AppendLine("LOW STOCK REORDER WARNINGS:");
+                    sb.AppendLine(string.Format("{0,-12} {1,-36} {2,10} {3,10}", "SKU", "Product Name", "In Stock", "Reorder"));
+                    sb.AppendLine("--------------------------------------------------------------------------------");
+                    foreach (var item in _lowStockItems.Take(30))
+                    {
+                        string name = item.ProductName.Length > 36 ? item.ProductName[..36] : item.ProductName;
+                        sb.AppendLine(string.Format("{0,-12} {1,-36} {2,10} {3,10}", item.SKU, name, item.CurrentStock, item.ReorderLevel));
+                    }
+                    return ("Stock Valuation & Low Stock Report", sb.ToString());
+                }
+                break;
+
+            case 3: // Sales Summary
+                if (_salesSummary is not null)
+                {
+                    sb.AppendLine($"Reporting Period         : {FromDate:yyyy-MM-dd} to {ToDate:yyyy-MM-dd}");
+                    sb.AppendLine($"Total Sales Turnover     : Rs. {_salesSummary.TotalRevenue:N2}");
+                    sb.AppendLine($"Total Units Sold         : {_salesSummary.TotalUnitsSold}");
+                    sb.AppendLine($"Total Transactions Count : {_salesSummary.TotalTransactions}");
+                    sb.AppendLine($"Average Invoice Value    : Rs. {_salesSummary.AverageOrderValue:N2}");
+                    return ("Sales Summary Report", sb.ToString());
+                }
+                break;
+
+            case 4: // GRN Purchases
+                sb.AppendLine($"Reporting Period         : {FromDate:yyyy-MM-dd} to {ToDate:yyyy-MM-dd}");
+                sb.AppendLine(string.Format("{0,-10} {1,-28} {2,16} {3,16}", "GRN #", "Supplier", "Total Amount", "Status"));
+                sb.AppendLine("--------------------------------------------------------------------------------");
+                foreach (var g in _grnRecords.Take(30))
+                {
+                    string sup = g.SupplierName.Length > 28 ? g.SupplierName[..28] : g.SupplierName;
+                    sb.AppendLine(string.Format("{0,-10} {1,-28} {2,16:N2} {3,16}", g.PurchaseId, sup, g.TotalAmount, g.Status));
+                }
+                return ("Goods Received Notes (GRN) Report", sb.ToString());
+
+            case 6: // Supplier Balances
+                if (_supplierBalanceSummary is not null)
+                {
+                    sb.AppendLine($"Total Outstanding Payable: Rs. {_supplierBalanceSummary.TotalSupplierPayables:N2}");
+                    sb.AppendLine($"Total Supplier Purchases : Rs. {_supplierBalanceSummary.TotalSupplierPurchases:N2}");
+                    sb.AppendLine($"Suppliers with Balance   : {_supplierBalanceSummary.SuppliersWithOutstandingBalanceCount}");
+                    sb.AppendLine("--------------------------------------------------------------------------------");
+                    sb.AppendLine(string.Format("{0,-30} {1,-16} {2,16} {3,14}", "Supplier Name", "Phone", "Total Purchases", "Balance Due"));
+                    sb.AppendLine("--------------------------------------------------------------------------------");
+                    foreach (var s in _supplierBalanceSummary.Suppliers.Take(30))
+                    {
+                        string sName = s.SupplierName.Length > 30 ? s.SupplierName[..30] : s.SupplierName;
+                        sb.AppendLine(string.Format("{0,-30} {1,-16} {2,16:N2} {3,14:N2}", sName, s.Phone ?? "-", s.TotalPurchases, s.CurrentBalance));
+                    }
+                    return ("Supplier Balances Report", sb.ToString());
+                }
+                break;
+
+            case 7: // Customer Credit Balances
+                if (_customerSummary is not null)
+                {
+                    sb.AppendLine($"Total Outstanding Credit : Rs. {_customerSummary.OutstandingCustomerBalance:N2}");
+                    sb.AppendLine($"Total Customer Revenue   : Rs. {_customerSummary.TotalCustomerRevenue:N2}");
+                    sb.AppendLine($"Total Customers          : {_customerSummary.TotalCustomersCount}");
+                    sb.AppendLine("--------------------------------------------------------------------------------");
+                    sb.AppendLine(string.Format("{0,-30} {1,-16} {2,16} {3,14}", "Customer Name", "Phone", "Total Invoiced", "Balance Due"));
+                    sb.AppendLine("--------------------------------------------------------------------------------");
+                    foreach (var c in _customerSummary.Customers.Take(30))
+                    {
+                        string cName = c.Name.Length > 30 ? c.Name[..30] : c.Name;
+                        sb.AppendLine(string.Format("{0,-30} {1,-16} {2,16:N2} {3,14:N2}", cName, c.Phone ?? "-", c.TotalSpent, c.OutstandingBalance));
+                    }
+                    return ("Customer Balances Report", sb.ToString());
+                }
+                break;
+        }
+
+        // Default Overview Analytics
+        sb.AppendLine($"Reporting Period         : {FromDate:yyyy-MM-dd} to {ToDate:yyyy-MM-dd}");
+        if (_generalAnalytics is not null)
+        {
+            sb.AppendLine($"Total Revenue            : Rs. {_generalAnalytics.TotalRevenue:N2}");
+            sb.AppendLine($"Net Revenue              : Rs. {_generalAnalytics.NetRevenue:N2}");
+            sb.AppendLine($"Total Transactions       : {_generalAnalytics.TotalTransactions}");
+            sb.AppendLine($"Average Order Value      : Rs. {_generalAnalytics.AverageOrderValue:N2}");
+            sb.AppendLine($"Total Discounts          : Rs. {_generalAnalytics.TotalDiscounts:N2}");
+            sb.AppendLine($"Net Profit               : Rs. {_generalAnalytics.NetProfit:N2}");
+        }
+        return ("Executive Analytics Overview", sb.ToString());
     }
 }
 

@@ -25,11 +25,18 @@
                 <TextBlock Text="Comprehensive financial, inventory, purchasing, sales, and customer intelligence"
                            Foreground="{StaticResource TextSecondaryBrush}" FontSize="13" Margin="0,2,0,0"/>
             </StackPanel>
-            <Button Grid.Column="1" Content="🔄  Refresh All Reports"
-                    Style="{StaticResource PrimaryButton}"
-                    Command="{Binding RefreshCommand}"
-                    IsEnabled="{Binding IsBusy, Converter={StaticResource InvertBoolConverter}}"
-                    Width="170" Height="38" Padding="0"/>
+            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                <Button Content="🖨️  Print to Epson LQ-310"
+                        Style="{StaticResource SuccessButton}"
+                        Command="{Binding PrintCurrentReportCommand}"
+                        IsEnabled="{Binding IsPrinting, Converter={StaticResource InvertBoolConverter}}"
+                        Height="38" Padding="14,0" Margin="0,0,10,0"/>
+                <Button Content="🔄  Refresh All Reports"
+                        Style="{StaticResource PrimaryButton}"
+                        Command="{Binding RefreshCommand}"
+                        IsEnabled="{Binding IsBusy, Converter={StaticResource InvertBoolConverter}}"
+                        Width="170" Height="38" Padding="0"/>
+            </StackPanel>
         </Grid>
 
         <!-- ── Date Filter Bar & Active Filter Feedback ────────────────────── -->
@@ -83,6 +90,12 @@
                     <Border Background="#FFEBEE" CornerRadius="12" Padding="10,6" Margin="0,0,8,6" VerticalAlignment="Center"
                             Visibility="{Binding HasError, Converter={StaticResource BoolToVisibilityConverter}}">
                         <TextBlock Text="{Binding ErrorMessage, StringFormat='⚠️ {0}'}" Foreground="{StaticResource DangerBrush}" FontWeight="SemiBold" FontSize="12"/>
+                    </Border>
+
+                    <!-- Print Status Chip -->
+                    <Border Background="#E8F5E9" CornerRadius="12" Padding="10,6" Margin="0,0,8,6" VerticalAlignment="Center"
+                            Visibility="{Binding HasPrintStatus, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <TextBlock Text="{Binding PrintStatusMessage}" Foreground="{StaticResource SuccessBrush}" FontWeight="Bold" FontSize="12"/>
                     </Border>
                 </WrapPanel>
 

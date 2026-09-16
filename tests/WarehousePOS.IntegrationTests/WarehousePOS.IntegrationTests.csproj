@@ -5,6 +5,7 @@
     <UseWPF>true</UseWPF>
     <RootNamespace>WarehousePOS.IntegrationTests</RootNamespace>
     <IsPackable>false</IsPackable>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
   </PropertyGroup>
 
   <ItemGroup>
