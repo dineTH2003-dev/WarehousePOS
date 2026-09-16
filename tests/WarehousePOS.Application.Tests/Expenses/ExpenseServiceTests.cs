@@ -1,7 +1,8 @@
-﻿using FluentAssertions;
+using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using WarehousePOS.Application.Expenses;
+using WarehousePOS.Application.Reports;
 using WarehousePOS.Domain.Entities;
 using WarehousePOS.Domain.Exceptions;
 using WarehousePOS.Domain.Interfaces;
@@ -77,14 +78,60 @@ public sealed class ExpenseServiceTests
     }
 
     [Fact]
-    public async Task CreateCategoryAsync_ValidRequest_AddsCategory()
+    public async Task UpdateAsync_ValidRequest_UpdatesExpense()
     {
-        var req = new CreateExpenseCategoryRequest("Maintenance", "Building repairs");
-        var result = await _sut.CreateCategoryAsync(req);
+        var category = ExpenseCategory.Create("Transport & Fuel");
+        var expense = Expense.Create(1, 1000m, "Old fuel", 1, DateTime.UtcNow);
+
+        _repoMock.Setup(r => r.GetByIdAsync(10, default)).ReturnsAsync(expense);
+        _repoMock.Setup(r => r.GetCategoryByIdAsync(1, default)).ReturnsAsync(category);
+
+        var updateReq = new UpdateExpenseRequest(1, 3500m, "Updated fuel cost", DateTime.UtcNow, "REF-NEW");
+        var result = await _sut.UpdateAsync(10, updateReq);
 
         result.Should().NotBeNull();
-        result.Name.Should().Be("Maintenance");
-        result.Description.Should().Be("Building repairs");
-        _repoMock.Verify(r => r.AddCategoryAsync(It.Is<ExpenseCategory>(c => c.Name == "Maintenance"), default), Times.Once);
+        result.Amount.Should().Be(3500m);
+        result.Description.Should().Be("Updated fuel cost");
+        _repoMock.Verify(r => r.UpdateAsync(expense, default), Times.Once);
+    }
+
+    [Fact]
+    public async Task DeleteAsync_ExistingExpense_RemovesExpense()
+    {
+        var expense = Expense.Create(1, 1000m, "To delete", 1, DateTime.UtcNow);
+        _repoMock.Setup(r => r.GetByIdAsync(5, default)).ReturnsAsync(expense);
+
+        await _sut.DeleteAsync(5);
+
+        _repoMock.Verify(r => r.DeleteAsync(expense, default), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetAnalyticsAsync_CalculatesAccurateKPIsAndCategoryBreakdown()
+    {
+        var cat1 = ExpenseCategory.Create("Transport & Fuel");
+        typeof(ExpenseCategory).GetProperty("Id")!.SetValue(cat1, 1);
+        var cat2 = ExpenseCategory.Create("Utility Bills");
+        typeof(ExpenseCategory).GetProperty("Id")!.SetValue(cat2, 2);
+
+        var today = DateTime.Today;
+        var e1 = Expense.Create(1, 5000m, "Diesel fuel for lorry", 1, today, "REF-1");
+        typeof(Expense).GetProperty("Category")!.SetValue(e1, cat1);
+
+        var e2 = Expense.Create(2, 2000m, "Water bill", 1, today, "REF-2");
+        typeof(Expense).GetProperty("Category")!.SetValue(e2, cat2);
+
+        _repoMock.Setup(r => r.GetAllAsync(default)).ReturnsAsync(new List<Expense> { e1, e2 });
+        _repoMock.Setup(r => r.GetCategoriesAsync(false, default)).ReturnsAsync(new List<ExpenseCategory> { cat1, cat2 });
+
+        var req = new ExpenseFilterRequest(DateRangePreset.ThisMonth, new DateTime(today.Year, today.Month, 1), today.AddDays(1));
+        var summary = await _sut.GetAnalyticsAsync(req);
+
+        summary.TotalExpenses.Should().Be(7000m);
+        summary.ExpenseCount.Should().Be(2);
+        summary.AverageExpense.Should().Be(3500m);
+        summary.HighestCategoryName.Should().Be("Transport & Fuel");
+        summary.HighestCategoryAmount.Should().Be(5000m);
+        summary.HighestCategoryPercentage.Should().Be(71.4);
     }
 }

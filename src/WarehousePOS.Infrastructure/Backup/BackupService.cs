@@ -6,24 +6,27 @@ namespace WarehousePOS.Infrastructure.Backup;
 
 public sealed class BackupService(
     string dbFilePath,
-    ILogger<BackupService> logger) : IBackupService
+    ILogger<BackupService> logger,
+    string? backupDirectory = null) : IBackupService
 {
-    private static readonly string BackupDirectory =
+    private static readonly string DefaultBackupDirectory =
         OperatingSystem.IsWindows()
             ? @"C:\ProgramData\WarehousePOS\Backups\"
             : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".warehousepos", "Backups");
 
     private const string MainBackupFileName = "WarehousePOS_Backup.zip";
 
+    private readonly string _backupDirectory = backupDirectory ?? DefaultBackupDirectory;
+
     public Task<string> CreateBackupAsync(CancellationToken ct = default)
     {
         if (!File.Exists(dbFilePath))
             throw new FileNotFoundException($"Database file not found at: {dbFilePath}");
 
-        Directory.CreateDirectory(BackupDirectory);
+        Directory.CreateDirectory(_backupDirectory);
 
-        var destinationZipPath = Path.Combine(BackupDirectory, MainBackupFileName);
-        var tempZipPath = Path.Combine(BackupDirectory, $"WarehousePOS_Backup_temp_{Guid.NewGuid():N}.zip");
+        var destinationZipPath = Path.Combine(_backupDirectory, MainBackupFileName);
+        var tempZipPath = Path.Combine(_backupDirectory, $"WarehousePOS_Backup_temp_{Guid.NewGuid():N}.zip");
         var tempDbPath = Path.Combine(Path.GetTempPath(), $"WarehousePOS_temp_{Guid.NewGuid():N}.db");
 
         try
@@ -58,10 +61,10 @@ public sealed class BackupService(
 
     public IReadOnlyList<FileInfo> GetBackupFiles()
     {
-        if (!Directory.Exists(BackupDirectory))
+        if (!Directory.Exists(_backupDirectory))
             return Array.Empty<FileInfo>();
 
-        var dir = new DirectoryInfo(BackupDirectory);
+        var dir = new DirectoryInfo(_backupDirectory);
         return dir.GetFiles("WarehousePOS_Backup*.zip")
                   .OrderByDescending(f => f.LastWriteTimeUtc)
                   .ToList();

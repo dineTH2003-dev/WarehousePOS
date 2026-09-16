@@ -57,6 +57,18 @@ public sealed class ExpenseRepository(AppDbContext db) : IExpenseRepository
         await db.SaveChangesAsync(ct);
     }
 
+    public async Task UpdateAsync(Expense expense, CancellationToken ct = default)
+    {
+        db.Expenses.Update(expense);
+        await db.SaveChangesAsync(ct);
+    }
+
+    public async Task DeleteAsync(Expense expense, CancellationToken ct = default)
+    {
+        db.Expenses.Remove(expense);
+        await db.SaveChangesAsync(ct);
+    }
+
     public async Task<IReadOnlyList<ExpenseCategory>> GetCategoriesAsync(bool includeInactive = false, CancellationToken ct = default) =>
         await db.ExpenseCategories.Where(c => includeInactive || c.IsActive).OrderBy(c => c.Name).ToListAsync(ct);
 

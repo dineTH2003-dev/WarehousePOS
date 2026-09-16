@@ -57,6 +57,21 @@ public sealed class RelayCommand<T>(Action<T?> execute, Func<T?, bool>? canExecu
         remove => CommandManager.RequerySuggested -= value;
     }
 
-    public bool CanExecute(object? parameter) => canExecute?.Invoke((T?)parameter) ?? true;
-    public void Execute(object? parameter) => execute((T?)parameter);
+    private static T? ConvertParameter(object? parameter)
+    {
+        if (parameter is T typed) return typed;
+        if (parameter is null) return default;
+        try
+        {
+            var targetType = Nullable.GetUnderlyingType(typeof(T)) ?? typeof(T);
+            return (T?)Convert.ChangeType(parameter, targetType);
+        }
+        catch
+        {
+            return default;
+        }
+    }
+
+    public bool CanExecute(object? parameter) => canExecute?.Invoke(ConvertParameter(parameter)) ?? true;
+    public void Execute(object? parameter) => execute(ConvertParameter(parameter));
 }

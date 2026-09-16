@@ -68,4 +68,23 @@ public sealed class Expense : AggregateRoot
             ReferenceNo      = referenceNo?.Trim()
         };
     }
+
+    public void Update(
+        int categoryId,
+        decimal amount,
+        string description,
+        string? referenceNo,
+        DateTime expenseDate)
+    {
+        if (categoryId <= 0) throw new ArgumentOutOfRangeException(nameof(categoryId));
+        if (amount <= 0)     throw new ArgumentOutOfRangeException(nameof(amount));
+        ArgumentException.ThrowIfNullOrWhiteSpace(description);
+
+        CategoryId  = categoryId;
+        Amount      = amount;
+        Description = description.Trim();
+        ReferenceNo = referenceNo?.Trim();
+        ExpenseDate = expenseDate;
+        SetUpdatedAt();
+    }
 }

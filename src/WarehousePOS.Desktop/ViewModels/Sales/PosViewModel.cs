@@ -1,12 +1,16 @@
 using System.Collections.ObjectModel;
 using System.Globalization;
+using WarehousePOS.Application.Printing;
 using WarehousePOS.Application.Products;
 using WarehousePOS.Application.Sales;
+using WarehousePOS.Application.Settings;
 using WarehousePOS.Desktop.Services;
 using WarehousePOS.Desktop.ViewModels;
 using WarehousePOS.Domain.Enums;
 
 namespace WarehousePOS.Desktop.ViewModels.Sales;
+
+public sealed record PaymentMethodOption(PaymentMethod Method, string DisplayName);
 
 public sealed class PosCartItem : ViewModelBase
 {
@@ -61,6 +65,10 @@ public sealed class PosViewModel : ViewModelBase
     private readonly ICustomerService _customerService;
     private readonly ISaleService     _saleService;
     private readonly SessionContext   _sessionContext;
+    private readonly IReceiptPrinter  _printer;
+    private readonly IStoreSettingService _settingService;
+
+    private SaleDto? _lastCompletedSale;
 
     private ObservableCollection<ProductDto>  _searchResults = [];
     private ObservableCollection<CustomerDto> _customers     = [];
@@ -76,9 +84,11 @@ public sealed class PosViewModel : ViewModelBase
     private decimal     _overallDiscount;
     private string      _overallDiscountText = string.Empty;
     private decimal     _amountPaid;
+    private string      _amountPaidText = "0";
     private string      _errorMessage   = string.Empty;
     private bool        _isBusy;
     private string      _successMessage = string.Empty;
+    private CancellationTokenSource? _successMessageCts;
 
     public ObservableCollection<ProductDto>  SearchResults => _searchResults;
     public ObservableCollection<CustomerDto> Customers     => _customers;
@@ -109,11 +119,32 @@ public sealed class PosViewModel : ViewModelBase
         }
     }
 
+    private bool _isRefreshingCustomers;
+    private PaymentMethod _selectedPaymentMethod = PaymentMethod.Cash;
+
+    public IReadOnlyList<PaymentMethodOption> PaymentMethodOptions { get; } = new List<PaymentMethodOption>
+    {
+        new(PaymentMethod.Cash, "Cash"),
+        new(PaymentMethod.Card, "Credit / Debit Card"),
+        new(PaymentMethod.Cheque, "Cheque"),
+        new(PaymentMethod.BankTransfer, "Bank Transfer")
+    };
+
+    public PaymentMethod SelectedPaymentMethod
+    {
+        get => _selectedPaymentMethod;
+        set => SetField(ref _selectedPaymentMethod, value);
+    }
+
+    public bool IsRegisteredCustomer => SelectedCustomer is not null;
+
     public CustomerDto? SelectedCustomer
     {
         get => _selectedCustomer;
         set
         {
+            if (_isRefreshingCustomers) return;
+
             if (SetField(ref _selectedCustomer, value))
             {
                 _isDiscountManuallyOverridden = false;
@@ -127,11 +158,14 @@ public sealed class PosViewModel : ViewModelBase
                 }
                 else
                 {
+                    _customerSearchQuery = string.Empty;
+                    OnPropertyChanged(nameof(CustomerSearchQuery));
                     _overallDiscount = 0;
                     _overallDiscountText = string.Empty;
                     OnPropertyChanged(nameof(OverallDiscount));
                     OnPropertyChanged(nameof(OverallDiscountText));
                 }
+                OnPropertyChanged(nameof(IsRegisteredCustomer));
                 RecalculateTotals();
             }
         }
@@ -194,56 +228,197 @@ public sealed class PosViewModel : ViewModelBase
         {
             if (SetField(ref _amountPaid, value))
             {
+                _amountPaidText = value == 0 ? "0" : value.ToString(CultureInfo.InvariantCulture);
+                OnPropertyChanged(nameof(AmountPaidText));
                 RecalculateTotals();
             }
         }
     }
 
-    public decimal SubTotal    => _cartItems.Sum(i => i.LineTotal);
-    public decimal TotalAmount => Math.Max(0, SubTotal - OverallDiscount);
-    public decimal ChangeAmount=> Math.Max(0, AmountPaid - TotalAmount);
-    public bool IsDeficit      => AmountPaid < TotalAmount && _cartItems.Count > 0;
-    public decimal Balance     => AmountPaid - TotalAmount;
-    public string BalanceLabel => IsDeficit ? "Deficit:" : "Change:";
-    public string BalanceDisplay => IsDeficit ? $"-Rs. {Math.Abs(Balance):N2}" : $"Rs. {ChangeAmount:N2}";
-    public string BalanceColor => IsDeficit ? "#DC2626" : "#16A34A";
+    public string AmountPaidText
+    {
+        get => _amountPaidText;
+        set
+        {
+            if (!string.IsNullOrEmpty(value) && value.Length > 1 && value.StartsWith("0") && !value.StartsWith("0.") && !value.StartsWith("0,"))
+            {
+                value = value.TrimStart('0');
+                if (string.IsNullOrEmpty(value)) value = "0";
+            }
+
+            if (!SetField(ref _amountPaidText, value))
+                return;
+
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                _amountPaid = 0;
+            }
+            else if (decimal.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out var paid) ||
+                     decimal.TryParse(value, NumberStyles.Any, CultureInfo.CurrentCulture, out paid))
+            {
+                _amountPaid = Math.Max(0, paid);
+            }
+            else
+            {
+                _amountPaid = 0;
+            }
+
+            RecalculateTotals();
+        }
+    }
+
+    public decimal SubTotal      => _cartItems.Sum(i => i.LineTotal);
+    public decimal TotalAmount   => Math.Max(0, SubTotal - OverallDiscount);
+    public decimal ChangeAmount  => Math.Max(0, AmountPaid - TotalAmount);
+    public decimal UnpaidBalance => Math.Max(0, TotalAmount - AmountPaid);
+    public bool IsDeficit        => AmountPaid < TotalAmount && _cartItems.Count > 0;
+    public decimal Balance       => AmountPaid - TotalAmount;
+
+    public string BalanceLabel =>
+        IsDeficit
+            ? (IsRegisteredCustomer ? "Credit Amount:" : "Deficit (Full Payment Required):")
+            : "Change:";
+
+    public string BalanceDisplay =>
+        IsDeficit
+            ? (IsRegisteredCustomer ? $"Rs. {UnpaidBalance:N2}" : $"-Rs. {UnpaidBalance:N2}")
+            : $"Rs. {ChangeAmount:N2}";
+
+    public string BalanceColor =>
+        IsDeficit
+            ? (IsRegisteredCustomer ? "#D97706" : "#DC2626")
+            : "#16A34A";
 
     public string ErrorMessage   { get => _errorMessage;   set { SetField(ref _errorMessage, value); OnPropertyChanged(nameof(HasError)); } }
     public bool HasError         => !string.IsNullOrEmpty(ErrorMessage);
-    public string SuccessMessage { get => _successMessage; set { SetField(ref _successMessage, value); OnPropertyChanged(nameof(HasSuccess)); } }
+    public string SuccessMessage
+    {
+        get => _successMessage;
+        set
+        {
+            if (SetField(ref _successMessage, value))
+            {
+                OnPropertyChanged(nameof(HasSuccess));
+                if (!string.IsNullOrEmpty(value))
+                {
+                    _successMessageCts?.Cancel();
+                    _successMessageCts = new CancellationTokenSource();
+                    var token = _successMessageCts.Token;
+
+                    Task.Delay(3000, token).ContinueWith(t =>
+                    {
+                        if (!t.IsCanceled && !token.IsCancellationRequested)
+                        {
+                            System.Windows.Application.Current?.Dispatcher?.Invoke(() =>
+                            {
+                                if (!token.IsCancellationRequested && _successMessage == value)
+                                {
+                                    SuccessMessage = string.Empty;
+                                }
+                            });
+                        }
+                    }, TaskScheduler.Default);
+                }
+            }
+        }
+    }
     public bool HasSuccess       => !string.IsNullOrEmpty(SuccessMessage);
     public bool IsBusy           { get => _isBusy;           set => SetField(ref _isBusy, value); }
+    public bool HasLastCompletedSale => _lastCompletedSale is not null;
 
     public RelayCommand<ProductDto> AddToCartCommand     { get; }
     public RelayCommand<PosCartItem> RemoveFromCartCommand{ get; }
     public RelayCommand ProcessSaleCommand               { get; }
     public RelayCommand ClearCartCommand                 { get; }
     public RelayCommand ClearCustomerSelectionCommand    { get; }
+    public RelayCommand RePrintLastReceiptCommand        { get; }
 
     public PosViewModel(
         IProductService productService,
         ICustomerService customerService,
         ISaleService saleService,
-        SessionContext sessionContext)
+        SessionContext sessionContext,
+        IReceiptPrinter printer,
+        IStoreSettingService settingService)
     {
         _productService  = productService;
         _customerService = customerService;
         _saleService     = saleService;
         _sessionContext  = sessionContext;
+        _printer         = printer;
+        _settingService  = settingService;
 
         AddToCartCommand              = new RelayCommand<ProductDto>(AddToCart);
         RemoveFromCartCommand         = new RelayCommand<PosCartItem>(RemoveFromCart);
-        ProcessSaleCommand            = new RelayCommand(async () => await ProcessSaleAsync(), () => !IsBusy && _cartItems.Count > 0 && !IsDeficit);
+        ProcessSaleCommand            = new RelayCommand(async () => await ProcessSaleAsync(), CanProcessSale);
         ClearCartCommand              = new RelayCommand(ClearCart);
         ClearCustomerSelectionCommand = new RelayCommand(ClearCustomerSelection);
+        RePrintLastReceiptCommand     = new RelayCommand(async () => await RePrintLastReceiptAsync(), () => _lastCompletedSale is not null);
+    }
+
+    private bool CanProcessSale()
+    {
+        if (IsBusy || _cartItems.Count == 0)
+            return false;
+
+        // Unregistered walk-in customers MUST pay in full
+        if (SelectedCustomer is null && AmountPaid < TotalAmount)
+            return false;
+
+        return true;
     }
 
     public async Task InitializeAsync()
     {
-        var custs = await _customerService.GetActiveAsync();
-        _customers.Clear();
-        foreach (var c in custs) _customers.Add(c);
-        FilterCustomers();
+        var prevSelectedId = SelectedCustomer?.Id;
+        var prevCustomerQuery = CustomerSearchQuery;
+        var prevDiscountOverridden = _isDiscountManuallyOverridden;
+        var prevDiscount = OverallDiscount;
+        var prevDiscountText = OverallDiscountText;
+
+        try
+        {
+            _isRefreshingCustomers = true;
+            var custs = await _customerService.GetActiveAsync();
+            _customers.Clear();
+            foreach (var c in custs) _customers.Add(c);
+            FilterCustomers();
+        }
+        finally
+        {
+            _isRefreshingCustomers = false;
+        }
+
+        if (prevSelectedId.HasValue)
+        {
+            var matchedCustomer = _customers.FirstOrDefault(c => c.Id == prevSelectedId.Value);
+            if (matchedCustomer is not null)
+            {
+                _selectedCustomer = matchedCustomer;
+                _customerSearchQuery = matchedCustomer.DisplayName;
+                OnPropertyChanged(nameof(SelectedCustomer));
+                OnPropertyChanged(nameof(CustomerSearchQuery));
+
+                if (prevDiscountOverridden)
+                {
+                    _isDiscountManuallyOverridden = true;
+                    _overallDiscount = prevDiscount;
+                    _overallDiscountText = prevDiscountText;
+                    OnPropertyChanged(nameof(OverallDiscount));
+                    OnPropertyChanged(nameof(OverallDiscountText));
+                }
+                else
+                {
+                    ApplyCustomerDiscountRate();
+                }
+                IsCustomerDropDownOpen = false;
+                RecalculateTotals();
+            }
+        }
+        else
+        {
+            IsCustomerDropDownOpen = false;
+        }
 
         await PerformSearchAsync();
     }
@@ -262,9 +437,13 @@ public sealed class PosViewModel : ViewModelBase
             FilteredCustomers.Add(c);
         }
 
-        if (!string.IsNullOrWhiteSpace(query) && FilteredCustomers.Any())
+        if (!string.IsNullOrWhiteSpace(query) && FilteredCustomers.Any() && SelectedCustomer is null)
         {
             IsCustomerDropDownOpen = true;
+        }
+        else
+        {
+            IsCustomerDropDownOpen = false;
         }
     }
 
@@ -388,9 +567,9 @@ public sealed class PosViewModel : ViewModelBase
             return;
         }
 
-        if (AmountPaid < TotalAmount)
+        if (SelectedCustomer is null && AmountPaid < TotalAmount)
         {
-            ErrorMessage = $"Amount paid (Rs. {AmountPaid:N2}) must be at least total amount (Rs. {TotalAmount:N2}).";
+            ErrorMessage = $"Unregistered walk-in customers cannot make credit purchases. Amount paid (Rs. {AmountPaid:N2}) must be at least total amount (Rs. {TotalAmount:N2}).";
             return;
         }
 
@@ -408,14 +587,52 @@ public sealed class PosViewModel : ViewModelBase
                 SelectedCustomer?.Id,
                 OverallDiscount,
                 AmountPaid,
-                "POS Cash Transaction",
-                items);
+                $"POS {SelectedPaymentMethod} Transaction",
+                items,
+                SelectedPaymentMethod);
 
             var sale = await _saleService.ProcessSaleAsync(req);
-            SuccessMessage = $"Sale #{sale.Id} completed! Change: Rs. {sale.Change:N2}";
+            _lastCompletedSale = sale;
+            OnPropertyChanged(nameof(HasLastCompletedSale));
+            RePrintLastReceiptCommand.RaiseCanExecuteChanged();
+
+            if (sale.AmountPaid < sale.TotalAmount && sale.CustomerId.HasValue)
+            {
+                decimal unpaid = sale.TotalAmount - sale.AmountPaid;
+                SuccessMessage = $"Sale #{sale.Id} processed on credit! Outstanding: Rs. {unpaid:N2}";
+            }
+            else
+            {
+                SuccessMessage = $"Sale #{sale.Id} completed! Change: Rs. {sale.Change:N2}";
+            }
+
+            // Auto-print to Epson LQ-310 if enabled in settings
+            try
+            {
+                var printerConfig = await _settingService.GetPrinterSettingsAsync();
+                if (printerConfig.AutoPrintEnabled)
+                {
+                    _ = Task.Run(async () =>
+                    {
+                        try
+                        {
+                            await _printer.PrintReceiptAsync(sale);
+                        }
+                        catch
+                        {
+                            // Error is logged within printer service
+                        }
+                    });
+                    SuccessMessage += " [Bill sent to printer]";
+                }
+            }
+            catch
+            {
+                // Non-blocking fallback
+            }
 
             ClearCart();
-            await PerformSearchAsync(); // Refresh product stock levels
+            await InitializeAsync(); // Refresh active customers & products
         }
         catch (Exception ex)
         {
@@ -427,13 +644,35 @@ public sealed class PosViewModel : ViewModelBase
         }
     }
 
+    public async Task RePrintLastReceiptAsync()
+    {
+        if (_lastCompletedSale is null) return;
+        try
+        {
+            await _printer.PrintReceiptAsync(_lastCompletedSale);
+            SuccessMessage = $"Re-printed bill for Sale #{_lastCompletedSale.Id} successfully!";
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Failed to re-print bill: {ex.Message}";
+        }
+    }
+
     private void ClearCart()
     {
         _cartItems.Clear();
         _isDiscountManuallyOverridden = false;
         OverallDiscount  = 0;
-        AmountPaid       = 0;
+        _amountPaid       = 0;
+        _amountPaidText   = "0";
+        SelectedPaymentMethod = PaymentMethod.Cash;
+        OnPropertyChanged(nameof(AmountPaidText));
         SelectedCustomer = null;
+        SearchQuery      = string.Empty;
+        SaleType         = SaleType.Retail;
+        ErrorMessage     = string.Empty;
+        IsCustomerDropDownOpen = false;
+        FilterCustomers();
         RecalculateTotals();
     }
 }

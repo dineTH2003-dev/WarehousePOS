@@ -131,7 +131,7 @@ public sealed class NotificationOrchestrator : INotificationOrchestrator
             }
         }
 
-        var items = lowStockProducts.Select(p => new LowStockItemDto(
+        var items = lowStockProducts.Select(p => new WarehousePOS.Application.Notifications.LowStockItemDto(
             p.Id,
             p.Name,
             p.SKU,

@@ -151,13 +151,29 @@ public static class DbInitializer
                 }
             }
 
+            var saleColumns = await db.Database
+                .SqlQueryRaw<string>("SELECT name FROM pragma_table_info('Sales')")
+                .ToListAsync();
+
+            if (saleColumns.Any() && !saleColumns.Contains("PaymentMethod", StringComparer.OrdinalIgnoreCase))
+            {
+                await db.Database.ExecuteSqlRawAsync("ALTER TABLE Sales ADD COLUMN PaymentMethod TEXT NOT NULL DEFAULT 'Cash';");
+            }
+
             var customerColumns = await db.Database
                 .SqlQueryRaw<string>("SELECT name FROM pragma_table_info('Customers')")
                 .ToListAsync();
 
-            if (customerColumns.Any() && !customerColumns.Contains("DiscountRate", StringComparer.OrdinalIgnoreCase))
+            if (customerColumns.Any())
             {
-                await db.Database.ExecuteSqlRawAsync("ALTER TABLE Customers ADD COLUMN DiscountRate TEXT NOT NULL DEFAULT '0';");
+                if (!customerColumns.Contains("DiscountRate", StringComparer.OrdinalIgnoreCase))
+                {
+                    await db.Database.ExecuteSqlRawAsync("ALTER TABLE Customers ADD COLUMN DiscountRate TEXT NOT NULL DEFAULT '0';");
+                }
+                if (!customerColumns.Contains("OutstandingBalance", StringComparer.OrdinalIgnoreCase))
+                {
+                    await db.Database.ExecuteSqlRawAsync("ALTER TABLE Customers ADD COLUMN OutstandingBalance TEXT NOT NULL DEFAULT '0';");
+                }
             }
 
             var productColumns = await db.Database
@@ -181,6 +197,18 @@ public static class DbInitializer
                 if (!productColumns.Contains("ClaimedQuantity", StringComparer.OrdinalIgnoreCase))
                 {
                     await db.Database.ExecuteSqlRawAsync("ALTER TABLE Products ADD COLUMN ClaimedQuantity INTEGER NOT NULL DEFAULT 0;");
+                }
+                if (!productColumns.Contains("PendingHigherPriceStockQuantity", StringComparer.OrdinalIgnoreCase))
+                {
+                    await db.Database.ExecuteSqlRawAsync("ALTER TABLE Products ADD COLUMN PendingHigherPriceStockQuantity INTEGER NOT NULL DEFAULT 0;");
+                }
+                if (!productColumns.Contains("PendingNewRetailPrice", StringComparer.OrdinalIgnoreCase))
+                {
+                    await db.Database.ExecuteSqlRawAsync("ALTER TABLE Products ADD COLUMN PendingNewRetailPrice TEXT NULL;");
+                }
+                if (!productColumns.Contains("PendingNewWholesalePrice", StringComparer.OrdinalIgnoreCase))
+                {
+                    await db.Database.ExecuteSqlRawAsync("ALTER TABLE Products ADD COLUMN PendingNewWholesalePrice TEXT NULL;");
                 }
             }
         }

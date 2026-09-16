@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using WarehousePOS.Application.Common;
 using WarehousePOS.Application.Notifications;
+using WarehousePOS.Application.Printing;
 using WarehousePOS.Application.Settings;
 using WarehousePOS.Desktop.ViewModels;
 
@@ -12,6 +13,7 @@ public sealed class StoreSettingsViewModel : ViewModelBase
     private readonly IBackupService _backupService;
     private readonly ICloudBackupService _cloudBackupService;
     private readonly INotificationOrchestrator _notificationOrchestrator;
+    private readonly IReceiptPrinter _printer;
 
     // Store settings fields
     private string _storeName = string.Empty;
@@ -82,6 +84,29 @@ public sealed class StoreSettingsViewModel : ViewModelBase
     public string NotificationStatusMessage { get => _notificationStatusMessage; set => SetField(ref _notificationStatusMessage, value); }
     public bool IsNotificationBusy { get => _isNotificationBusy; private set => SetField(ref _isNotificationBusy, value); }
 
+    // Printer settings fields
+    private string _selectedPrinterName = "EPSON LQ-310 ESC/P2";
+    private bool _isAutoPrintEnabled = true;
+    private string _selectedPaperType = "Continuous_5_5_Inch";
+    private int _feedLines = 3;
+    private string _printerStatusMessage = string.Empty;
+    private bool _isPrinterTesting;
+
+    public ObservableCollection<string> AvailablePrinters { get; } = [];
+    public ObservableCollection<string> AvailablePaperTypes { get; } =
+    [
+        "Continuous_5_5_Inch",
+        "Continuous_11_Inch",
+        "Standard_A4"
+    ];
+
+    public string SelectedPrinterName { get => _selectedPrinterName; set => SetField(ref _selectedPrinterName, value); }
+    public bool IsAutoPrintEnabled { get => _isAutoPrintEnabled; set => SetField(ref _isAutoPrintEnabled, value); }
+    public string SelectedPaperType { get => _selectedPaperType; set => SetField(ref _selectedPaperType, value); }
+    public int FeedLines { get => _feedLines; set => SetField(ref _feedLines, value); }
+    public string PrinterStatusMessage { get => _printerStatusMessage; set => SetField(ref _printerStatusMessage, value); }
+    public bool IsPrinterTesting { get => _isPrinterTesting; private set => SetField(ref _isPrinterTesting, value); }
+
     private int _selectedTabIndex = 0;
     public int SelectedTabIndex
     {
@@ -93,6 +118,7 @@ public sealed class StoreSettingsViewModel : ViewModelBase
                 OnPropertyChanged(nameof(IsStoreTabActive));
                 OnPropertyChanged(nameof(IsBackupTabActive));
                 OnPropertyChanged(nameof(IsNotificationTabActive));
+                OnPropertyChanged(nameof(IsPrinterTabActive));
             }
         }
     }
@@ -124,6 +150,15 @@ public sealed class StoreSettingsViewModel : ViewModelBase
         }
     }
 
+    public bool IsPrinterTabActive
+    {
+        get => _selectedTabIndex == 3;
+        set
+        {
+            if (value) SelectedTabIndex = 3;
+        }
+    }
+
     public bool IsSyncPending => _cloudBackupService.IsSyncPending;
     public string? PendingSyncReason => _cloudBackupService.PendingSyncReason;
 
@@ -134,6 +169,7 @@ public sealed class StoreSettingsViewModel : ViewModelBase
     public RelayCommand SelectStoreTabCommand { get; }
     public RelayCommand SelectBackupTabCommand { get; }
     public RelayCommand SelectNotificationTabCommand { get; }
+    public RelayCommand SelectPrinterTabCommand { get; }
     public RelayCommand SaveCommand { get; }
     public RelayCommand BackupNowCommand { get; }
     public RelayCommand ConnectDriveCommand { get; }
@@ -144,17 +180,22 @@ public sealed class StoreSettingsViewModel : ViewModelBase
     public RelayCommand SendTestWhatsAppCommand { get; }
     public RelayCommand SendMonthlyReportNowCommand { get; }
     public RelayCommand CheckLowStockAlertsNowCommand { get; }
+    public RelayCommand SavePrinterSettingsCommand { get; }
+    public RelayCommand TestPrintCommand { get; }
+    public RelayCommand RefreshPrintersCommand { get; }
 
     public StoreSettingsViewModel(
         IStoreSettingService settingService,
         IBackupService backupService,
         ICloudBackupService cloudBackupService,
-        INotificationOrchestrator notificationOrchestrator)
+        INotificationOrchestrator notificationOrchestrator,
+        IReceiptPrinter printer)
     {
         _settingService = settingService;
         _backupService = backupService;
         _cloudBackupService = cloudBackupService;
         _notificationOrchestrator = notificationOrchestrator;
+        _printer = printer;
 
         _cloudBackupService.SyncStatusChanged += () =>
         {
@@ -165,6 +206,7 @@ public sealed class StoreSettingsViewModel : ViewModelBase
         SelectStoreTabCommand = new RelayCommand(() => SelectedTabIndex = 0);
         SelectBackupTabCommand = new RelayCommand(() => SelectedTabIndex = 1);
         SelectNotificationTabCommand = new RelayCommand(() => SelectedTabIndex = 2);
+        SelectPrinterTabCommand = new RelayCommand(() => SelectedTabIndex = 3);
 
         SaveCommand = new RelayCommand(async () => await SaveSettingsAsync());
         BackupNowCommand = new RelayCommand(async () => await ExecuteBackupAsync(), () => !IsBackupInProgress);
@@ -177,6 +219,10 @@ public sealed class StoreSettingsViewModel : ViewModelBase
         SendTestWhatsAppCommand = new RelayCommand(async () => await SendTestWhatsAppAsync(), () => !IsNotificationBusy);
         SendMonthlyReportNowCommand = new RelayCommand(async () => await SendMonthlyReportNowAsync(), () => !IsNotificationBusy);
         CheckLowStockAlertsNowCommand = new RelayCommand(async () => await CheckLowStockAlertsNowAsync(), () => !IsNotificationBusy);
+
+        SavePrinterSettingsCommand = new RelayCommand(async () => await SavePrinterSettingsAsync(), () => !IsBusy);
+        TestPrintCommand = new RelayCommand(async () => await ExecuteTestPrintAsync(), () => !IsPrinterTesting);
+        RefreshPrintersCommand = new RelayCommand(RefreshPrinters);
     }
 
     public async Task LoadSettingsAsync()
@@ -194,6 +240,7 @@ public sealed class StoreSettingsViewModel : ViewModelBase
             await CheckGoogleDriveStatusAsync();
             await RefreshBackupListsAsync();
             await LoadNotificationSettingsAsync();
+            await LoadPrinterSettingsAsync();
         }
         finally
         {
@@ -513,6 +560,88 @@ public sealed class StoreSettingsViewModel : ViewModelBase
         finally
         {
             IsNotificationBusy = false;
+        }
+    }
+
+    public void RefreshPrinters()
+    {
+        AvailablePrinters.Clear();
+        var list = _printer.GetInstalledPrinters();
+        foreach (var p in list)
+        {
+            AvailablePrinters.Add(p);
+        }
+
+        if (string.IsNullOrWhiteSpace(SelectedPrinterName) || !AvailablePrinters.Contains(SelectedPrinterName))
+        {
+            var match = AvailablePrinters.FirstOrDefault(p =>
+                p.Contains("LQ-310", StringComparison.OrdinalIgnoreCase) ||
+                p.Contains("Epson", StringComparison.OrdinalIgnoreCase));
+            SelectedPrinterName = match ?? AvailablePrinters.FirstOrDefault() ?? "EPSON LQ-310 ESC/P2";
+        }
+    }
+
+    private async Task LoadPrinterSettingsAsync()
+    {
+        RefreshPrinters();
+        var config = await _settingService.GetPrinterSettingsAsync();
+        if (!string.IsNullOrWhiteSpace(config.PrinterName))
+        {
+            SelectedPrinterName = config.PrinterName;
+        }
+        IsAutoPrintEnabled = config.AutoPrintEnabled;
+        if (!string.IsNullOrWhiteSpace(config.PaperType))
+        {
+            SelectedPaperType = config.PaperType;
+        }
+        FeedLines = config.FeedLines;
+    }
+
+    private async Task SavePrinterSettingsAsync()
+    {
+        PrinterStatusMessage = string.Empty;
+        try
+        {
+            var dto = new PrinterSettingsDto(
+                SelectedPrinterName ?? "EPSON LQ-310 ESC/P2",
+                IsAutoPrintEnabled,
+                SelectedPaperType ?? "Continuous_5_5_Inch",
+                FeedLines);
+
+            await _settingService.SavePrinterSettingsAsync(dto);
+            PrinterStatusMessage = "✅ Printer configuration saved successfully! POS will now use these settings.";
+        }
+        catch (Exception ex)
+        {
+            PrinterStatusMessage = $"❌ Error: {ex.Message}";
+        }
+    }
+
+    private async Task ExecuteTestPrintAsync()
+    {
+        if (IsPrinterTesting) return;
+        IsPrinterTesting = true;
+        PrinterStatusMessage = "Sending ESC/P2 hardware test ticket to printer...";
+        try
+        {
+            string target = SelectedPrinterName ?? "EPSON LQ-310 ESC/P2";
+            bool success = await _printer.TestPrintAsync(target);
+            if (success)
+            {
+                PrinterStatusMessage = $"✅ Test print sent to '{target}' successfully! Check the paper.";
+            }
+            else
+            {
+                PrinterStatusMessage = $"⚠️ Warning: Test print could not be dispatched to '{target}'. Verify printer is on and connected.";
+            }
+        }
+        catch (Exception ex)
+        {
+            PrinterStatusMessage = $"❌ Test print error: {ex.Message}";
+        }
+        finally
+        {
+            IsPrinterTesting = false;
         }
     }
 }

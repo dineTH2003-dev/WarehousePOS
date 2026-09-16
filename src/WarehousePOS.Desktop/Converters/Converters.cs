@@ -127,3 +127,35 @@ public sealed class EnumToBoolConverter : IValueConverter
         return Binding.DoNothing;
     }
 }
+
+/// <summary>Converts Expense Category name to a consistent WPF SolidColorBrush badge background.</summary>
+public sealed class CategoryToColorBrushConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        var cat = value?.ToString()?.Trim() ?? string.Empty;
+        var hexColor = cat switch
+        {
+            "Transport & Fuel"      => "#3B82F6", // Blue
+            "Maintenance & Repairs" => "#10B981", // Green
+            "Utility Bills"         => "#F59E0B", // Amber
+            "Rent & Lease"          => "#8B5CF6", // Purple
+            "Office Supplies"       => "#EF4444", // Red
+            "Wages & Salaries"      => "#14B8A6", // Teal
+            "Miscellaneous"         => "#64748B", // Slate
+            _                       => "#6366F1"  // Indigo default
+        };
+
+        try
+        {
+            return (System.Windows.Media.Brush)new System.Windows.Media.BrushConverter().ConvertFromString(hexColor)!;
+        }
+        catch
+        {
+            return System.Windows.Media.Brushes.Gray;
+        }
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) =>
+        throw new NotSupportedException();
+}

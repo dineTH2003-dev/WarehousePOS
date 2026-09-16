@@ -8,6 +8,8 @@ public interface IExpenseRepository
     Task<IReadOnlyList<Expense>> GetAllAsync(CancellationToken ct = default);
     Task<IReadOnlyList<Expense>> GetByDateRangeAsync(DateTime from, DateTime to, CancellationToken ct = default);
     Task AddAsync(Expense expense, CancellationToken ct = default);
+    Task UpdateAsync(Expense expense, CancellationToken ct = default);
+    Task DeleteAsync(Expense expense, CancellationToken ct = default);
 
     // Expense Categories
     Task<IReadOnlyList<ExpenseCategory>> GetCategoriesAsync(bool includeInactive = false, CancellationToken ct = default);

@@ -16,13 +16,14 @@ public partial class ReceiptPreviewWindow : Window
         string storeName = "WAREHOUSE POS & WHOLESALE",
         string storeAddress = "123 Main Street, Colombo, Sri Lanka",
         string storePhone = "Tel: 011-2345678",
-        string footerMessage = "Thank you for your business!")
+        string footerMessage = "Thank you for your business!",
+        string taxRegNo = "")
     {
         InitializeComponent();
         _sale = sale;
         _printer = printer;
 
-        TxtReceiptText.Text = EpsonLq310Printer.FormatReceiptText(sale, storeName, storeAddress, storePhone, footerMessage);
+        TxtReceiptText.Text = EpsonLq310Printer.FormatReceiptText(sale, storeName, storeAddress, storePhone, footerMessage, taxRegNo);
     }
 
     private async void Print_Click(object sender, RoutedEventArgs e)

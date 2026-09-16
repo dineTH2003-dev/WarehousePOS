@@ -8,13 +8,13 @@ namespace WarehousePOS.Infrastructure.Repositories;
 public sealed class SupplierRepository(AppDbContext db) : ISupplierRepository
 {
     public async Task<Supplier?> GetByIdAsync(int id, CancellationToken ct = default) =>
-        await db.Suppliers.FirstOrDefaultAsync(s => s.Id == id, ct);
+        await db.Suppliers.AsNoTracking().FirstOrDefaultAsync(s => s.Id == id, ct);
 
     public async Task<IReadOnlyList<Supplier>> GetAllAsync(CancellationToken ct = default) =>
-        await db.Suppliers.OrderBy(s => s.Name).ToListAsync(ct);
+        await db.Suppliers.AsNoTracking().OrderBy(s => s.Name).ToListAsync(ct);
 
     public async Task<IReadOnlyList<Supplier>> GetActiveAsync(CancellationToken ct = default) =>
-        await db.Suppliers.Where(s => s.IsActive).OrderBy(s => s.Name).ToListAsync(ct);
+        await db.Suppliers.AsNoTracking().Where(s => s.IsActive).OrderBy(s => s.Name).ToListAsync(ct);
 
     public async Task<bool> ExistsByNameAsync(string name, int? excludeId = null, CancellationToken ct = default) =>
         await db.Suppliers.AnyAsync(
@@ -39,7 +39,11 @@ public sealed class SupplierRepository(AppDbContext db) : ISupplierRepository
 
     public async Task UpdateAsync(Supplier supplier, CancellationToken ct = default)
     {
-        db.Suppliers.Update(supplier);
+        var entry = db.ChangeTracker.Entries<Supplier>().FirstOrDefault(e => e.Entity.Id == supplier.Id);
+        if (entry is null)
+        {
+            db.Entry(supplier).State = EntityState.Modified;
+        }
         await db.SaveChangesAsync(ct);
     }
 }

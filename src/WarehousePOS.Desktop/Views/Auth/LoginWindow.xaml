@@ -1,7 +1,9 @@
 <Window x:Class="WarehousePOS.Desktop.Views.Auth.LoginWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Warehouse POS — Login"
+        xmlns:behaviors="clr-namespace:WarehousePOS.Desktop.Behaviors"
+        Title="Happy Products — Login"
+        Icon="/Resources/Images/app-icon.png"
         MinHeight="600"
         MinWidth="820"
         Height="720"
@@ -23,7 +25,8 @@
 
         <Grid HorizontalAlignment="Center"
               VerticalAlignment="Center"
-              Margin="24">
+              Margin="24"
+              behaviors:ArrowNavigationBehavior.IsEnabled="True">
             <Border Width="430"
                     MaxWidth="430"
                     Padding="38,34,38,30"
@@ -35,9 +38,9 @@
                 <StackPanel>
 
                     <!-- Official Happy Products logo stored as a local resource. -->
-                    <Border MaxWidth="280"
+                    <Border MaxWidth="260"
                             HorizontalAlignment="Center"
-                            Margin="0,0,0,18">
+                            Margin="0,0,0,8">
                         <Image Source="{StaticResource HappyProductsLogo}"
                                Stretch="Uniform"
                                SnapsToDevicePixels="True"
@@ -45,15 +48,10 @@
                                RenderOptions.BitmapScalingMode="HighQuality" />
                     </Border>
 
-                    <TextBlock Text="Warehouse POS"
-                               Style="{StaticResource H2}"
-                               HorizontalAlignment="Center"
-                               FontSize="25"
-                               Margin="0,0,0,4" />
                     <TextBlock Text="Sign in to continue"
                                Style="{StaticResource CaptionText}"
                                HorizontalAlignment="Center"
-                               Margin="0,0,0,28" />
+                               Margin="0,0,0,20" />
 
                     <!-- Username -->
                     <StackPanel Margin="0,0,0,16">
@@ -62,8 +60,10 @@
                                    Margin="0,0,0,6" />
                         <TextBox x:Name="UsernameBox"
                                  Style="{StaticResource FormTextBox}"
+                                 Height="42"
                                  Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}"
-                                 IsEnabled="{Binding IsBusy, Converter={StaticResource InvertBoolConverter}}" />
+                                 IsEnabled="{Binding IsBusy, Converter={StaticResource InvertBoolConverter}}"
+                                 KeyDown="UsernameBox_KeyDown" />
                     </StackPanel>
 
                     <!-- Password -->
@@ -71,10 +71,65 @@
                         <TextBlock Text="Password"
                                    Style="{StaticResource LabelText}"
                                    Margin="0,0,0,6" />
-                        <PasswordBox x:Name="PasswordBox"
-                                     Style="{StaticResource FormPasswordBox}"
-                                     IsEnabled="{Binding IsBusy, Converter={StaticResource InvertBoolConverter}}"
-                                     KeyDown="PasswordBox_KeyDown" />
+                        <Border x:Name="PasswordContainer"
+                                Height="42"
+                                Background="White"
+                                BorderBrush="{StaticResource BorderBrush}"
+                                BorderThickness="1"
+                                CornerRadius="6">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+
+                                <!-- Masked Password -->
+                                <PasswordBox x:Name="PasswordBox"
+                                             Grid.Column="0"
+                                             FontSize="14"
+                                             Foreground="{StaticResource TextPrimaryBrush}"
+                                             Background="Transparent"
+                                             BorderThickness="0"
+                                             Padding="10,0"
+                                             VerticalContentAlignment="Center"
+                                             IsEnabled="{Binding IsBusy, Converter={StaticResource InvertBoolConverter}}"
+                                             PasswordChanged="PasswordBox_PasswordChanged"
+                                             GotFocus="PasswordControl_GotFocus"
+                                             LostFocus="PasswordControl_LostFocus"
+                                             KeyDown="PasswordControl_KeyDown" />
+
+                                <!-- Plain Text Password (when eye icon toggled) -->
+                                <TextBox x:Name="PasswordTextBox"
+                                         Grid.Column="0"
+                                         FontSize="14"
+                                         Foreground="{StaticResource TextPrimaryBrush}"
+                                         Background="Transparent"
+                                         BorderThickness="0"
+                                         Padding="10,0"
+                                         VerticalContentAlignment="Center"
+                                         Visibility="Collapsed"
+                                         IsEnabled="{Binding IsBusy, Converter={StaticResource InvertBoolConverter}}"
+                                         TextChanged="PasswordTextBox_TextChanged"
+                                         GotFocus="PasswordControl_GotFocus"
+                                         LostFocus="PasswordControl_LostFocus"
+                                         KeyDown="PasswordControl_KeyDown" />
+
+                                <!-- Eye Icon Toggle Button -->
+                                <Button x:Name="TogglePasswordButton"
+                                        Grid.Column="1"
+                                        Style="{StaticResource PasswordEyeToggleButtonStyle}"
+                                        Margin="0,0,3,0"
+                                        ToolTip="Show password"
+                                        Click="TogglePasswordButton_Click">
+                                    <Path x:Name="EyeIconPath"
+                                          Data="{StaticResource EyeOpenIcon}"
+                                          Fill="{StaticResource TextSecondaryBrush}"
+                                          Width="18"
+                                          Height="18"
+                                          Stretch="Uniform" />
+                                </Button>
+                            </Grid>
+                        </Border>
                     </StackPanel>
 
                     <!-- Existing validation/error message. -->
@@ -97,7 +152,8 @@
                             Height="46"
                             x:Name="LoginButton"
                             IsEnabled="{Binding IsBusy, Converter={StaticResource InvertBoolConverter}}"
-                            Click="LoginButton_Click" />
+                            Click="LoginButton_Click"
+                            KeyDown="LoginButton_KeyDown" />
 
                     <TextBlock Text="Signing in..."
                                Style="{StaticResource CaptionText}"
@@ -108,7 +164,7 @@
             </Border>
         </Grid>
 
-        <TextBlock Text="Warehouse POS  |  Happy Products"
+        <TextBlock Text="© 2026 Happy Products • All Rights Reserved"
                    Foreground="#D9FFFFFF"
                    FontSize="12"
                    HorizontalAlignment="Center"
