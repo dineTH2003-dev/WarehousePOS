@@ -1,7 +1,9 @@
 using System.Collections.ObjectModel;
 using System.Globalization;
+using WarehousePOS.Application.Printing;
 using WarehousePOS.Application.Products;
 using WarehousePOS.Application.Sales;
+using WarehousePOS.Application.Settings;
 using WarehousePOS.Desktop.Services;
 using WarehousePOS.Desktop.ViewModels;
 using WarehousePOS.Domain.Enums;
@@ -63,6 +65,10 @@ public sealed class PosViewModel : ViewModelBase
     private readonly ICustomerService _customerService;
     private readonly ISaleService     _saleService;
     private readonly SessionContext   _sessionContext;
+    private readonly IReceiptPrinter  _printer;
+    private readonly IStoreSettingService _settingService;
+
+    private SaleDto? _lastCompletedSale;
 
     private ObservableCollection<ProductDto>  _searchResults = [];
     private ObservableCollection<CustomerDto> _customers     = [];
@@ -318,29 +324,36 @@ public sealed class PosViewModel : ViewModelBase
     }
     public bool HasSuccess       => !string.IsNullOrEmpty(SuccessMessage);
     public bool IsBusy           { get => _isBusy;           set => SetField(ref _isBusy, value); }
+    public bool HasLastCompletedSale => _lastCompletedSale is not null;
 
     public RelayCommand<ProductDto> AddToCartCommand     { get; }
     public RelayCommand<PosCartItem> RemoveFromCartCommand{ get; }
     public RelayCommand ProcessSaleCommand               { get; }
     public RelayCommand ClearCartCommand                 { get; }
     public RelayCommand ClearCustomerSelectionCommand    { get; }
+    public RelayCommand RePrintLastReceiptCommand        { get; }
 
     public PosViewModel(
         IProductService productService,
         ICustomerService customerService,
         ISaleService saleService,
-        SessionContext sessionContext)
+        SessionContext sessionContext,
+        IReceiptPrinter printer,
+        IStoreSettingService settingService)
     {
         _productService  = productService;
         _customerService = customerService;
         _saleService     = saleService;
         _sessionContext  = sessionContext;
+        _printer         = printer;
+        _settingService  = settingService;
 
         AddToCartCommand              = new RelayCommand<ProductDto>(AddToCart);
         RemoveFromCartCommand         = new RelayCommand<PosCartItem>(RemoveFromCart);
         ProcessSaleCommand            = new RelayCommand(async () => await ProcessSaleAsync(), CanProcessSale);
         ClearCartCommand              = new RelayCommand(ClearCart);
         ClearCustomerSelectionCommand = new RelayCommand(ClearCustomerSelection);
+        RePrintLastReceiptCommand     = new RelayCommand(async () => await RePrintLastReceiptAsync(), () => _lastCompletedSale is not null);
     }
 
     private bool CanProcessSale()
@@ -579,15 +592,43 @@ public sealed class PosViewModel : ViewModelBase
                 SelectedPaymentMethod);
 
             var sale = await _saleService.ProcessSaleAsync(req);
+            _lastCompletedSale = sale;
+            OnPropertyChanged(nameof(HasLastCompletedSale));
+            RePrintLastReceiptCommand.RaiseCanExecuteChanged();
 
             if (sale.AmountPaid < sale.TotalAmount && sale.CustomerId.HasValue)
             {
                 decimal unpaid = sale.TotalAmount - sale.AmountPaid;
-                SuccessMessage = $"Sale #{sale.Id} processed on credit! Outstanding added: Rs. {unpaid:N2}";
+                SuccessMessage = $"Sale #{sale.Id} processed on credit! Outstanding: Rs. {unpaid:N2}";
             }
             else
             {
                 SuccessMessage = $"Sale #{sale.Id} completed! Change: Rs. {sale.Change:N2}";
+            }
+
+            // Auto-print to Epson LQ-310 if enabled in settings
+            try
+            {
+                var printerConfig = await _settingService.GetPrinterSettingsAsync();
+                if (printerConfig.AutoPrintEnabled)
+                {
+                    _ = Task.Run(async () =>
+                    {
+                        try
+                        {
+                            await _printer.PrintReceiptAsync(sale);
+                        }
+                        catch
+                        {
+                            // Error is logged within printer service
+                        }
+                    });
+                    SuccessMessage += " [Bill sent to printer]";
+                }
+            }
+            catch
+            {
+                // Non-blocking fallback
             }
 
             ClearCart();
@@ -600,6 +641,20 @@ public sealed class PosViewModel : ViewModelBase
         finally
         {
             IsBusy = false;
+        }
+    }
+
+    public async Task RePrintLastReceiptAsync()
+    {
+        if (_lastCompletedSale is null) return;
+        try
+        {
+            await _printer.PrintReceiptAsync(_lastCompletedSale);
+            SuccessMessage = $"Re-printed bill for Sale #{_lastCompletedSale.Id} successfully!";
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Failed to re-print bill: {ex.Message}";
         }
     }
 

@@ -306,6 +306,8 @@
                         <Button Grid.Column="0" Content="Clear" Style="{StaticResource SecondaryButton}" Command="{Binding ClearCartCommand}"/>
                         <Button Grid.Column="2" Content="Complete Sale" Style="{StaticResource SuccessButton}" Command="{Binding ProcessSaleCommand}" Height="44" FontSize="16"/>
                     </Grid>
+
+                    <Button Content="🖨️ Re-print Last Bill" Style="{StaticResource SecondaryButton}" Command="{Binding RePrintLastReceiptCommand}" Margin="0,8,0,0" Height="36" Visibility="{Binding HasLastCompletedSale, Converter={StaticResource BoolToVisibilityConverter}}"/>
                 </StackPanel>
             </Grid>
         </Border>
