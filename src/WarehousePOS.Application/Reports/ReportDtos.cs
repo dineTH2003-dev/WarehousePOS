@@ -137,7 +137,8 @@ public sealed record GrnRecordDto(
     decimal PaidAmount,
     decimal RemainingBalance,
     string Status,
-    IReadOnlyList<GrnLineItemDto> LineItems);
+    IReadOnlyList<GrnLineItemDto> LineItems,
+    string? ContactPerson = null);
 
 public sealed record GrnLineItemDto(
     int ProductId,

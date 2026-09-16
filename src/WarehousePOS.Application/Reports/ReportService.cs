@@ -484,7 +484,8 @@ public sealed class ReportService(
                 p.PaidAmount,
                 p.RemainingBalance,
                 status,
-                lineItems);
+                lineItems,
+                p.Supplier?.ContactPerson);
         }).OrderByDescending(g => g.PurchaseDate).ToList();
 
         return new GrnReportDto(totalCount, totalReceived, totalPaid, totalBalance, grnRecords);
