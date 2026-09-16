@@ -4,7 +4,7 @@
         xmlns:behaviors="clr-namespace:WarehousePOS.Desktop.Behaviors"
         Title="Receipt Print Preview — Epson LQ-310"
         Icon="/Resources/Images/app-icon.png"
-        Height="620" Width="480"
+        Height="620" Width="720"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
         Background="#F3F4F6">
