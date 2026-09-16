@@ -71,11 +71,65 @@
                         <TextBlock Text="Password"
                                    Style="{StaticResource LabelText}"
                                    Margin="0,0,0,6" />
-                        <PasswordBox x:Name="PasswordBox"
-                                     Style="{StaticResource FormPasswordBox}"
-                                     Height="42"
-                                     IsEnabled="{Binding IsBusy, Converter={StaticResource InvertBoolConverter}}"
-                                     KeyDown="PasswordBox_KeyDown" />
+                        <Border x:Name="PasswordContainer"
+                                Height="42"
+                                Background="White"
+                                BorderBrush="{StaticResource BorderBrush}"
+                                BorderThickness="1"
+                                CornerRadius="6">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+
+                                <!-- Masked Password -->
+                                <PasswordBox x:Name="PasswordBox"
+                                             Grid.Column="0"
+                                             FontSize="14"
+                                             Foreground="{StaticResource TextPrimaryBrush}"
+                                             Background="Transparent"
+                                             BorderThickness="0"
+                                             Padding="10,0"
+                                             VerticalContentAlignment="Center"
+                                             IsEnabled="{Binding IsBusy, Converter={StaticResource InvertBoolConverter}}"
+                                             PasswordChanged="PasswordBox_PasswordChanged"
+                                             GotFocus="PasswordControl_GotFocus"
+                                             LostFocus="PasswordControl_LostFocus"
+                                             KeyDown="PasswordControl_KeyDown" />
+
+                                <!-- Plain Text Password (when eye icon toggled) -->
+                                <TextBox x:Name="PasswordTextBox"
+                                         Grid.Column="0"
+                                         FontSize="14"
+                                         Foreground="{StaticResource TextPrimaryBrush}"
+                                         Background="Transparent"
+                                         BorderThickness="0"
+                                         Padding="10,0"
+                                         VerticalContentAlignment="Center"
+                                         Visibility="Collapsed"
+                                         IsEnabled="{Binding IsBusy, Converter={StaticResource InvertBoolConverter}}"
+                                         TextChanged="PasswordTextBox_TextChanged"
+                                         GotFocus="PasswordControl_GotFocus"
+                                         LostFocus="PasswordControl_LostFocus"
+                                         KeyDown="PasswordControl_KeyDown" />
+
+                                <!-- Eye Icon Toggle Button -->
+                                <Button x:Name="TogglePasswordButton"
+                                        Grid.Column="1"
+                                        Style="{StaticResource PasswordEyeToggleButtonStyle}"
+                                        Margin="0,0,3,0"
+                                        ToolTip="Show password"
+                                        Click="TogglePasswordButton_Click">
+                                    <Path x:Name="EyeIconPath"
+                                          Data="{StaticResource EyeOpenIcon}"
+                                          Fill="{StaticResource TextSecondaryBrush}"
+                                          Width="18"
+                                          Height="18"
+                                          Stretch="Uniform" />
+                                </Button>
+                            </Grid>
+                        </Border>
                     </StackPanel>
 
                     <!-- Existing validation/error message. -->
