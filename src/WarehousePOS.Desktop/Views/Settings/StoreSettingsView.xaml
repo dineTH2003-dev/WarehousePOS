@@ -74,6 +74,10 @@
                              GroupName="SettingsTabs"
                              IsChecked="{Binding IsNotificationTabActive, Mode=TwoWay}"
                              Style="{StaticResource SettingsTabRadioStyle}"/>
+                <RadioButton Content="🖨️  Printer &amp; Bill Printing"
+                             GroupName="SettingsTabs"
+                             IsChecked="{Binding IsPrinterTabActive, Mode=TwoWay}"
+                             Style="{StaticResource SettingsTabRadioStyle}"/>
             </StackPanel>
         </Border>
 
@@ -442,6 +446,57 @@
                     </Border>
 
                 </StackPanel>
+            </ScrollViewer>
+
+            <!-- ── Tab 4: Printer & Bill Printing Settings ─────────── -->
+            <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
+                          Visibility="{Binding IsPrinterTabActive, Converter={StaticResource BoolToVisibilityConverter}}">
+                <Border Style="{StaticResource Card}" VerticalAlignment="Top" MaxWidth="680" HorizontalAlignment="Left">
+                    <StackPanel>
+                        <TextBlock Text="Dot-Matrix &amp; Hardware Printer Configuration" Style="{StaticResource H3}" Margin="0,0,0,4"/>
+                        <TextBlock Text="Configure your Epson LQ-310 ESC/P2 dot-matrix printer, continuous paper, and auto-print preferences."
+                                   Style="{StaticResource CaptionText}" Margin="0,0,0,20"/>
+
+                        <!-- Printer Selection -->
+                        <TextBlock Text="Select Installed Printer" Style="{StaticResource FormLabel}"/>
+                        <Grid Margin="0,0,0,16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="10"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <ComboBox Grid.Column="0" ItemsSource="{Binding AvailablePrinters}" SelectedItem="{Binding SelectedPrinterName, Mode=TwoWay}" Height="38"/>
+                            <Button Grid.Column="2" Content="🔄 Refresh" Style="{StaticResource SecondaryButton}" Command="{Binding RefreshPrintersCommand}" Height="38" Padding="12,0"/>
+                        </Grid>
+
+                        <!-- Auto-Print Toggle -->
+                        <Border Background="#F8FAFC" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="6" Padding="14" Margin="0,0,0,16">
+                            <CheckBox Content="⚡ Automatically print bill when 'Complete Sale' is clicked in POS"
+                                      IsChecked="{Binding IsAutoPrintEnabled, Mode=TwoWay}"
+                                      FontWeight="SemiBold" FontSize="13" Foreground="{StaticResource TextPrimaryBrush}"/>
+                        </Border>
+
+                        <!-- Paper Size Selection -->
+                        <TextBlock Text="Paper Format &amp; Dimensions" Style="{StaticResource FormLabel}"/>
+                        <ComboBox ItemsSource="{Binding AvailablePaperTypes}" SelectedItem="{Binding SelectedPaperType, Mode=TwoWay}" Height="38" Margin="0,0,0,4"/>
+                        <TextBlock Text="Recommended: Continuous_5_5_Inch (Standard 9.5&quot; x 5.5&quot; 2-ply NCR continuous tractor paper)"
+                                   Style="{StaticResource CaptionText}" Margin="0,0,0,16"/>
+
+                        <!-- Feed Lines for Tear-off -->
+                        <TextBlock Text="Tear-Off Form Feed Lines" Style="{StaticResource FormLabel}"/>
+                        <TextBox Text="{Binding FeedLines, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource FormTextBox}" Margin="0,0,0,20"/>
+
+                        <!-- Action Buttons -->
+                        <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                            <Button Content="💾 Save Printer Settings" Style="{StaticResource PrimaryButton}" Command="{Binding SavePrinterSettingsCommand}" Height="40" Padding="20,0" Margin="0,0,12,0"/>
+                            <Button Content="🖨️ Test Print EPSON LQ-310" Style="{StaticResource SuccessButton}" Command="{Binding TestPrintCommand}" Height="40" Padding="20,0"/>
+                        </StackPanel>
+
+                        <!-- Status Feedback -->
+                        <TextBlock Text="{Binding PrinterStatusMessage}" FontWeight="SemiBold" FontSize="13" Margin="0,14,0,0"
+                                   Foreground="{StaticResource SuccessBrush}" TextWrapping="Wrap"/>
+                    </StackPanel>
+                </Border>
             </ScrollViewer>
         </Grid>
 </Page>
