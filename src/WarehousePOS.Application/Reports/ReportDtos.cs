@@ -33,7 +33,16 @@ public sealed record GeneralAnalyticsDto(
     decimal RetailSalesRevenue,
     decimal WholesaleSalesRevenue,
     int RetailSalesCount,
-    int WholesaleSalesCount);
+    int WholesaleSalesCount,
+    decimal CardPaymentTotal = 0m,
+    decimal CreditSalesTotal = 0m,
+    decimal TotalCustomerOutstanding = 0m,
+    decimal GrossMarginPercentage = 0m,
+    string TopCategoryName = "N/A",
+    decimal TopCategoryRevenue = 0m,
+    string TopProductName = "N/A",
+    int TopProductQty = 0);
+
 
 // 2. Daily Sales
 public sealed record DailySalesReportDto(
@@ -128,7 +137,8 @@ public sealed record GrnRecordDto(
     decimal PaidAmount,
     decimal RemainingBalance,
     string Status,
-    IReadOnlyList<GrnLineItemDto> LineItems);
+    IReadOnlyList<GrnLineItemDto> LineItems,
+    string? ContactPerson = null);
 
 public sealed record GrnLineItemDto(
     int ProductId,

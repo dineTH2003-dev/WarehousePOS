@@ -1,4 +1,6 @@
 using System.Collections.ObjectModel;
+using System.Windows;
+using System.Windows.Media;
 using WarehousePOS.Application.Reports;
 using WarehousePOS.Application.Suppliers;
 using WarehousePOS.Desktop.Services;
@@ -41,6 +43,7 @@ public sealed class ReportsViewModel : ViewModelBase
     // Detail Panel Selection State
     private LowStockItemDto? _selectedLowStockItem;
     private GrnRecordDto? _selectedGrnRecord;
+    private ClaimRecordDto? _selectedClaimRecord;
     private SupplierBalanceReportDto? _selectedSupplierBalance;
     private CustomerReportDto? _selectedCustomerReport;
 
@@ -142,7 +145,7 @@ public sealed class ReportsViewModel : ViewModelBase
         {
             if (SetField(ref _selectedSupplierId, value))
             {
-                if (SelectedTabIndex == 4) // GRN tab
+                if (SelectedTabIndex == 3) // GRN tab
                     _ = LoadGrnReportAsync();
             }
         }
@@ -294,6 +297,12 @@ public sealed class ReportsViewModel : ViewModelBase
         set => SetField(ref _selectedGrnRecord, value);
     }
 
+    public ClaimRecordDto? SelectedClaimRecord
+    {
+        get => _selectedClaimRecord;
+        set => SetField(ref _selectedClaimRecord, value);
+    }
+
     public SupplierBalanceReportDto? SelectedSupplierBalance
     {
         get => _selectedSupplierBalance;
@@ -310,8 +319,31 @@ public sealed class ReportsViewModel : ViewModelBase
     public GeneralAnalyticsDto? GeneralAnalytics
     {
         get => _generalAnalytics;
-        private set => SetField(ref _generalAnalytics, value);
+        private set
+        {
+            if (SetField(ref _generalAnalytics, value))
+            {
+                OnPropertyChanged(nameof(CashPaymentPercentage));
+                OnPropertyChanged(nameof(CardPaymentPercentage));
+                OnPropertyChanged(nameof(BankPaymentPercentage));
+                OnPropertyChanged(nameof(ChequePaymentPercentage));
+                OnPropertyChanged(nameof(CreditSalesPercentage));
+                OnPropertyChanged(nameof(RetailSalesPercentage));
+                OnPropertyChanged(nameof(WholesaleSalesPercentage));
+            }
+        }
     }
+
+    // Computed Analytics Percentages for UI Visualization
+    public decimal CashPaymentPercentage => GeneralAnalytics?.NetRevenue > 0 ? Math.Round((GeneralAnalytics.CashPaymentTotal / GeneralAnalytics.NetRevenue) * 100m, 1) : 0m;
+    public decimal CardPaymentPercentage => GeneralAnalytics?.NetRevenue > 0 ? Math.Round((GeneralAnalytics.CardPaymentTotal / GeneralAnalytics.NetRevenue) * 100m, 1) : 0m;
+    public decimal BankPaymentPercentage => GeneralAnalytics?.NetRevenue > 0 ? Math.Round((GeneralAnalytics.BankPaymentTotal / GeneralAnalytics.NetRevenue) * 100m, 1) : 0m;
+    public decimal ChequePaymentPercentage => GeneralAnalytics?.NetRevenue > 0 ? Math.Round((GeneralAnalytics.ChequePaymentTotal / GeneralAnalytics.NetRevenue) * 100m, 1) : 0m;
+    public decimal CreditSalesPercentage => GeneralAnalytics?.NetRevenue > 0 ? Math.Round((GeneralAnalytics.CreditSalesTotal / GeneralAnalytics.NetRevenue) * 100m, 1) : 0m;
+
+    public decimal RetailSalesPercentage => GeneralAnalytics?.NetRevenue > 0 ? Math.Round((GeneralAnalytics.RetailSalesRevenue / GeneralAnalytics.NetRevenue) * 100m, 1) : 0m;
+    public decimal WholesaleSalesPercentage => GeneralAnalytics?.NetRevenue > 0 ? Math.Round((GeneralAnalytics.WholesaleSalesRevenue / GeneralAnalytics.NetRevenue) * 100m, 1) : 0m;
+
 
     public DailySalesReportDto? DailySales
     {
@@ -369,11 +401,14 @@ public sealed class ReportsViewModel : ViewModelBase
     public ObservableCollection<string> BusinessInsights => _businessInsights;
 
     // Filtered Collections
+    private readonly ObservableCollection<ProductClaimSliceDto> _productClaimDistribution = [];
+
     public ObservableCollection<LowStockItemDto> FilteredLowStockItems => _filteredLowStockItems;
     public ObservableCollection<GrnRecordDto> FilteredGrnRecords => _filteredGrnRecords;
     public ObservableCollection<ClaimRecordDto> FilteredClaimRecords => _filteredClaimRecords;
     public ObservableCollection<SupplierBalanceReportDto> FilteredSupplierBalances => _filteredSupplierBalances;
     public ObservableCollection<CustomerReportDto> FilteredCustomerReports => _filteredCustomerReports;
+    public ObservableCollection<ProductClaimSliceDto> ProductClaimDistribution => _productClaimDistribution;
 
     // Chart Maximum Scales
     public decimal MaxSalesTrendRevenue => _salesTrend.Count > 0 ? Math.Max(1m, _salesTrend.Max(x => x.Revenue)) : 1m;
@@ -389,6 +424,8 @@ public sealed class ReportsViewModel : ViewModelBase
     public RelayCommand<string> SetStockFilterCommand { get; }
     public RelayCommand ClearLowStockSelectionCommand { get; }
     public RelayCommand ClearGrnSelectionCommand { get; }
+    public RelayCommand ClearClaimSelectionCommand { get; }
+    public RelayCommand<ClaimRecordDto> SelectClaimCommand { get; }
     public RelayCommand ClearSupplierSelectionCommand { get; }
     public RelayCommand ClearCustomerSelectionCommand { get; }
 
@@ -415,6 +452,8 @@ public sealed class ReportsViewModel : ViewModelBase
 
         ClearLowStockSelectionCommand = new RelayCommand(() => SelectedLowStockItem = null);
         ClearGrnSelectionCommand = new RelayCommand(() => SelectedGrnRecord = null);
+        ClearClaimSelectionCommand = new RelayCommand(() => SelectedClaimRecord = null);
+        SelectClaimCommand = new RelayCommand<ClaimRecordDto>(claim => SelectedClaimRecord = claim);
         ClearSupplierSelectionCommand = new RelayCommand(() => SelectedSupplierBalance = null);
         ClearCustomerSelectionCommand = new RelayCommand(() => SelectedCustomerReport = null);
 
@@ -535,8 +574,17 @@ public sealed class ReportsViewModel : ViewModelBase
         {
             switch (SelectedTabIndex)
             {
-                case 0: // General Analytics
+                case 0: // Sales Summary Overview (Executive Dashboard)
                     GeneralAnalytics = await _reportService.GetGeneralAnalyticsAsync(FromDate, ToDate, ct);
+                    SalesSummary = await _reportService.GetSalesSummaryAsync(FromDate, ToDate, ct);
+                    if (SalesSummary != null)
+                    {
+                        _categoryPerformance.Clear();
+                        foreach (var c in SalesSummary.CategoryPerformance) _categoryPerformance.Add(c);
+                        _fastMovingItems.Clear();
+                        foreach (var fm in SalesSummary.TopProducts) _fastMovingItems.Add(fm);
+                        OnPropertyChanged(nameof(MaxCategoryRevenue));
+                    }
                     var trend = await _reportService.GetSalesTrendAsync(FromDate, ToDate, ct);
                     _salesTrend.Clear();
                     foreach (var t in trend) _salesTrend.Add(t);
@@ -548,14 +596,14 @@ public sealed class ReportsViewModel : ViewModelBase
                     DailySales = await _reportService.GetDailySalesReportAsync(FromDate, ToDate, ct);
                     var trendPoints = await _reportService.GetSalesTrendAsync(FromDate, ToDate, ct);
                     _salesTrend.Clear();
-                    foreach (var t in trendPoints) _salesTrend.Add(t);
+                    foreach (var t in trendPoints.OrderByDescending(x => x.Date)) _salesTrend.Add(t);
                     var hourly = await _reportService.GetHourlySalesAsync(ToDate, ct);
                     _hourlySales.Clear();
                     foreach (var h in hourly) _hourlySales.Add(h);
                     OnPropertyChanged(nameof(MaxHourlyRevenue));
                     break;
 
-                case 2: // Inventory
+                case 2: // Inventory & Stock
                     StockValuation = await _reportService.GetStockValuationReportAsync(ct);
                     var allInventory = await _reportService.GetAllInventoryItemsAsync(ct);
                     _lowStockItems.Clear();
@@ -568,26 +616,11 @@ public sealed class ReportsViewModel : ViewModelBase
                     foreach (var fm in fastMoving) _fastMovingItems.Add(fm);
                     break;
 
-                case 3: // Sales Summary
-                    SalesSummary = await _reportService.GetSalesSummaryAsync(FromDate, ToDate, ct);
-                    if (SalesSummary != null)
-                    {
-                        _categoryPerformance.Clear();
-                        foreach (var c in SalesSummary.CategoryPerformance) _categoryPerformance.Add(c);
-                        _fastMovingItems.Clear();
-                        foreach (var fm in SalesSummary.TopProducts) _fastMovingItems.Add(fm);
-                        _salesTrend.Clear();
-                        foreach (var t in SalesSummary.SalesTrend) _salesTrend.Add(t);
-                        OnPropertyChanged(nameof(MaxCategoryRevenue));
-                        OnPropertyChanged(nameof(MaxSalesTrendRevenue));
-                    }
-                    break;
-
-                case 4: // GRN Reports
+                case 3: // GRN Reports
                     await LoadGrnReportAsync(ct);
                     break;
 
-                case 5: // Claim Items
+                case 4: // Claim Items
                     ClaimReport = await _reportService.GetClaimItemsReportAsync(FromDate, ToDate, ct);
                     _claimRecords.Clear();
                     if (ClaimReport != null)
@@ -597,7 +630,7 @@ public sealed class ReportsViewModel : ViewModelBase
                     ApplyClaimFilters();
                     break;
 
-                case 6: // Supplier Balances
+                case 5: // Supplier Balances
                     SupplierBalanceSummary = await _reportService.GetSupplierBalanceReportSummaryAsync(FromDate, ToDate, ct);
                     _supplierBalances.Clear();
                     if (SupplierBalanceSummary != null)
@@ -608,7 +641,7 @@ public sealed class ReportsViewModel : ViewModelBase
                     OnPropertyChanged(nameof(MaxSupplierPayable));
                     break;
 
-                case 7: // Customer Insights
+                case 6: // Customer Insights
                     CustomerSummary = await _reportService.GetCustomerReportSummaryAsync(FromDate, ToDate, ct);
                     _customerReports.Clear();
                     if (CustomerSummary != null)
@@ -716,6 +749,94 @@ public sealed class ReportsViewModel : ViewModelBase
 
         foreach (var item in query)
             _filteredClaimRecords.Add(item);
+
+        BuildProductClaimDistribution();
+    }
+
+    private void BuildProductClaimDistribution()
+    {
+        _productClaimDistribution.Clear();
+        if (_claimRecords.Count == 0) return;
+
+        var palette = new[] { "#D97706", "#2563EB", "#059669", "#7C3AED", "#DC2626", "#0284C7", "#64748B" };
+
+        var grouped = _claimRecords
+            .GroupBy(x => x.ProductName)
+            .Select(g => new
+            {
+                ProductName = g.Key,
+                SKU = g.First().SKU,
+                Quantity = g.Sum(x => x.Quantity),
+                TotalValue = g.Sum(x => x.TotalValue)
+            })
+            .OrderByDescending(x => x.Quantity)
+            .ToList();
+
+        int totalQty = grouped.Sum(x => x.Quantity);
+        if (totalQty <= 0) return;
+
+        double currentAngle = 0;
+        int colorIndex = 0;
+
+        foreach (var g in grouped)
+        {
+            double pct = (double)g.Quantity / totalQty;
+            double sweep = pct * 360.0;
+            double startAngle = currentAngle;
+            double endAngle = currentAngle + sweep;
+            currentAngle = endAngle;
+
+            string color = palette[colorIndex % palette.Length];
+            colorIndex++;
+
+            var geom = CreatePieSliceGeometry(startAngle, endAngle);
+
+            _productClaimDistribution.Add(new ProductClaimSliceDto(
+                g.ProductName,
+                g.SKU,
+                g.Quantity,
+                g.TotalValue,
+                Math.Round(pct * 100.0, 1),
+                startAngle,
+                endAngle,
+                color,
+                geom));
+        }
+    }
+
+    private static Geometry CreatePieSliceGeometry(double startAngleDegrees, double endAngleDegrees, double radius = 68, Point center = default)
+    {
+        if (center == default) center = new Point(77.5, 77.5);
+
+        double sweepAngle = endAngleDegrees - startAngleDegrees;
+        if (sweepAngle >= 360 || sweepAngle <= -360)
+        {
+            var fullCircle = new EllipseGeometry(center, radius, radius);
+            fullCircle.Freeze();
+            return fullCircle;
+        }
+
+        double startRad = (startAngleDegrees - 90) * Math.PI / 180.0;
+        double endRad = (endAngleDegrees - 90) * Math.PI / 180.0;
+
+        Point p1 = new Point(center.X + radius * Math.Cos(startRad), center.Y + radius * Math.Sin(startRad));
+        Point p2 = new Point(center.X + radius * Math.Cos(endRad), center.Y + radius * Math.Sin(endRad));
+
+        bool isLargeArc = sweepAngle > 180.0;
+
+        var figure = new PathFigure
+        {
+            StartPoint = center,
+            IsClosed = true,
+            IsFilled = true
+        };
+        figure.Segments.Add(new LineSegment(p1, true));
+        figure.Segments.Add(new ArcSegment(p2, new Size(radius, radius), 0, isLargeArc, SweepDirection.Clockwise, true));
+
+        var geometry = new PathGeometry();
+        geometry.Figures.Add(figure);
+        geometry.Freeze();
+        return geometry;
     }
 
     private void ApplySupplierFilters()
@@ -767,25 +888,43 @@ public sealed class ReportsViewModel : ViewModelBase
         {
             var retailShare = (GeneralAnalytics.RetailSalesRevenue / GeneralAnalytics.TotalRevenue) * 100m;
             if (retailShare >= 50)
-                _businessInsights.Add($"✓ Retail sales generated {retailShare:F1}% of overall revenue.");
+                _businessInsights.Add($"✓ Retail sales generated {retailShare:F1}% of overall revenue ({GeneralAnalytics.RetailSalesCount} transactions).");
             else
-                _businessInsights.Add($"✓ Wholesale sales generated {(100m - retailShare):F1}% of overall revenue.");
+                _businessInsights.Add($"✓ Wholesale sales generated {(100m - retailShare):F1}% of overall revenue ({GeneralAnalytics.WholesaleSalesCount} transactions).");
         }
 
-        if (GeneralAnalytics.NetProfit > 0)
+        if (GeneralAnalytics.NetProfit != 0)
         {
             var profitMargin = GeneralAnalytics.TotalRevenue > 0 ? (GeneralAnalytics.NetProfit / GeneralAnalytics.TotalRevenue) * 100m : 0m;
-            _businessInsights.Add($"📈 Net Profit margin stands at {profitMargin:F1}% for the selected period.");
+            if (GeneralAnalytics.NetProfit > 0)
+                _businessInsights.Add($"📈 Net Profit margin stands at {profitMargin:F1}% (Rs. {GeneralAnalytics.NetProfit:N2}) for the selected period.");
+            else
+                _businessInsights.Add($"📉 Period operates at a net margin deficit of {Math.Abs(profitMargin):F1}% (Rs. {GeneralAnalytics.NetProfit:N2}).");
+        }
+
+        if (!string.IsNullOrEmpty(GeneralAnalytics.TopCategoryName) && GeneralAnalytics.TopCategoryName != "N/A")
+        {
+            _businessInsights.Add($"🏆 Top performing category is '{GeneralAnalytics.TopCategoryName}' generating Rs. {GeneralAnalytics.TopCategoryRevenue:N2}.");
+        }
+
+        if (!string.IsNullOrEmpty(GeneralAnalytics.TopProductName) && GeneralAnalytics.TopProductName != "N/A")
+        {
+            _businessInsights.Add($"⭐ Highest moving item is '{GeneralAnalytics.TopProductName}' with {GeneralAnalytics.TopProductQty} units sold.");
+        }
+
+        if (GeneralAnalytics.CreditSalesTotal > 0)
+        {
+            _businessInsights.Add($"💳 Unpaid customer credit issued in period totals Rs. {GeneralAnalytics.CreditSalesTotal:N2}.");
+        }
+
+        if (GeneralAnalytics.TotalCustomerOutstanding > 0)
+        {
+            _businessInsights.Add($"👥 Total outstanding customer debt balance across all accounts is Rs. {GeneralAnalytics.TotalCustomerOutstanding:N2}.");
         }
 
         if (StockValuation != null && StockValuation.LowStockCount > 0)
         {
             _businessInsights.Add($"⚠️ {StockValuation.LowStockCount} products are approaching or below reorder level.");
-        }
-
-        if (SupplierBalanceSummary != null && SupplierBalanceSummary.TotalSupplierPayables > 0)
-        {
-            _businessInsights.Add($"🏢 Outstanding supplier payables total Rs. {SupplierBalanceSummary.TotalSupplierPayables:N2}.");
         }
     }
 
@@ -795,3 +934,14 @@ public sealed class ReportsViewModel : ViewModelBase
             throw new UnauthorizedAccessException("Only an Admin can access Reports.");
     }
 }
+
+public sealed record ProductClaimSliceDto(
+    string ProductName,
+    string SKU,
+    int Quantity,
+    decimal TotalValue,
+    double Percentage,
+    double StartAngle,
+    double EndAngle,
+    string ColorHex,
+    Geometry SliceGeometry);

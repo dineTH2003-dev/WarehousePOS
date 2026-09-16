@@ -71,10 +71,62 @@ public sealed class ReportService(
         decimal retailRev    = retailSales.Sum(s => s.TotalAmount);
         decimal wholesaleRev = wholesaleSales.Sum(s => s.TotalAmount);
 
-        // Payment Breakdown (using actual payment amounts / method approximations)
-        decimal cashTotal   = activeSales.Sum(s => s.AmountPaid);
-        decimal bankTotal   = 0m;
-        decimal chequeTotal = 0m;
+        // Payment Breakdown
+        decimal cashTotal   = activeSales.Where(s => s.PaymentMethod == PaymentMethod.Cash).Sum(s => s.AmountPaid);
+        decimal cardTotal   = activeSales.Where(s => s.PaymentMethod == PaymentMethod.Card).Sum(s => s.AmountPaid);
+        decimal chequeTotal = activeSales.Where(s => s.PaymentMethod == PaymentMethod.Cheque).Sum(s => s.AmountPaid);
+        decimal bankTotal   = activeSales.Where(s => s.PaymentMethod == PaymentMethod.BankTransfer).Sum(s => s.AmountPaid);
+        decimal creditTotal = activeSales.Sum(s => s.UnpaidAmount);
+
+        // Total Customer Receivables
+        var customers = await customerRepo.GetAllAsync(ct);
+        decimal totalCustomerOutstanding = (customers ?? []).Sum(c => c.OutstandingBalance);
+
+        // Gross Margin Percentage
+        decimal grossMarginPct = netRevenue > 0 ? Math.Round(((netRevenue - cogs) / netRevenue) * 100m, 1) : 0m;
+
+        // Top Category & Product Drivers
+        string topCatName = "N/A";
+        decimal topCatRev = 0m;
+        string topProdName = "N/A";
+        int topProdQty = 0;
+
+        if (activeSales.Count > 0)
+        {
+            var categories = await categoryRepo.GetAllAsync(ct);
+            var categoryMap = (categories ?? []).ToDictionary(c => c.Id, c => c.Name);
+
+            var categoryTotals = new Dictionary<string, decimal>();
+            var productTotals = new Dictionary<string, int>();
+
+            foreach (var sale in activeSales)
+            {
+                foreach (var item in sale.Items)
+                {
+                    var prod = item.Product ?? (productMap.TryGetValue(item.ProductId, out var p) ? p : null);
+                    if (prod != null)
+                    {
+                        var catName = categoryMap.TryGetValue(prod.CategoryId, out var cName) ? cName : "General";
+                        categoryTotals[catName] = categoryTotals.GetValueOrDefault(catName) + item.LineTotal;
+                        productTotals[prod.Name] = productTotals.GetValueOrDefault(prod.Name) + item.Quantity;
+                    }
+                }
+            }
+
+            if (categoryTotals.Count > 0)
+            {
+                var topCat = categoryTotals.OrderByDescending(kv => kv.Value).First();
+                topCatName = topCat.Key;
+                topCatRev = topCat.Value;
+            }
+
+            if (productTotals.Count > 0)
+            {
+                var topProd = productTotals.OrderByDescending(kv => kv.Value).First();
+                topProdName = topProd.Key;
+                topProdQty = topProd.Value;
+            }
+        }
 
         return new GeneralAnalyticsDto(
             start,
@@ -95,7 +147,15 @@ public sealed class ReportService(
             retailRev,
             wholesaleRev,
             retailSales.Count,
-            wholesaleSales.Count);
+            wholesaleSales.Count,
+            cardTotal,
+            creditTotal,
+            totalCustomerOutstanding,
+            grossMarginPct,
+            topCatName,
+            topCatRev,
+            topProdName,
+            topProdQty);
     }
 
     // ── 2. Daily Sales & Trend ────────────────────────────────────────────────
@@ -424,7 +484,8 @@ public sealed class ReportService(
                 p.PaidAmount,
                 p.RemainingBalance,
                 status,
-                lineItems);
+                lineItems,
+                p.Supplier?.ContactPerson);
         }).OrderByDescending(g => g.PurchaseDate).ToList();
 
         return new GrnReportDto(totalCount, totalReceived, totalPaid, totalBalance, grnRecords);
