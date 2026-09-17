@@ -22,14 +22,52 @@ public sealed class PurchasingViewModel : ViewModelBase
     private string? _selectedPaymentMethod;
     private string _paidAmountText = "0.00";
     private string _paymentDetails = string.Empty;
-    private string _errorMessage = string.Empty;
     private bool _isBusy;
     private bool _isPaidAmountUserModified;
+    private bool _showAllProducts;
+    private decimal _discountAmount;
+    private string _discountAmountText = "0.00";
+    private string _errorMessage = string.Empty;
 
     public ObservableCollection<SupplierDto> Suppliers          { get; } = [];
     public ObservableCollection<ProductDto>  AvailableProducts  { get; } = [];
     public ObservableCollection<PurchasingItemRowViewModel> LineItems { get; } = [];
     public ObservableCollection<string> PaymentMethods         { get; } = ["Cash", "Cheque", "Bank Transfer", "Credit / Unpaid"];
+
+    public bool ShowAllProducts
+    {
+        get => _showAllProducts;
+        set
+        {
+            if (SetField(ref _showAllProducts, value))
+            {
+                FilterProductsForSelectedSupplier();
+            }
+        }
+    }
+
+    public string DiscountAmountText
+    {
+        get => _discountAmountText;
+        set
+        {
+            if (SetField(ref _discountAmountText, value))
+            {
+                if (decimal.TryParse(value, out var d) && d >= 0)
+                {
+                    _discountAmount = d;
+                }
+                else
+                {
+                    _discountAmount = 0;
+                }
+                OnPropertyChanged(nameof(DiscountAmount));
+                UpdateOrderSummary();
+            }
+        }
+    }
+
+    public decimal DiscountAmount => _discountAmount;
 
     public int? SelectedSupplierId
     {
@@ -97,7 +135,8 @@ public sealed class PurchasingViewModel : ViewModelBase
         set { SetField(ref _isBusy, value); SaveAndReceiveCommand.RaiseCanExecuteChanged(); }
     }
 
-    public decimal TotalOrderCost => LineItems.Sum(i => i.TotalCost);
+    public decimal GrossTotal => LineItems.Sum(i => i.TotalCost);
+    public decimal TotalOrderCost => Math.Max(0, GrossTotal - DiscountAmount);
     public int TotalPaidQuantity => LineItems.Sum(i => i.Quantity);
     public int TotalFreeQuantity => LineItems.Sum(i => i.FreeQuantity);
     public int TotalItemsCount => LineItems.Count;
@@ -171,18 +210,25 @@ public sealed class PurchasingViewModel : ViewModelBase
         var selectedSupplier = Suppliers.FirstOrDefault(s => s.Id == SelectedSupplierId);
         AvailableProducts.Clear();
 
-        if (selectedSupplier is not null && !string.IsNullOrWhiteSpace(selectedSupplier.ProvidedProducts))
+        List<ProductDto> matchedProducts = [];
+        if (!_showAllProducts && selectedSupplier is not null && !string.IsNullOrWhiteSpace(selectedSupplier.ProvidedProducts))
         {
             var tokens = selectedSupplier.ProvidedProducts
                 .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
-            var matchedProducts = _allActiveProducts
+            matchedProducts = _allActiveProducts
                 .Where(p => tokens.Any(t => t.Equals(p.Name, StringComparison.OrdinalIgnoreCase) ||
                                             t.Equals(p.SKU, StringComparison.OrdinalIgnoreCase)))
                 .ToList();
-
-            foreach (var p in matchedProducts) AvailableProducts.Add(p);
         }
+
+        // Fallback: If "Show All Products" is selected, or no products matched, or supplier has no configured products, show all active products!
+        if (_showAllProducts || matchedProducts.Count == 0)
+        {
+            matchedProducts = _allActiveProducts;
+        }
+
+        foreach (var p in matchedProducts) AvailableProducts.Add(p);
 
         foreach (var item in LineItems)
         {
@@ -230,6 +276,7 @@ public sealed class PurchasingViewModel : ViewModelBase
 
     private void UpdateOrderSummary()
     {
+        OnPropertyChanged(nameof(GrossTotal));
         OnPropertyChanged(nameof(TotalOrderCost));
         OnPropertyChanged(nameof(TotalPaidQuantity));
         OnPropertyChanged(nameof(TotalFreeQuantity));
@@ -253,6 +300,15 @@ public sealed class PurchasingViewModel : ViewModelBase
 
         _selectedPaymentMethod = null;
         OnPropertyChanged(nameof(SelectedPaymentMethod));
+
+        _showAllProducts = false;
+        OnPropertyChanged(nameof(ShowAllProducts));
+
+        _discountAmount = 0;
+        _discountAmountText = "0.00";
+        OnPropertyChanged(nameof(DiscountAmountText));
+        OnPropertyChanged(nameof(DiscountAmount));
+        OnPropertyChanged(nameof(GrossTotal));
 
         Notes = string.Empty;
         PaymentDetails = string.Empty;
@@ -327,7 +383,8 @@ public sealed class PurchasingViewModel : ViewModelBase
                 itemRequests,
                 SelectedPaymentMethod!,
                 PaidAmount,
-                string.IsNullOrWhiteSpace(PaymentDetails) ? null : PaymentDetails.Trim());
+                string.IsNullOrWhiteSpace(PaymentDetails) ? null : PaymentDetails.Trim(),
+                DiscountAmount);
 
             var createdPurchase = await _purchaseService.CreateAsync(createReq);
             await _purchaseService.ConfirmAsync(createdPurchase.Id);
