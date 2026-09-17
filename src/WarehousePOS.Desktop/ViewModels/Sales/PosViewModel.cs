@@ -267,8 +267,86 @@ public sealed class PosViewModel : ViewModelBase
         }
     }
 
+    private decimal _deliveryFee;
+    private string  _deliveryFeeText = string.Empty;
+    private string  _customCustomerName = string.Empty;
+    private string  _customCustomerPhone = string.Empty;
+    private string  _customDeliveryAddress = string.Empty;
+    private bool    _saveAsNewCustomer;
+    private bool    _isAdvancePayment;
+
+    public string DeliveryFeeText
+    {
+        get => _deliveryFeeText;
+        set
+        {
+            if (SetField(ref _deliveryFeeText, value))
+            {
+                if (decimal.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out var fee) ||
+                    decimal.TryParse(value, NumberStyles.Any, CultureInfo.CurrentCulture, out fee))
+                {
+                    _deliveryFee = Math.Max(0, fee);
+                }
+                else
+                {
+                    _deliveryFee = 0;
+                }
+                OnPropertyChanged(nameof(DeliveryFee));
+                RecalculateTotals();
+            }
+        }
+    }
+
+    public decimal DeliveryFee => _deliveryFee;
+
+    public string CustomCustomerName
+    {
+        get => _customCustomerName;
+        set => SetField(ref _customCustomerName, value);
+    }
+
+    public string CustomCustomerPhone
+    {
+        get => _customCustomerPhone;
+        set
+        {
+            if (SetField(ref _customCustomerPhone, value))
+            {
+                if (SelectedCustomer is null && !string.IsNullOrWhiteSpace(value))
+                {
+                    CustomerSearchQuery = value;
+                }
+            }
+        }
+    }
+
+    public string CustomDeliveryAddress
+    {
+        get => _customDeliveryAddress;
+        set => SetField(ref _customDeliveryAddress, value);
+    }
+
+    public bool SaveAsNewCustomer
+    {
+        get => _saveAsNewCustomer;
+        set => SetField(ref _saveAsNewCustomer, value);
+    }
+
+    public bool IsAdvancePayment
+    {
+        get => _isAdvancePayment;
+        set
+        {
+            if (SetField(ref _isAdvancePayment, value))
+            {
+                RecalculateTotals();
+                ProcessSaleCommand.RaiseCanExecuteChanged();
+            }
+        }
+    }
+
     public decimal SubTotal      => _cartItems.Sum(i => i.LineTotal);
-    public decimal TotalAmount   => Math.Max(0, SubTotal - OverallDiscount);
+    public decimal TotalAmount   => Math.Max(0, SubTotal - OverallDiscount) + DeliveryFee;
     public decimal ChangeAmount  => Math.Max(0, AmountPaid - TotalAmount);
     public decimal UnpaidBalance => Math.Max(0, TotalAmount - AmountPaid);
     public bool IsDeficit        => AmountPaid < TotalAmount && _cartItems.Count > 0;
@@ -276,17 +354,17 @@ public sealed class PosViewModel : ViewModelBase
 
     public string BalanceLabel =>
         IsDeficit
-            ? (IsRegisteredCustomer ? "Credit Amount:" : "Deficit (Full Payment Required):")
+            ? (IsAdvancePayment ? "Remaining Balance (Advance Order):" : (IsRegisteredCustomer ? "Credit Amount:" : "Deficit (Full Payment Required):"))
             : "Change:";
 
     public string BalanceDisplay =>
         IsDeficit
-            ? (IsRegisteredCustomer ? $"Rs. {UnpaidBalance:N2}" : $"-Rs. {UnpaidBalance:N2}")
+            ? (IsAdvancePayment || IsRegisteredCustomer ? $"Rs. {UnpaidBalance:N2}" : $"-Rs. {UnpaidBalance:N2}")
             : $"Rs. {ChangeAmount:N2}";
 
     public string BalanceColor =>
         IsDeficit
-            ? (IsRegisteredCustomer ? "#D97706" : "#DC2626")
+            ? (IsAdvancePayment ? "#2563EB" : (IsRegisteredCustomer ? "#D97706" : "#DC2626"))
             : "#16A34A";
 
     public string ErrorMessage   { get => _errorMessage;   set { SetField(ref _errorMessage, value); OnPropertyChanged(nameof(HasError)); } }
@@ -361,8 +439,12 @@ public sealed class PosViewModel : ViewModelBase
         if (IsBusy || _cartItems.Count == 0)
             return false;
 
-        // Unregistered walk-in customers MUST pay in full
-        if (SelectedCustomer is null && AmountPaid < TotalAmount)
+        // Unregistered walk-in customers MUST pay in full unless advance payment
+        if (SelectedCustomer is null && !IsAdvancePayment && AmountPaid < TotalAmount)
+            return false;
+
+        // Advance payments require paying at least some amount > 0
+        if (IsAdvancePayment && AmountPaid <= 0)
             return false;
 
         return true;
@@ -567,9 +649,15 @@ public sealed class PosViewModel : ViewModelBase
             return;
         }
 
-        if (SelectedCustomer is null && AmountPaid < TotalAmount)
+        if (SelectedCustomer is null && !IsAdvancePayment && AmountPaid < TotalAmount)
         {
             ErrorMessage = $"Unregistered walk-in customers cannot make credit purchases. Amount paid (Rs. {AmountPaid:N2}) must be at least total amount (Rs. {TotalAmount:N2}).";
+            return;
+        }
+
+        if (IsAdvancePayment && AmountPaid <= 0)
+        {
+            ErrorMessage = "Advance orders require an advance payment amount greater than zero.";
             return;
         }
 
@@ -589,14 +677,24 @@ public sealed class PosViewModel : ViewModelBase
                 AmountPaid,
                 $"POS {SelectedPaymentMethod} Transaction",
                 items,
-                SelectedPaymentMethod);
+                SelectedPaymentMethod,
+                DeliveryFee,
+                string.IsNullOrWhiteSpace(CustomCustomerName) ? null : CustomCustomerName.Trim(),
+                string.IsNullOrWhiteSpace(CustomCustomerPhone) ? null : CustomCustomerPhone.Trim(),
+                string.IsNullOrWhiteSpace(CustomDeliveryAddress) ? null : CustomDeliveryAddress.Trim(),
+                IsAdvancePayment,
+                SaveAsNewCustomer);
 
             var sale = await _saleService.ProcessSaleAsync(req);
             _lastCompletedSale = sale;
             OnPropertyChanged(nameof(HasLastCompletedSale));
             RePrintLastReceiptCommand.RaiseCanExecuteChanged();
 
-            if (sale.AmountPaid < sale.TotalAmount && sale.CustomerId.HasValue)
+            if (sale.Status == SaleStatus.AdvancePaid)
+            {
+                SuccessMessage = $"Advance Order #{sale.Id} created! Advance Paid: Rs. {sale.AmountPaid:N2}, Remaining: Rs. {sale.UnpaidAmount:N2}";
+            }
+            else if (sale.AmountPaid < sale.TotalAmount && sale.CustomerId.HasValue)
             {
                 decimal unpaid = sale.TotalAmount - sale.AmountPaid;
                 SuccessMessage = $"Sale #{sale.Id} processed on credit! Outstanding: Rs. {unpaid:N2}";
@@ -672,6 +770,15 @@ public sealed class PosViewModel : ViewModelBase
         SaleType         = SaleType.Retail;
         ErrorMessage     = string.Empty;
         IsCustomerDropDownOpen = false;
+        _deliveryFee = 0;
+        _deliveryFeeText = string.Empty;
+        OnPropertyChanged(nameof(DeliveryFee));
+        OnPropertyChanged(nameof(DeliveryFeeText));
+        CustomCustomerName = string.Empty;
+        CustomCustomerPhone = string.Empty;
+        CustomDeliveryAddress = string.Empty;
+        SaveAsNewCustomer = false;
+        IsAdvancePayment = false;
         FilterCustomers();
         RecalculateTotals();
     }

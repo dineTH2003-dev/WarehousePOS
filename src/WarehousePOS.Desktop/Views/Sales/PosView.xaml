@@ -179,6 +179,25 @@
                         </Grid>
                     </Border>
 
+                    <!-- Walk-in Customer / Ad-hoc Details (when not selecting a registered customer) -->
+                    <StackPanel Visibility="{Binding IsRegisteredCustomer, Converter={StaticResource InverseBoolToVisibilityConverter}}" Margin="0,0,0,8">
+                        <Grid Margin="0,0,0,4">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="6"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox Grid.Column="0" Text="{Binding CustomCustomerName, UpdateSourceTrigger=PropertyChanged}"
+                                     Tag="Walk-in Name (optional)" ToolTip="Walk-in / delivery customer name"
+                                     Style="{StaticResource FormTextBox}" Height="28" Padding="6,2"/>
+                            <TextBox Grid.Column="2" Text="{Binding CustomCustomerPhone, UpdateSourceTrigger=PropertyChanged}"
+                                     Tag="Phone (optional)" ToolTip="Walk-in / delivery customer phone"
+                                     Style="{StaticResource FormTextBox}" Height="28" Padding="6,2"/>
+                        </Grid>
+                        <CheckBox Content="Save to Customer Directory" IsChecked="{Binding SaveAsNewCustomer}"
+                                  FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" Margin="2,0,0,0"/>
+                    </StackPanel>
+
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
@@ -257,10 +276,30 @@
                                  PreviewMouseLeftButtonDown="TextBox_PreviewMouseLeftButtonDown"/>
                     </Grid>
 
+                    <!-- Delivery Fee (Rs.) -->
+                    <Grid Margin="0,0,0,6">
+                        <TextBlock Text="Delivery Fee (Rs.):" FontSize="14" Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center"/>
+                        <TextBox Text="{Binding DeliveryFeeText, UpdateSourceTrigger=PropertyChanged}" Width="100" HorizontalAlignment="Right" Style="{StaticResource FormTextBox}"
+                                 behaviors:IntegerOnlyBehavior.IsEnabled="True"
+                                 GotFocus="TextBox_GotFocus"
+                                 PreviewMouseLeftButtonDown="TextBox_PreviewMouseLeftButtonDown"/>
+                    </Grid>
+
+                    <!-- Delivery Address (optional) -->
+                    <TextBox Text="{Binding CustomDeliveryAddress, UpdateSourceTrigger=PropertyChanged}"
+                             Tag="Delivery Address (optional)" ToolTip="Enter delivery destination address"
+                             Style="{StaticResource FormTextBox}" Height="28" Padding="6,2" Margin="0,0,0,8"/>
+
                     <Grid Margin="0,0,0,10">
                         <TextBlock Text="TOTAL:" FontSize="18" FontWeight="Bold" Foreground="{StaticResource PrimaryBrush}"/>
                         <TextBlock Text="{Binding TotalAmount, StringFormat=Rs. {0:N2}}" HorizontalAlignment="Right" FontSize="20" FontWeight="Bold" Foreground="{StaticResource PrimaryBrush}"/>
                     </Grid>
+
+                    <!-- Advance Order Toggle -->
+                    <CheckBox Content="📌 Mark as Advance / Layaway Order"
+                              IsChecked="{Binding IsAdvancePayment}"
+                              FontWeight="SemiBold" Foreground="{StaticResource PrimaryDarkBrush}"
+                              Margin="0,0,0,10"/>
 
                     <Grid Margin="0,0,0,10">
                         <TextBlock Text="Payment Method:" FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center"/>
