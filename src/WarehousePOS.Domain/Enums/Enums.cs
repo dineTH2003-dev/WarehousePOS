@@ -64,5 +64,7 @@ public enum SaleStatus
 {
     Completed = 1,
     Cancelled = 2,
-    Returned = 3
+    Returned = 3,
+    AdvancePaid = 4,
+    PartiallyReturned = 5
 }
