@@ -17,7 +17,8 @@ public sealed record ExpenseDto(
     string? ReferenceNo,
     DateTime ExpenseDate,
     int RecordedByUserId,
-    string CreatedBy = "Admin");
+    string CreatedBy = "Admin",
+    int? SaleId = null);
 
 public sealed record CreateExpenseRequest(
     int CategoryId,
@@ -25,14 +26,16 @@ public sealed record CreateExpenseRequest(
     string Description,
     int RecordedByUserId,
     DateTime? ExpenseDate = null,
-    string? ReferenceNo   = null);
+    string? ReferenceNo   = null,
+    int? SaleId           = null);
 
 public sealed record UpdateExpenseRequest(
     int CategoryId,
     decimal Amount,
     string Description,
     DateTime ExpenseDate,
-    string? ReferenceNo = null);
+    string? ReferenceNo = null,
+    int? SaleId         = null);
 
 public sealed record CreateExpenseCategoryRequest(
     string Name,

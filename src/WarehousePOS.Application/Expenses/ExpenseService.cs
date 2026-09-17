@@ -10,6 +10,7 @@ public interface IExpenseService
 {
     Task<IReadOnlyList<ExpenseDto>> GetAllAsync(CancellationToken ct = default);
     Task<IReadOnlyList<ExpenseDto>> GetByDateRangeAsync(DateTime from, DateTime to, CancellationToken ct = default);
+    Task<IReadOnlyList<ExpenseDto>> GetBySaleIdAsync(int saleId, CancellationToken ct = default);
     Task<ExpenseDto> CreateAsync(CreateExpenseRequest request, CancellationToken ct = default);
     Task<ExpenseDto> UpdateAsync(int id, UpdateExpenseRequest request, CancellationToken ct = default);
     Task DeleteAsync(int id, CancellationToken ct = default);
@@ -43,12 +44,19 @@ public sealed class ExpenseService(
         return list.Select(e => Map(e, userMap)).ToList();
     }
 
+    public async Task<IReadOnlyList<ExpenseDto>> GetBySaleIdAsync(int saleId, CancellationToken ct = default)
+    {
+        var userMap = await GetUserMapAsync(ct);
+        var list = await repo.GetAllAsync(ct);
+        return list.Where(e => e.SaleId == saleId).Select(e => Map(e, userMap)).ToList();
+    }
+
     public async Task<ExpenseDto> CreateAsync(CreateExpenseRequest req, CancellationToken ct = default)
     {
         _ = await repo.GetCategoryByIdAsync(req.CategoryId, ct)
             ?? throw new EntityNotFoundException(nameof(ExpenseCategory), req.CategoryId);
 
-        var expense = Expense.Create(req.CategoryId, req.Amount, req.Description, req.RecordedByUserId, req.ExpenseDate, req.ReferenceNo);
+        var expense = Expense.Create(req.CategoryId, req.Amount, req.Description, req.RecordedByUserId, req.ExpenseDate, req.ReferenceNo, req.SaleId);
         await repo.AddAsync(expense, ct);
 
         logger.LogInformation("Expense recorded: Rs. {Amount:N2} ({Description})", expense.Amount, expense.Description);
@@ -65,7 +73,7 @@ public sealed class ExpenseService(
         _ = await repo.GetCategoryByIdAsync(req.CategoryId, ct)
             ?? throw new EntityNotFoundException(nameof(ExpenseCategory), req.CategoryId);
 
-        expense.Update(req.CategoryId, req.Amount, req.Description, req.ReferenceNo, req.ExpenseDate);
+        expense.Update(req.CategoryId, req.Amount, req.Description, req.ReferenceNo, req.ExpenseDate, req.SaleId);
         await repo.UpdateAsync(expense, ct);
 
         logger.LogInformation("Expense #{Id} updated: Rs. {Amount:N2} ({Description})", id, expense.Amount, expense.Description);
@@ -250,7 +258,8 @@ public sealed class ExpenseService(
             e.ReferenceNo,
             e.ExpenseDate,
             e.RecordedByUserId,
-            createdBy);
+            createdBy,
+            e.SaleId);
     }
 
     private static ExpenseCategoryDto MapCategory(ExpenseCategory c) => new(
