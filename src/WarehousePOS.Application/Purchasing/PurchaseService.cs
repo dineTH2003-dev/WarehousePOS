@@ -32,7 +32,7 @@ public sealed class PurchaseService(
         _ = await supplierRepo.GetByIdAsync(req.SupplierId, ct)
             ?? throw new EntityNotFoundException(nameof(Supplier), req.SupplierId);
 
-        var purchase = Purchase.Create(req.SupplierId, req.CreatedByUserId, req.Notes, req.PaymentMethod, req.PaidAmount, req.PaymentDetails);
+        var purchase = Purchase.Create(req.SupplierId, req.CreatedByUserId, req.Notes, req.PaymentMethod, req.PaidAmount, req.PaymentDetails, req.DiscountAmount);
 
         foreach (var item in req.Items)
         {
@@ -130,5 +130,6 @@ public sealed class PurchaseService(
             i.Product?.SKU ?? string.Empty,
             i.Quantity, i.FreeQuantity, i.UnitCost, i.TotalCost,
             i.RetailPrice, i.WholesalePrice, i.ClaimedQuantityReceived)).ToList(),
-        p.PaymentMethod, p.PaidAmount, p.RemainingBalance, p.PaymentDetails);
+        p.PaymentMethod, p.PaidAmount, p.RemainingBalance, p.PaymentDetails,
+        p.SubTotal, p.DiscountAmount);
 }
