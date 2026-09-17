@@ -1,0 +1,49 @@
+<Window x:Class="WarehousePOS.Desktop.Views.Sales.AdjustSaleDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:behaviors="clr-namespace:WarehousePOS.Desktop.Behaviors"
+        Title="Amend Invoice Details (Admin)"
+        Icon="/Resources/Images/app-icon.png"
+        SizeToContent="Height" Width="480"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        Background="{StaticResource BackgroundBrush}">
+
+    <Border Style="{StaticResource Card}" Margin="20" Padding="20">
+        <StackPanel behaviors:ArrowNavigationBehavior.IsEnabled="True">
+            <!-- Header -->
+            <StackPanel Margin="0,0,0,16">
+                <TextBlock Text="Amend Invoice Details" Style="{StaticResource H3}"/>
+                <TextBlock x:Name="InvoiceHeaderInfo" Text="Invoice #123"
+                           Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" Margin="0,4,0,0"/>
+                <TextBlock Text="Update customer contact details, delivery destination, delivery fee, or order notes."
+                           Foreground="{StaticResource TextSecondaryBrush}" FontSize="11" Margin="0,2,0,0" TextWrapping="Wrap"/>
+            </StackPanel>
+
+            <!-- Inputs -->
+            <StackPanel Margin="0,0,0,16">
+                <TextBlock Text="Customer Name" Style="{StaticResource LabelText}" Margin="0,0,0,4"/>
+                <TextBox x:Name="TxtCustomerName" Style="{StaticResource FormTextBox}" MinHeight="36" Margin="0,0,0,10"/>
+
+                <TextBlock Text="Customer Phone" Style="{StaticResource LabelText}" Margin="0,0,0,4"/>
+                <TextBox x:Name="TxtCustomerPhone" Style="{StaticResource FormTextBox}" MinHeight="36" Margin="0,0,0,10"/>
+
+                <TextBlock Text="Delivery Address" Style="{StaticResource LabelText}" Margin="0,0,0,4"/>
+                <TextBox x:Name="TxtDeliveryAddress" Style="{StaticResource FormTextBox}" MinHeight="36" Margin="0,0,0,10"/>
+
+                <TextBlock Text="Delivery Fee (Rs.)" Style="{StaticResource LabelText}" Margin="0,0,0,4"/>
+                <TextBox x:Name="TxtDeliveryFee" Style="{StaticResource FormTextBox}" MinHeight="36" Margin="0,0,0,10"
+                         behaviors:IntegerOnlyBehavior.IsEnabled="True"/>
+
+                <TextBlock Text="Order Notes / Reason for Amendment" Style="{StaticResource LabelText}" Margin="0,0,0,4"/>
+                <TextBox x:Name="TxtNotes" Style="{StaticResource FormTextBox}" MinHeight="36"/>
+            </StackPanel>
+
+            <!-- Action Buttons -->
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Content="Cancel" Style="{StaticResource SecondaryButton}" Margin="0,0,8,0" Click="BtnCancel_Click"/>
+                <Button Content="Save Amendments" Style="{StaticResource PrimaryButton}" Click="BtnSubmit_Click"/>
+            </StackPanel>
+        </StackPanel>
+    </Border>
+</Window>

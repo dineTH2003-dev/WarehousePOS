@@ -1,0 +1,64 @@
+<Window x:Class="WarehousePOS.Desktop.Views.Sales.SalesReturnDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:behaviors="clr-namespace:WarehousePOS.Desktop.Behaviors"
+        Title="Process Sales Item Return &amp; Restock"
+        Icon="/Resources/Images/app-icon.png"
+        SizeToContent="Height" Width="680"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        Background="{StaticResource BackgroundBrush}">
+
+    <Border Style="{StaticResource Card}" Margin="20" Padding="20">
+        <StackPanel behaviors:ArrowNavigationBehavior.IsEnabled="True">
+            <!-- Header -->
+            <StackPanel Margin="0,0,0,14">
+                <TextBlock Text="Return Sold Items &amp; Restock" Style="{StaticResource H3}"/>
+                <TextBlock x:Name="InvoiceHeaderInfo" Text="Invoice #123 — Customer Name"
+                           Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" Margin="0,4,0,0"/>
+                <TextBlock Text="Enter the quantity of each item being returned. Returned items will automatically be restocked into warehouse inventory."
+                           Foreground="{StaticResource TextSecondaryBrush}" FontSize="11" Margin="0,2,0,0" TextWrapping="Wrap"/>
+            </StackPanel>
+
+            <!-- Items Table -->
+            <Border BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="6" Margin="0,0,0,14" MaxHeight="240">
+                <DataGrid x:Name="GridReturnItems" AutoGenerateColumns="False" CanUserAddRows="False"
+                          HeadersVisibility="Column" GridLinesVisibility="Horizontal"
+                          Background="White" RowHeaderWidth="0">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Product / SKU" Binding="{Binding DisplayName}" Width="*" IsReadOnly="True"/>
+                        <DataGridTextColumn Header="Sold" Binding="{Binding SoldQuantity}" Width="55" IsReadOnly="True"/>
+                        <DataGridTextColumn Header="Returned" Binding="{Binding ReturnedQuantity}" Width="65" IsReadOnly="True"/>
+                        <DataGridTextColumn Header="Available" Binding="{Binding AvailableQuantity}" Width="65" IsReadOnly="True"/>
+                        <DataGridTextColumn Header="Unit Price" Binding="{Binding UnitPrice, StringFormat=N2}" Width="85" IsReadOnly="True"/>
+                        <DataGridTemplateColumn Header="Return Qty" Width="85">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBox Text="{Binding ReturnQuantity, UpdateSourceTrigger=PropertyChanged}"
+                                             behaviors:IntegerOnlyBehavior.IsEnabled="True"
+                                             Style="{StaticResource FormTextBox}"
+                                             Height="28" Padding="4,2" HorizontalContentAlignment="Center"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Border>
+
+            <!-- Refund and Reason -->
+            <StackPanel Margin="0,0,0,16">
+                <CheckBox x:Name="ChkRefundCash" Content="💰 Refund Cash to Customer (deduct from register / refund payment)"
+                          IsChecked="True" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,10"/>
+
+                <TextBlock Text="Return Reason / Notes *" Style="{StaticResource LabelText}" Margin="0,0,0,4"/>
+                <TextBox x:Name="TxtReason" Style="{StaticResource FormTextBox}" MinHeight="36" Tag="e.g., Customer returned unused item, wrong model ordered..."/>
+            </StackPanel>
+
+            <!-- Action Buttons -->
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Content="Cancel" Style="{StaticResource SecondaryButton}" Margin="0,0,8,0" Click="BtnCancel_Click"/>
+                <Button Content="Process Return &amp; Restock" Style="{StaticResource DangerButton}" Click="BtnSubmit_Click"/>
+            </StackPanel>
+        </StackPanel>
+    </Border>
+</Window>

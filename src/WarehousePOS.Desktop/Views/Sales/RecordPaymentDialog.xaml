@@ -1,0 +1,64 @@
+<Window x:Class="WarehousePOS.Desktop.Views.Sales.RecordPaymentDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:behaviors="clr-namespace:WarehousePOS.Desktop.Behaviors"
+        Title="Record Payment / Installment"
+        Icon="/Resources/Images/app-icon.png"
+        SizeToContent="Height" Width="460"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        Background="{StaticResource BackgroundBrush}">
+
+    <Border Style="{StaticResource Card}" Margin="20" Padding="20">
+        <StackPanel behaviors:ArrowNavigationBehavior.IsEnabled="True">
+            <!-- Header -->
+            <StackPanel Margin="0,0,0,16">
+                <TextBlock Text="Record Bill Payment" Style="{StaticResource H3}"/>
+                <TextBlock x:Name="InvoiceInfoText" Text="Invoice #123 — Customer Name"
+                           Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" Margin="0,4,0,0"/>
+            </StackPanel>
+
+            <!-- Summary Badges -->
+            <Border Background="#F8FAFC" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="6" Padding="12,8" Margin="0,0,0,16">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="Bill Total" FontSize="11" Foreground="{StaticResource TextMutedBrush}"/>
+                        <TextBlock x:Name="TxtBillTotal" Text="Rs. 0.00" FontWeight="Bold" FontSize="13"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="1">
+                        <TextBlock Text="Paid So Far" FontSize="11" Foreground="{StaticResource TextMutedBrush}"/>
+                        <TextBlock x:Name="TxtAmountPaid" Text="Rs. 0.00" FontWeight="Bold" FontSize="13" Foreground="#16A34A"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Text="Balance Due" FontSize="11" Foreground="{StaticResource TextMutedBrush}"/>
+                        <TextBlock x:Name="TxtBalanceDue" Text="Rs. 0.00" FontWeight="Bold" FontSize="13" Foreground="#DC2626"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- Inputs -->
+            <StackPanel Margin="0,0,0,16">
+                <TextBlock Text="Payment Amount (Rs.) *" Style="{StaticResource LabelText}" Margin="0,0,0,4"/>
+                <TextBox x:Name="TxtPaymentAmount" Style="{StaticResource FormTextBox}" MinHeight="36" Margin="0,0,0,12"
+                         behaviors:IntegerOnlyBehavior.IsEnabled="True"/>
+
+                <TextBlock Text="Payment Method *" Style="{StaticResource LabelText}" Margin="0,0,0,4"/>
+                <ComboBox x:Name="CmbPaymentMethod" Height="36" Margin="0,0,0,12"/>
+
+                <TextBlock Text="Payment Notes / Reference (Optional)" Style="{StaticResource LabelText}" Margin="0,0,0,4"/>
+                <TextBox x:Name="TxtNotes" Style="{StaticResource FormTextBox}" MinHeight="36"/>
+            </StackPanel>
+
+            <!-- Action Buttons -->
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Content="Cancel" Style="{StaticResource SecondaryButton}" Margin="0,0,8,0" Click="BtnCancel_Click"/>
+                <Button Content="Record Payment" Style="{StaticResource SuccessButton}" Click="BtnSubmit_Click"/>
+            </StackPanel>
+        </StackPanel>
+    </Border>
+</Window>
