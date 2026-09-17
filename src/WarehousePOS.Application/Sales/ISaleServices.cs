@@ -23,4 +23,8 @@ public interface ISaleService
     Task<SaleDto> ProcessSaleAsync(CreateSaleRequest request, CancellationToken ct = default);
     Task CancelSaleAsync(int saleId, CancellationToken ct = default);
     Task ClaimWarrantyAsync(int saleId, int productId, int claimQuantity, int userId = 1, string? notes = null, CancellationToken ct = default);
+    Task<IReadOnlyList<SaleDto>> SearchSalesAsync(SaleSearchCriteria criteria, CancellationToken ct = default);
+    Task<SaleDto> RecordPaymentAsync(RecordSalePaymentRequest request, CancellationToken ct = default);
+    Task<SaleDto> ProcessReturnAsync(ProcessSaleReturnRequest request, CancellationToken ct = default);
+    Task<SaleDto> AdjustSaleAsync(AdjustSaleRequest request, CancellationToken ct = default);
 }
