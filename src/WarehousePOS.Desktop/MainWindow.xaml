@@ -152,6 +152,10 @@
                             Content="🖥️  Point of Sale"
                             Style="{StaticResource NavButton}"
                             Click="BtnPos_Click"/>
+                    <Button x:Name="BtnBillHistory"
+                            Content="🧾  Bill History"
+                            Style="{StaticResource NavButton}"
+                            Click="BtnBillHistory_Click"/>
                     <Button x:Name="BtnProducts"
                             Content="📦  Products"
                             Style="{StaticResource NavButton}"
