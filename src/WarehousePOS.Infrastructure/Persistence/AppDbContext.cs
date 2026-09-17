@@ -23,6 +23,7 @@ public sealed class AppDbContext : DbContext
     public DbSet<Customer>          Customers          { get; set; }
     public DbSet<Sale>              Sales              { get; set; }
     public DbSet<SaleItem>          SaleItems          { get; set; }
+    public DbSet<SalePayment>       SalePayments       { get; set; }
     public DbSet<AuditLog>          AuditLogs          { get; set; }
     public DbSet<StoreSetting>      StoreSettings      { get; set; }
     public DbSet<ExpenseCategory>   ExpenseCategories  { get; set; }
