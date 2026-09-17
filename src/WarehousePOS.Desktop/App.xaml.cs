@@ -80,6 +80,7 @@ public partial class App : System.Windows.Application
                     // "cannot resolve Scoped service from root provider" errors.
                     services.AddScoped<LoginViewModel>();
                     services.AddScoped<PosViewModel>();
+                    services.AddScoped<BillHistoryViewModel>();
                     services.AddScoped<ProductListViewModel>();
                     services.AddScoped<ProductFormViewModel>();
                     services.AddScoped<PurchasingViewModel>();
@@ -96,6 +97,7 @@ public partial class App : System.Windows.Application
 
                     // ── Views (Pages) ─────────────────────────────
                     services.AddScoped<PosView>();
+                    services.AddScoped<BillHistoryView>();
                     services.AddScoped<ProductListView>();
                     services.AddScoped<PurchasingView>();
                     services.AddScoped<CategoryManagementView>();
@@ -117,6 +119,7 @@ public partial class App : System.Windows.Application
 
             // ── Register navigation routes ────────────────────────
             NavigationService.Register<PosViewModel,                        Views.Sales.PosView>();
+            NavigationService.Register<BillHistoryViewModel,                Views.Sales.BillHistoryView>();
             NavigationService.Register<ProductListViewModel,                Views.Products.ProductListView>();
             NavigationService.Register<PurchasingViewModel,                 Views.Purchasing.PurchasingView>();
             NavigationService.Register<CategoryManagementViewModel,         Views.Products.CategoryManagementView>();

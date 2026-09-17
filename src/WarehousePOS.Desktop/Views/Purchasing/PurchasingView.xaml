@@ -70,6 +70,12 @@
                                   Tag="Select Supplier">
                             <ComboBox.ToolTip>Choose the supplier providing these products (filters line item products)</ComboBox.ToolTip>
                         </ComboBox>
+                        <CheckBox Content="Show all catalog products (bypass supplier filter)"
+                                  IsChecked="{Binding ShowAllProducts}"
+                                  Margin="0,4,0,0"
+                                  FontSize="11"
+                                  Foreground="{StaticResource TextSecondaryBrush}"
+                                  ToolTip="Check this to display all products in the catalog even if not listed under this supplier"/>
                         <TextBlock Text="{Binding SupplierError}" Foreground="{StaticResource DangerBrush}" FontSize="11" Margin="0,4,0,0"
                                    Visibility="{Binding SupplierError, Converter={StaticResource NullToVisibilityConverter}}" TextWrapping="Wrap"/>
                     </StackPanel>
@@ -228,8 +234,10 @@
                                                       SelectedItem="{Binding Product}"
                                                       Height="38"
                                                       DisplayMemberPath="Name"
-                                                      Tag="Select Product">
-                                                <ComboBox.ToolTip>Select product to purchase</ComboBox.ToolTip>
+                                                      IsEditable="True"
+                                                      IsTextSearchEnabled="True"
+                                                      Tag="Select or search product">
+                                                <ComboBox.ToolTip>Select or type product name/SKU to purchase</ComboBox.ToolTip>
                                             </ComboBox>
                                             <TextBlock Text="{Binding ProductError}" Foreground="{StaticResource DangerBrush}" FontSize="10" Margin="0,2,0,0"
                                                        Visibility="{Binding ProductError, Converter={StaticResource NullToVisibilityConverter}}" TextWrapping="Wrap"/>
@@ -333,9 +341,31 @@
 
                 <!-- Order Totals summary -->
                 <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <!-- Gross Total -->
+                    <Border Background="#F8FAFC" BorderBrush="#E2E8F0" BorderThickness="1" CornerRadius="8" Padding="10,6" Margin="0,0,10,0">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock Text="Gross: " FontSize="12" Foreground="{StaticResource TextSecondaryBrush}"/>
+                            <TextBlock Text="{Binding GrossTotal, StringFormat='Rs. {0:N2}'}" FontWeight="SemiBold" FontSize="13" Foreground="{StaticResource TextPrimaryBrush}"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Discount Input -->
+                    <Border Background="#FFF7ED" BorderBrush="#FED7AA" BorderThickness="1" CornerRadius="8" Padding="10,4" Margin="0,0,10,0">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock Text="Discount (Rs.): " FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" Foreground="#C2410C"/>
+                            <TextBox Width="80" Height="28" MinHeight="28"
+                                     Text="{Binding DiscountAmountText, UpdateSourceTrigger=PropertyChanged}"
+                                     behaviors:DecimalOnlyBehavior.IsEnabled="True"
+                                     Style="{StaticResource FormTextBox}"
+                                     VerticalContentAlignment="Center"
+                                     ToolTip="Enter purchase discount amount in rupees"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Net Total Cost -->
                     <Border Background="#EFF6FF" CornerRadius="8" Padding="12,8" Margin="0,0,16,0">
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="Total Cost: " FontSize="14" Foreground="{StaticResource TextSecondaryBrush}"/>
+                            <TextBlock Text="Net Cost: " FontSize="13" Foreground="{StaticResource TextSecondaryBrush}"/>
                             <TextBlock Text="{Binding TotalOrderCost, StringFormat='Rs. {0:N2}'}" FontWeight="Bold" FontSize="16" Foreground="{StaticResource PrimaryBrush}"/>
                         </StackPanel>
                     </Border>

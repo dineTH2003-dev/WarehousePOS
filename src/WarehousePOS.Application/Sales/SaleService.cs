@@ -50,11 +50,25 @@ public sealed class SaleService(
             customer = await customerRepo.GetByIdAsync(req.CustomerId.Value, ct)
                 ?? throw new EntityNotFoundException(nameof(Customer), req.CustomerId.Value);
         }
+        else if (req.SaveAsNewCustomer && !string.IsNullOrWhiteSpace(req.CustomerName))
+        {
+            customer = Customer.Create(req.CustomerName, req.SaleType, req.CustomerPhone, address: req.DeliveryAddress);
+            await customerRepo.AddAsync(customer, ct);
+        }
 
         Sale sale = null!;
         await unitOfWork.ExecuteInTransactionAsync(async () =>
         {
-            sale = Sale.Create(req.SaleType, req.CreatedByUserId, req.CustomerId, req.Notes, req.PaymentMethod);
+            sale = Sale.Create(
+                req.SaleType,
+                req.CreatedByUserId,
+                customer?.Id ?? req.CustomerId,
+                req.Notes,
+                req.PaymentMethod,
+                req.DeliveryFee,
+                req.CustomerName ?? customer?.Name,
+                req.CustomerPhone ?? customer?.Phone,
+                req.DeliveryAddress ?? customer?.Address);
 
             foreach (var itemReq in req.Items)
             {
@@ -78,7 +92,7 @@ public sealed class SaleService(
                     req.CreatedByUserId,
                     referenceId: sale.Id.ToString(),
                     referenceType: "Sale",
-                    notes: $"POS Sale ({req.SaleType})");
+                    notes: req.IsAdvancePayment ? $"POS Sale ({req.SaleType}) [Advance Order]" : $"POS Sale ({req.SaleType})");
 
                 await movementRepo.AddAsync(movement, ct);
             }
@@ -86,7 +100,12 @@ public sealed class SaleService(
             if (req.DiscountAmount > 0)
                 sale.ApplyDiscount(req.DiscountAmount);
 
-            sale.RecordPayment(req.AmountPaid, isRegisteredCustomer: req.CustomerId.HasValue);
+            sale.RecordPayment(
+                req.AmountPaid,
+                isRegisteredCustomer: customer is not null,
+                isAdvancePayment: req.IsAdvancePayment,
+                userId: req.CreatedByUserId,
+                notes: req.Notes);
 
             if (customer is not null && req.AmountPaid < sale.TotalAmount)
             {
@@ -209,10 +228,130 @@ public sealed class SaleService(
         logger.LogInformation("Warranty claim recorded for Sale #{SaleId}, Product {SKU}, Qty: {Qty}", sale.Id, product.SKU, claimQuantity);
     }
 
+    public async Task<IReadOnlyList<SaleDto>> SearchSalesAsync(SaleSearchCriteria criteria, CancellationToken ct = default)
+    {
+        var sales = await saleRepo.SearchAsync(
+            criteria.FromDate,
+            criteria.ToDate,
+            criteria.SearchTerm,
+            criteria.Status,
+            criteria.PaymentMethod,
+            criteria.SaleType,
+            ct);
+        return sales.Select(Map).ToList();
+    }
+
+    public async Task<SaleDto> RecordPaymentAsync(RecordSalePaymentRequest req, CancellationToken ct = default)
+    {
+        var sale = await saleRepo.GetByIdAsync(req.SaleId, ct)
+            ?? throw new EntityNotFoundException(nameof(Sale), req.SaleId);
+
+        await unitOfWork.ExecuteInTransactionAsync(async () =>
+        {
+            sale.RecordAdditionalPayment(req.Amount, req.PaymentMethod, req.CashierUserId, req.Notes);
+
+            if (sale.CustomerId.HasValue)
+            {
+                var customer = await customerRepo.GetByIdAsync(sale.CustomerId.Value, ct);
+                if (customer is not null)
+                {
+                    customer.DecreaseOutstandingBalance(req.Amount);
+                    await customerRepo.UpdateAsync(customer, ct);
+                }
+            }
+
+            await saleRepo.UpdateAsync(sale, ct);
+        }, ct);
+
+        logger.LogInformation("Additional payment of {Amount:C2} recorded for Sale #{SaleId}", req.Amount, sale.Id);
+        return Map(sale);
+    }
+
+    public async Task<SaleDto> ProcessReturnAsync(ProcessSaleReturnRequest req, CancellationToken ct = default)
+    {
+        var sale = await saleRepo.GetByIdAsync(req.SaleId, ct)
+            ?? throw new EntityNotFoundException(nameof(Sale), req.SaleId);
+
+        if (!req.Items.Any())
+            throw new BusinessRuleViolationException("EmptyReturn", "No items specified for return.");
+
+        await unitOfWork.ExecuteInTransactionAsync(async () =>
+        {
+            decimal totalRefundAmount = 0;
+
+            foreach (var returnItem in req.Items)
+            {
+                if (returnItem.Quantity <= 0) continue;
+
+                var saleItem = sale.Items.FirstOrDefault(i => i.ProductId == returnItem.ProductId)
+                    ?? throw new BusinessRuleViolationException("ItemNotFound", $"Product ID {returnItem.ProductId} is not on invoice #{sale.Id}.");
+
+                var unitRefund = saleItem.UnitPrice - (saleItem.Quantity > 0 ? (saleItem.Discount / saleItem.Quantity) : 0);
+                totalRefundAmount += unitRefund * returnItem.Quantity;
+
+                sale.ProcessReturn(returnItem.ProductId, returnItem.Quantity);
+
+                var product = await productRepo.GetByIdAsync(returnItem.ProductId, ct)
+                    ?? throw new EntityNotFoundException(nameof(Product), returnItem.ProductId);
+
+                var before = product.StockQuantity;
+                product.AddStock(returnItem.Quantity);
+                await productRepo.UpdateAsync(product, ct);
+
+                var movement = InventoryMovement.Create(
+                    product.Id,
+                    MovementType.ReturnIn,
+                    returnItem.Quantity,
+                    before,
+                    req.CashierUserId,
+                    referenceId: sale.Id.ToString(),
+                    referenceType: "SaleReturn",
+                    notes: returnItem.Reason ?? $"Return from Invoice #{sale.Id}");
+
+                await movementRepo.AddAsync(movement, ct);
+            }
+
+            // If sale had unpaid balance, reduce customer debt first
+            if (sale.CustomerId.HasValue && sale.UnpaidAmount > 0)
+            {
+                var customer = await customerRepo.GetByIdAsync(sale.CustomerId.Value, ct);
+                if (customer is not null)
+                {
+                    decimal debtReduction = Math.Min(totalRefundAmount, sale.UnpaidAmount);
+                    customer.DecreaseOutstandingBalance(debtReduction);
+                    await customerRepo.UpdateAsync(customer, ct);
+                }
+            }
+
+            await saleRepo.UpdateAsync(sale, ct);
+        }, ct);
+
+        logger.LogInformation("Processed return for Sale #{SaleId}", sale.Id);
+        return Map(sale);
+    }
+
+    public async Task<SaleDto> AdjustSaleAsync(AdjustSaleRequest req, CancellationToken ct = default)
+    {
+        var sale = await saleRepo.GetByIdAsync(req.SaleId, ct)
+            ?? throw new EntityNotFoundException(nameof(Sale), req.SaleId);
+
+        if (string.IsNullOrWhiteSpace(req.Reason))
+            throw new BusinessRuleViolationException("ReasonRequired", "An adjustment reason is mandatory.");
+
+        await unitOfWork.ExecuteInTransactionAsync(async () =>
+        {
+            sale.AdjustBillDetails(req.DeliveryFee, req.Notes, req.CustomerName, req.CustomerPhone, req.DeliveryAddress);
+            await saleRepo.UpdateAsync(sale, ct);
+        }, ct);
+
+        logger.LogInformation("Sale #{SaleId} adjusted by User {UserId}. Reason: {Reason}", req.SaleId, req.AdminUserId, req.Reason);
+        return Map(sale);
+    }
+
     private static SaleDto Map(Sale s) => new(
         s.Id,
         s.CustomerId,
-        s.Customer?.Name ?? "Walk-in Customer",
+        !string.IsNullOrWhiteSpace(s.CustomerName) ? s.CustomerName : (s.Customer?.Name ?? "Walk-in Customer"),
         s.SaleType,
         s.SaleType.ToString(),
         s.Status,
@@ -235,6 +374,21 @@ public sealed class SaleService(
             i.Product?.WarrantyYears ?? 0,
             i.Product?.WarrantyMonths ?? 0,
             i.Product?.WarrantyDays ?? 0,
-            i.ClaimedQuantity)).ToList(),
-        s.PaymentMethod);
+            i.ClaimedQuantity,
+            i.ReturnedQuantity,
+            i.ReturnableQuantity)).ToList(),
+        s.PaymentMethod,
+        s.DeliveryFee,
+        s.CustomerPhone ?? s.Customer?.Phone,
+        s.DeliveryAddress ?? s.Customer?.Address,
+        s.UnpaidAmount,
+        s.Payments.Select(p => new SalePaymentDto(
+            p.Id,
+            p.SaleId,
+            p.Amount,
+            p.PaymentMethod,
+            p.PaymentMethod.ToString(),
+            p.PaymentDate,
+            p.CashierUserId,
+            p.Notes)).ToList());
 }

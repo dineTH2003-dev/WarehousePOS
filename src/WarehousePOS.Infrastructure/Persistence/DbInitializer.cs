@@ -211,6 +211,65 @@ public static class DbInitializer
                     await db.Database.ExecuteSqlRawAsync("ALTER TABLE Products ADD COLUMN PendingNewWholesalePrice TEXT NULL;");
                 }
             }
+
+            // --- Purchasing enhancements ---
+            if (purchaseColumns.Any() && !purchaseColumns.Contains("DiscountAmount", StringComparer.OrdinalIgnoreCase))
+            {
+                await db.Database.ExecuteSqlRawAsync("ALTER TABLE Purchases ADD COLUMN DiscountAmount TEXT NOT NULL DEFAULT '0';");
+            }
+
+            // --- Sales enhancements: Delivery fee, custom customer, and address ---
+            if (saleColumns.Any())
+            {
+                if (!saleColumns.Contains("DeliveryFee", StringComparer.OrdinalIgnoreCase))
+                {
+                    await db.Database.ExecuteSqlRawAsync("ALTER TABLE Sales ADD COLUMN DeliveryFee TEXT NOT NULL DEFAULT '0';");
+                }
+                if (!saleColumns.Contains("CustomerName", StringComparer.OrdinalIgnoreCase))
+                {
+                    await db.Database.ExecuteSqlRawAsync("ALTER TABLE Sales ADD COLUMN CustomerName TEXT NULL;");
+                }
+                if (!saleColumns.Contains("CustomerPhone", StringComparer.OrdinalIgnoreCase))
+                {
+                    await db.Database.ExecuteSqlRawAsync("ALTER TABLE Sales ADD COLUMN CustomerPhone TEXT NULL;");
+                }
+                if (!saleColumns.Contains("DeliveryAddress", StringComparer.OrdinalIgnoreCase))
+                {
+                    await db.Database.ExecuteSqlRawAsync("ALTER TABLE Sales ADD COLUMN DeliveryAddress TEXT NULL;");
+                }
+            }
+
+            // --- SaleItems: Returned Quantity ---
+            if (saleItemColumns.Any() && !saleItemColumns.Contains("ReturnedQuantity", StringComparer.OrdinalIgnoreCase))
+            {
+                await db.Database.ExecuteSqlRawAsync("ALTER TABLE SaleItems ADD COLUMN ReturnedQuantity INTEGER NOT NULL DEFAULT 0;");
+            }
+
+            // --- Expenses: Linked SaleId ---
+            var expenseColumns = await db.Database
+                .SqlQueryRaw<string>("SELECT name FROM pragma_table_info('Expenses')")
+                .ToListAsync();
+
+            if (expenseColumns.Any() && !expenseColumns.Contains("SaleId", StringComparer.OrdinalIgnoreCase))
+            {
+                await db.Database.ExecuteSqlRawAsync("ALTER TABLE Expenses ADD COLUMN SaleId INTEGER NULL;");
+            }
+
+            // --- SalePayments table for advance and installment payments ---
+            await db.Database.ExecuteSqlRawAsync(@"
+                CREATE TABLE IF NOT EXISTS SalePayments (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    SaleId INTEGER NOT NULL,
+                    Amount TEXT NOT NULL,
+                    PaymentMethod INTEGER NOT NULL,
+                    PaymentDate TEXT NOT NULL,
+                    CashierUserId INTEGER NOT NULL,
+                    Notes TEXT NULL,
+                    FOREIGN KEY (SaleId) REFERENCES Sales (Id) ON DELETE CASCADE
+                );
+                CREATE INDEX IF NOT EXISTS IX_SalePayments_SaleId ON SalePayments (SaleId);
+                CREATE INDEX IF NOT EXISTS IX_SalePayments_PaymentDate ON SalePayments (PaymentDate);
+            ");
         }
         catch (Exception ex)
         {

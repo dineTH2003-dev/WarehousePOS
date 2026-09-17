@@ -20,6 +20,7 @@ public interface ISaleRepository
     Task<IReadOnlyList<Sale>> GetAllAsync(CancellationToken ct = default);
     Task<IReadOnlyList<Sale>> GetByDateRangeAsync(DateTime from, DateTime to, CancellationToken ct = default);
     Task<IReadOnlyList<Sale>> GetByCustomerAsync(int customerId, CancellationToken ct = default);
+    Task<IReadOnlyList<Sale>> SearchAsync(DateTime? from, DateTime? to, string? searchTerm, SaleStatus? status, PaymentMethod? paymentMethod, SaleType? saleType, CancellationToken ct = default);
     Task AddAsync(Sale sale, CancellationToken ct = default);
     Task UpdateAsync(Sale sale, CancellationToken ct = default);
     Task<IReadOnlyList<(int ProductId, string Sku, string Name, string CategoryName, int QuantitySold, decimal TotalSales)>> GetTopSellingProductsAsync(int topCount = 10, CancellationToken ct = default);

@@ -49,6 +49,7 @@ public sealed class SaleRepository(AppDbContext db) : ISaleRepository
         db.Sales
           .AsNoTracking()
           .Include(s => s.Customer)
+          .Include(s => s.Payments)
           .Include(s => s.Items)
           .ThenInclude(i => i.Product);
 
@@ -69,6 +70,40 @@ public sealed class SaleRepository(AppDbContext db) : ISaleRepository
             .Where(s => s.CustomerId == customerId)
             .OrderByDescending(s => s.SaleDate)
             .ToListAsync(ct);
+
+    public async Task<IReadOnlyList<Sale>> SearchAsync(DateTime? from, DateTime? to, string? searchTerm, SaleStatus? status, PaymentMethod? paymentMethod, SaleType? saleType, CancellationToken ct = default)
+    {
+        var query = WithIncludes();
+
+        if (from.HasValue)
+            query = query.Where(s => s.SaleDate >= from.Value);
+
+        if (to.HasValue)
+            query = query.Where(s => s.SaleDate <= to.Value);
+
+        if (status.HasValue)
+            query = query.Where(s => s.Status == status.Value);
+
+        if (paymentMethod.HasValue)
+            query = query.Where(s => s.PaymentMethod == paymentMethod.Value);
+
+        if (saleType.HasValue)
+            query = query.Where(s => s.SaleType == saleType.Value);
+
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+        {
+            var term = searchTerm.Trim().ToLower();
+            query = query.Where(s =>
+                s.Id.ToString().Contains(term) ||
+                (s.Customer != null && s.Customer.Name.ToLower().Contains(term)) ||
+                (s.Customer != null && s.Customer.Phone != null && s.Customer.Phone.Contains(term)) ||
+                (s.CustomerName != null && s.CustomerName.ToLower().Contains(term)) ||
+                (s.CustomerPhone != null && s.CustomerPhone.Contains(term)) ||
+                (s.Notes != null && s.Notes.ToLower().Contains(term)));
+        }
+
+        return await query.OrderByDescending(s => s.SaleDate).ToListAsync(ct);
+    }
 
     public async Task AddAsync(Sale sale, CancellationToken ct = default)
     {

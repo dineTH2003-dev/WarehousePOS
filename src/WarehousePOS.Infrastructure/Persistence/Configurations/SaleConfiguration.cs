@@ -50,6 +50,11 @@ public sealed class SaleConfiguration : IEntityTypeConfiguration<Sale>
         builder.Property(s => s.DiscountAmount).HasColumnType("decimal(18,2)");
         builder.Property(s => s.TotalAmount).HasColumnType("decimal(18,2)");
         builder.Property(s => s.AmountPaid).HasColumnType("decimal(18,2)");
+        builder.Property(s => s.DeliveryFee).HasColumnType("decimal(18,2)").HasDefaultValue(0m);
+
+        builder.Property(s => s.CustomerName).HasMaxLength(100);
+        builder.Property(s => s.CustomerPhone).HasMaxLength(30);
+        builder.Property(s => s.DeliveryAddress).HasMaxLength(250);
 
         builder.Property(s => s.Notes).HasMaxLength(1000);
 
@@ -62,6 +67,11 @@ public sealed class SaleConfiguration : IEntityTypeConfiguration<Sale>
                .WithOne()
                .HasForeignKey(i => i.SaleId)
                .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasMany(s => s.Payments)
+               .WithOne()
+               .HasForeignKey(p => p.SaleId)
+               .OnDelete(DeleteBehavior.Cascade);
     }
 }
 
@@ -73,10 +83,26 @@ public sealed class SaleItemConfiguration : IEntityTypeConfiguration<SaleItem>
 
         builder.Property(i => i.UnitPrice).HasColumnType("decimal(18,2)");
         builder.Property(i => i.Discount).HasColumnType("decimal(18,2)");
+        builder.Property(i => i.ReturnedQuantity).HasDefaultValue(0);
 
         builder.HasOne(i => i.Product)
                .WithMany()
                .HasForeignKey(i => i.ProductId)
                .OnDelete(DeleteBehavior.Restrict);
+    }
+}
+
+public sealed class SalePaymentConfiguration : IEntityTypeConfiguration<SalePayment>
+{
+    public void Configure(EntityTypeBuilder<SalePayment> builder)
+    {
+        builder.HasKey(p => p.Id);
+
+        builder.Property(p => p.Amount).HasColumnType("decimal(18,2)");
+        builder.Property(p => p.PaymentMethod).HasConversion<int>();
+        builder.Property(p => p.Notes).HasMaxLength(250);
+
+        builder.HasIndex(p => p.SaleId);
+        builder.HasIndex(p => p.PaymentDate);
     }
 }

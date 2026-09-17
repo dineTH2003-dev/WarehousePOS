@@ -1,0 +1,315 @@
+<Page x:Class="WarehousePOS.Desktop.Views.Sales.BillHistoryView"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:behaviors="clr-namespace:WarehousePOS.Desktop.Behaviors"
+      Title="Bill History &amp; Invoice Explorer"
+      KeepAlive="True"
+      Background="{StaticResource BackgroundBrush}">
+
+    <Grid Margin="24" behaviors:ArrowNavigationBehavior.IsEnabled="True">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Top Header -->
+        <StackPanel Grid.Row="0" Margin="0,0,0,16">
+            <TextBlock Text="Bill History &amp; Invoices" Style="{StaticResource H2}"/>
+            <TextBlock Text="Inspect past sales, track layaway / advance installments, process returns, and reprint receipts"
+                       Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" Margin="0,2,0,0"/>
+        </StackPanel>
+
+        <!-- KPI / Summary Cards -->
+        <Grid Grid.Row="1" Margin="0,0,0,16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="14"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="14"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Card 1: Count -->
+            <Border Grid.Column="0" Style="{StaticResource Card}" Padding="16,12">
+                <StackPanel>
+                    <TextBlock Text="Total Invoices" FontSize="12" Foreground="{StaticResource TextMutedBrush}" FontWeight="SemiBold"/>
+                    <TextBlock Text="{Binding TotalSalesCount}" FontSize="24" FontWeight="Bold" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,4,0,0"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Card 2: Revenue -->
+            <Border Grid.Column="2" Style="{StaticResource Card}" Padding="16,12">
+                <StackPanel>
+                    <TextBlock Text="Total Paid / Collected" FontSize="12" Foreground="{StaticResource TextMutedBrush}" FontWeight="SemiBold"/>
+                    <TextBlock Text="{Binding TotalRevenue, StringFormat=Rs. {0:N2}}" FontSize="24" FontWeight="Bold" Foreground="#16A34A" Margin="0,4,0,0"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Card 3: Outstanding -->
+            <Border Grid.Column="4" Style="{StaticResource Card}" Padding="16,12">
+                <StackPanel>
+                    <TextBlock Text="Total Outstanding / Credit" FontSize="12" Foreground="{StaticResource TextMutedBrush}" FontWeight="SemiBold"/>
+                    <TextBlock Text="{Binding TotalOutstanding, StringFormat=Rs. {0:N2}}" FontSize="24" FontWeight="Bold" Foreground="#DC2626" Margin="0,4,0,0"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <!-- Filter Row -->
+        <Border Grid.Row="2" Style="{StaticResource Card}" Margin="0,0,0,16" Padding="14,12">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="2*"/>
+                    <ColumnDefinition Width="10"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="6"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="10"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="6"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="10"/>
+                    <ColumnDefinition Width="1.2*"/>
+                    <ColumnDefinition Width="10"/>
+                    <ColumnDefinition Width="1.2*"/>
+                    <ColumnDefinition Width="10"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="6"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Search Input -->
+                <TextBox Grid.Column="0" Text="{Binding SearchQuery, UpdateSourceTrigger=PropertyChanged}"
+                         Style="{StaticResource FormTextBox}" Height="34"
+                         Tag="Search Invoice #, Customer, Phone, Notes..."
+                         ToolTip="Search by bill number, customer name, phone, or notes"/>
+
+                <!-- From Date -->
+                <TextBlock Grid.Column="2" Text="From:" VerticalAlignment="Center" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}"/>
+                <DatePicker Grid.Column="4" SelectedDate="{Binding FromDate}" Width="115" Height="34"/>
+
+                <!-- To Date -->
+                <TextBlock Grid.Column="6" Text="To:" VerticalAlignment="Center" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}"/>
+                <DatePicker Grid.Column="8" SelectedDate="{Binding ToDate}" Width="115" Height="34"/>
+
+                <!-- Status Filter -->
+                <ComboBox Grid.Column="10" ItemsSource="{Binding StatusOptions}"
+                          SelectedItem="{Binding SelectedStatusOption}"
+                          DisplayMemberPath="DisplayName" Height="34"/>
+
+                <!-- Payment Method Filter -->
+                <ComboBox Grid.Column="12" ItemsSource="{Binding PaymentOptions}"
+                          SelectedItem="{Binding SelectedPaymentOption}"
+                          DisplayMemberPath="DisplayName" Height="34"/>
+
+                <!-- Filter Actions -->
+                <Button Grid.Column="14" Content="Search" Style="{StaticResource PrimaryButton}" Command="{Binding SearchCommand}" Height="34" Padding="14,0"/>
+                <Button Grid.Column="16" Content="Reset" Style="{StaticResource SecondaryButton}" Command="{Binding ResetFiltersCommand}" Height="34" Padding="12,0"/>
+            </Grid>
+        </Border>
+
+        <!-- Main Content Area (Left: Sales Grid, Right: Details Drawer) -->
+        <Grid Grid.Row="3">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1.2*"/>
+                <ColumnDefinition Width="16"/>
+                <ColumnDefinition Width="1*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Left Panel: Invoices DataGrid -->
+            <Border Grid.Column="0" Style="{StaticResource Card}" Padding="0">
+                <DataGrid ItemsSource="{Binding Sales}"
+                          SelectedItem="{Binding SelectedSale, Mode=TwoWay}"
+                          AutoGenerateColumns="False"
+                          CanUserAddRows="False"
+                          IsReadOnly="True"
+                          SelectionMode="Single"
+                          HeadersVisibility="Column"
+                          GridLinesVisibility="Horizontal">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Inv #" Binding="{Binding Id}" Width="65"/>
+                        <DataGridTextColumn Header="Date" Binding="{Binding SaleDate, Converter={StaticResource UtcToLocalDateTimeConverter}}" Width="140"/>
+                        <DataGridTemplateColumn Header="Customer" Width="*">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <StackPanel VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding CustomerName}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                                        <TextBlock Text="{Binding CustomerPhone}" FontSize="11" Foreground="{StaticResource TextMutedBrush}"
+                                                   Visibility="{Binding CustomerPhone, Converter={StaticResource NullToVisibilityConverter}}"/>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTextColumn Header="Type" Binding="{Binding SaleTypeLabel}" Width="80"/>
+                        <DataGridTemplateColumn Header="Status" Width="110">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Border CornerRadius="12" Padding="8,3" HorizontalAlignment="Left" Background="#EFF6FF">
+                                        <TextBlock Text="{Binding StatusLabel}" FontSize="11" FontWeight="SemiBold" Foreground="#1D4ED8"/>
+                                    </Border>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTextColumn Header="Total" Binding="{Binding TotalAmount, StringFormat=Rs. {0:N2}}" Width="100"/>
+                        <DataGridTextColumn Header="Paid" Binding="{Binding AmountPaid, StringFormat=Rs. {0:N2}}" Width="95"/>
+                        <DataGridTemplateColumn Header="Balance Due" Width="95">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding UnpaidAmount, StringFormat=Rs. {0:N2}}"
+                                               FontWeight="SemiBold"
+                                               Foreground="{Binding UnpaidAmount, Converter={StaticResource ValueToWidthConverter}}"
+                                               VerticalAlignment="Center">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Foreground" Value="#16A34A"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding UnpaidAmount}" Value="0">
+                                                        <Setter Property="Foreground" Value="#64748B"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Border>
+
+            <!-- Right Panel: Invoice Detail Drawer -->
+            <Border Grid.Column="2" Style="{StaticResource Card}" Padding="16">
+                <Grid>
+                    <!-- Empty state when no sale selected -->
+                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center"
+                                Visibility="{Binding HasSelectedSale, Converter={StaticResource InverseBoolToVisibilityConverter}}">
+                        <TextBlock Text="🧾" FontSize="48" HorizontalAlignment="Center" Margin="0,0,0,8"/>
+                        <TextBlock Text="No Invoice Selected" Style="{StaticResource H3}" HorizontalAlignment="Center"/>
+                        <TextBlock Text="Click an invoice in the table on the left to view line items, payments, returns, and delivery details."
+                                   Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" TextAlignment="Center" MaxWidth="280" Margin="0,4,0,0"/>
+                    </StackPanel>
+
+                    <!-- Selected Invoice Content -->
+                    <Grid Visibility="{Binding HasSelectedSale, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Invoice Header Details -->
+                        <Grid Grid.Row="0" Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="{Binding SelectedSale.Id, StringFormat=Invoice #{0}}" Style="{StaticResource H3}" VerticalAlignment="Center"/>
+                                    <Border CornerRadius="12" Padding="8,2" Margin="10,0,0,0" Background="#EFF6FF" VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding SelectedSale.StatusLabel}" FontSize="11" FontWeight="Bold" Foreground="#1D4ED8"/>
+                                    </Border>
+                                </StackPanel>
+                                <TextBlock Text="{Binding SelectedSale.SaleDate, Converter={StaticResource UtcToLocalDateTimeConverter}}"
+                                           Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" Margin="0,2,0,0"/>
+                                <TextBlock Text="{Binding SelectedSale.CustomerName, StringFormat=Customer: {0}}"
+                                           FontWeight="SemiBold" FontSize="13" Margin="0,4,0,0"/>
+                                <TextBlock Text="{Binding SelectedSale.CustomerPhone, StringFormat=Phone: {0}}"
+                                           Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"
+                                           Visibility="{Binding SelectedSale.CustomerPhone, Converter={StaticResource NullToVisibilityConverter}}"/>
+                                <TextBlock Text="{Binding SelectedSale.DeliveryAddress, StringFormat=Deliver To: {0}}"
+                                           Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"
+                                           Visibility="{Binding SelectedSale.DeliveryAddress, Converter={StaticResource NullToVisibilityConverter}}"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- Action Toolbar -->
+                        <WrapPanel Grid.Row="1" Margin="0,0,0,12">
+                            <Button Content="🖨️ Print Bill" Style="{StaticResource SecondaryButton}" Command="{Binding RePrintReceiptCommand}" Margin="0,0,6,6"/>
+                            <Button Content="💳 Settle / Pay" Style="{StaticResource SuccessButton}" Command="{Binding RecordPaymentCommand}" Margin="0,0,6,6"
+                                    Visibility="{Binding CanRecordPayment, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                            <Button Content="↩️ Return Items" Style="{StaticResource DangerButton}" Command="{Binding ProcessReturnCommand}" Margin="0,0,6,6"
+                                    Visibility="{Binding CanProcessReturn, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                            <Button Content="💸 Add Outcome" Style="{StaticResource SecondaryButton}" Command="{Binding AddExpenseCommand}" Margin="0,0,6,6"/>
+                            <Button Content="✏️ Amend Details" Style="{StaticResource SecondaryButton}" Command="{Binding AdjustSaleCommand}" Margin="0,0,6,6"
+                                    Visibility="{Binding IsAdmin, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                        </WrapPanel>
+
+                        <!-- Tabbed / Sectional Data: Items, Payments, Outcomes -->
+                        <TabControl Grid.Row="2" Margin="0,0,0,12">
+                            <!-- Tab 1: Line Items -->
+                            <TabItem Header="Items">
+                                <DataGrid ItemsSource="{Binding SelectedSale.Items}" AutoGenerateColumns="False" CanUserAddRows="False"
+                                          IsReadOnly="True" HeadersVisibility="Column" GridLinesVisibility="Horizontal" Margin="0,6,0,0">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="Product" Binding="{Binding ProductName}" Width="*"/>
+                                        <DataGridTextColumn Header="Qty" Binding="{Binding Quantity}" Width="45"/>
+                                        <DataGridTextColumn Header="Price" Binding="{Binding UnitPrice, StringFormat=N2}" Width="75"/>
+                                        <DataGridTextColumn Header="Ret." Binding="{Binding ReturnedQuantity}" Width="45"/>
+                                        <DataGridTextColumn Header="Total" Binding="{Binding LineTotal, StringFormat=N2}" Width="80"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </TabItem>
+
+                            <!-- Tab 2: Payments History -->
+                            <TabItem Header="Payments">
+                                <DataGrid ItemsSource="{Binding SelectedSale.Payments}" AutoGenerateColumns="False" CanUserAddRows="False"
+                                          IsReadOnly="True" HeadersVisibility="Column" GridLinesVisibility="Horizontal" Margin="0,6,0,0">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="Date" Binding="{Binding PaymentDate, Converter={StaticResource UtcToLocalDateTimeConverter}}" Width="125"/>
+                                        <DataGridTextColumn Header="Method" Binding="{Binding PaymentMethodLabel}" Width="80"/>
+                                        <DataGridTextColumn Header="Amount" Binding="{Binding Amount, StringFormat=Rs. {0:N2}}" Width="95"/>
+                                        <DataGridTextColumn Header="Notes" Binding="{Binding Notes}" Width="*"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </TabItem>
+
+                            <!-- Tab 3: Extra Outcomes / Expenses -->
+                            <TabItem Header="Extra Outcomes">
+                                <DataGrid ItemsSource="{Binding SelectedSaleExpenses}" AutoGenerateColumns="False" CanUserAddRows="False"
+                                          IsReadOnly="True" HeadersVisibility="Column" GridLinesVisibility="Horizontal" Margin="0,6,0,0">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="Category" Binding="{Binding CategoryName}" Width="100"/>
+                                        <DataGridTextColumn Header="Amount" Binding="{Binding Amount, StringFormat=Rs. {0:N2}}" Width="85"/>
+                                        <DataGridTextColumn Header="Description" Binding="{Binding Description}" Width="*"/>
+                                        <DataGridTextColumn Header="By" Binding="{Binding CreatedBy}" Width="75"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </TabItem>
+                        </TabControl>
+
+                        <!-- Financial Summary Box -->
+                        <Border Grid.Row="3" Background="#F8FAFC" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="6" Padding="12,8">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="Sub Total" FontSize="11" Foreground="{StaticResource TextMutedBrush}"/>
+                                    <TextBlock Text="{Binding SelectedSale.SubTotal, StringFormat=Rs. {0:N2}}" FontWeight="SemiBold" FontSize="13"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1">
+                                    <TextBlock Text="Delivery Fee" FontSize="11" Foreground="{StaticResource TextMutedBrush}"/>
+                                    <TextBlock Text="{Binding SelectedSale.DeliveryFee, StringFormat=Rs. {0:N2}}" FontWeight="SemiBold" FontSize="13"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="Total Bill" FontSize="11" Foreground="{StaticResource TextMutedBrush}"/>
+                                    <TextBlock Text="{Binding SelectedSale.TotalAmount, StringFormat=Rs. {0:N2}}" FontWeight="Bold" FontSize="14" Foreground="{StaticResource PrimaryBrush}"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="3">
+                                    <TextBlock Text="Balance Due" FontSize="11" Foreground="{StaticResource TextMutedBrush}"/>
+                                    <TextBlock Text="{Binding SelectedSale.UnpaidAmount, StringFormat=Rs. {0:N2}}" FontWeight="Bold" FontSize="14" Foreground="#DC2626"/>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+                    </Grid>
+                </Grid>
+            </Border>
+        </Grid>
+    </Grid>
+</Page>

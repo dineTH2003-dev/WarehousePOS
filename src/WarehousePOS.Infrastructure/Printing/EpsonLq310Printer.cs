@@ -279,9 +279,15 @@ public sealed class EpsonLq310Printer(
         sb.AppendLine(new string('=', width));
 
         string customerStr = string.IsNullOrWhiteSpace(sale.CustomerName) ? "Walk-in Customer" : sale.CustomerName;
+        if (!string.IsNullOrWhiteSpace(sale.CustomerPhone))
+            customerStr += $" ({sale.CustomerPhone})";
         string dateStr = sale.SaleDate.ToLocalTime().ToString("yyyy-MM-dd HH:mm");
         sb.AppendLine($"Invoice #: {sale.Id,-20} Date: {dateStr,48}");
         sb.AppendLine($"Customer : {customerStr,-35} Type: {sale.SaleTypeLabel,-15} Pay: {sale.PaymentMethod}");
+        if (!string.IsNullOrWhiteSpace(sale.DeliveryAddress))
+        {
+            sb.AppendLine($"Delivery To: {sale.DeliveryAddress}");
+        }
         sb.AppendLine(new string('-', width));
         sb.AppendLine(string.Format("{0,-3} {1,-38} {2,8} {3,12} {4,14}", "#", "Item Description", "Qty", "Unit Price", "Line Total"));
         sb.AppendLine(new string('-', width));
@@ -303,11 +309,19 @@ public sealed class EpsonLq310Printer(
         sb.AppendLine(string.Format("{0,64} {1,15:N2}", "Sub Total:", sale.SubTotal));
         if (sale.DiscountAmount > 0)
             sb.AppendLine(string.Format("{0,64} {1,15:N2}", "Discount:", -sale.DiscountAmount));
+        if (sale.DeliveryFee > 0)
+            sb.AppendLine(string.Format("{0,64} {1,15:N2}", "Delivery Fee:", sale.DeliveryFee));
         sb.AppendLine(string.Format("{0,64} {1,15:N2}", "TOTAL AMOUNT (LKR):", sale.TotalAmount));
         sb.AppendLine(string.Format("{0,64} {1,15:N2}", "Amount Tendered:", sale.AmountPaid));
         sb.AppendLine(string.Format("{0,64} {1,15:N2}", "Change Due:", sale.Change));
 
-        if (sale.AmountPaid < sale.TotalAmount)
+        if (sale.Status == Domain.Enums.SaleStatus.AdvancePaid || sale.UnpaidAmount > 0)
+        {
+            decimal balDue = sale.UnpaidAmount > 0 ? sale.UnpaidAmount : Math.Max(0, sale.TotalAmount - sale.AmountPaid);
+            string balLabel = sale.Status == Domain.Enums.SaleStatus.AdvancePaid ? "ADVANCE BAL DUE:" : "OUTSTANDING CREDIT:";
+            sb.AppendLine(string.Format("{0,64} {1,15:N2}", balLabel, balDue));
+        }
+        else if (sale.AmountPaid < sale.TotalAmount)
         {
             decimal creditDue = sale.TotalAmount - sale.AmountPaid;
             sb.AppendLine(string.Format("{0,64} {1,15:N2}", "OUTSTANDING CREDIT:", creditDue));
@@ -344,6 +358,11 @@ public sealed class EpsonLq310Printer(
         }
 
         sb.AppendLine(new string('-', width));
+        if (purchase.DiscountAmount > 0)
+        {
+            sb.AppendLine(string.Format("{0,64} {1,15:N2}", "Sub Total:", purchase.SubTotal));
+            sb.AppendLine(string.Format("{0,64} {1,15:N2}", "Discount:", -purchase.DiscountAmount));
+        }
         sb.AppendLine(string.Format("{0,64} {1,15:N2}", "TOTAL COST:", purchase.TotalAmount));
         sb.AppendLine(new string('=', width));
 
