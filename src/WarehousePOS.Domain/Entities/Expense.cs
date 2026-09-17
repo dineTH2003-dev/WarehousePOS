@@ -45,6 +45,7 @@ public sealed class Expense : AggregateRoot
     public string? ReferenceNo     { get; private set; }
     public DateTime ExpenseDate    { get; private set; }
     public int RecordedByUserId    { get; private set; }
+    public int? SaleId             { get; private set; }
 
     public static Expense Create(
         int categoryId,
@@ -52,7 +53,8 @@ public sealed class Expense : AggregateRoot
         string description,
         int recordedByUserId,
         DateTime? expenseDate = null,
-        string? referenceNo   = null)
+        string? referenceNo   = null,
+        int? saleId           = null)
     {
         if (categoryId <= 0) throw new ArgumentOutOfRangeException(nameof(categoryId));
         if (amount <= 0)     throw new ArgumentOutOfRangeException(nameof(amount));
@@ -65,7 +67,8 @@ public sealed class Expense : AggregateRoot
             Description      = description.Trim(),
             RecordedByUserId = recordedByUserId,
             ExpenseDate      = expenseDate ?? DateTime.UtcNow,
-            ReferenceNo      = referenceNo?.Trim()
+            ReferenceNo      = referenceNo?.Trim(),
+            SaleId           = saleId
         };
     }
 
@@ -74,7 +77,8 @@ public sealed class Expense : AggregateRoot
         decimal amount,
         string description,
         string? referenceNo,
-        DateTime expenseDate)
+        DateTime expenseDate,
+        int? saleId = null)
     {
         if (categoryId <= 0) throw new ArgumentOutOfRangeException(nameof(categoryId));
         if (amount <= 0)     throw new ArgumentOutOfRangeException(nameof(amount));
@@ -85,6 +89,13 @@ public sealed class Expense : AggregateRoot
         Description = description.Trim();
         ReferenceNo = referenceNo?.Trim();
         ExpenseDate = expenseDate;
+        SaleId      = saleId;
+        SetUpdatedAt();
+    }
+
+    public void LinkToSale(int saleId)
+    {
+        SaleId = saleId;
         SetUpdatedAt();
     }
 }
