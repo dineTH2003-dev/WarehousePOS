@@ -34,7 +34,10 @@ public sealed class PurchasingViewModel : ViewModelBase
     public ObservableCollection<ProductDto> AvailableProducts { get; } = [];
     public ObservableCollection<PurchasingItemRowViewModel> LineItems { get; } = [];
     public ObservableCollection<SupplierProductEntitlementDto> Entitlements { get; } = [];
+    public ObservableCollection<ProductEntitlementGroupViewModel> GroupedEntitlements { get; } = [];
     public ObservableCollection<string> PaymentMethods { get; } = ["Cash", "Cheque", "Bank Transfer", "Credit / Unpaid"];
+
+    public bool HasEntitlements => GroupedEntitlements.Count > 0;
 
     public bool ShowAllProducts
     {
@@ -78,6 +81,8 @@ public sealed class PurchasingViewModel : ViewModelBase
         {
             if (SetField(ref _selectedSupplierId, value))
             {
+                _showAllProducts = false;
+                OnPropertyChanged(nameof(ShowAllProducts));
                 FilterProductsForSelectedSupplier();
                 OnPropertyChanged(nameof(SupplierError));
                 _ = LoadEntitlementsForSelectedSupplierAsync();
@@ -138,8 +143,10 @@ public sealed class PurchasingViewModel : ViewModelBase
         set { SetField(ref _isBusy, value); SaveAndReceiveCommand.RaiseCanExecuteChanged(); }
     }
 
-    public decimal GrossTotal => LineItems.Sum(i => i.TotalCost);
-    public decimal TotalOrderCost => Math.Max(0, GrossTotal - DiscountAmount);
+    public decimal GrossTotal => LineItems.Sum(i => i.BaseGrossCost);
+    public decimal LineDiscountsTotal => LineItems.Sum(i => i.LineDiscountAmount);
+    public decimal TotalDiscountAmount => LineDiscountsTotal;
+    public decimal TotalOrderCost => Math.Max(0, GrossTotal - TotalDiscountAmount);
     public int TotalPaidQuantity => LineItems.Sum(i => i.Quantity);
     public int TotalFreeQuantity => LineItems.Sum(i => i.FreeQuantity);
     public int TotalItemsCount => LineItems.Count;
@@ -218,6 +225,9 @@ public sealed class PurchasingViewModel : ViewModelBase
     public async Task LoadEntitlementsForSelectedSupplierAsync()
     {
         Entitlements.Clear();
+        GroupedEntitlements.Clear();
+        OnPropertyChanged(nameof(HasEntitlements));
+
         if (!SelectedSupplierId.HasValue || SelectedSupplierId.Value <= 0)
             return;
 
@@ -228,6 +238,47 @@ public sealed class PurchasingViewModel : ViewModelBase
             {
                 Entitlements.Add(r);
             }
+
+            var groups = records
+                .GroupBy(r => (r.ProductId, r.ProductName, r.ProductCode))
+                .Select(g =>
+                {
+                    var sortedItems = g
+                        .OrderByDescending(r => r.IsImminent)
+                        .ThenBy(r => r.NextEntitlementDate ?? DateTime.MaxValue)
+                        .ThenByDescending(r => r.EventDate)
+                        .ToList();
+
+                    var earliestNext = sortedItems
+                        .Where(r => r.NextEntitlementDate.HasValue)
+                        .Select(r => r.NextEntitlementDate!.Value)
+                        .DefaultIfEmpty(DateTime.MaxValue)
+                        .Min();
+
+                    var latestEvent = sortedItems.Select(r => r.EventDate).Max();
+                    var hasImminent = sortedItems.Any(r => r.IsImminent);
+
+                    return new ProductEntitlementGroupViewModel
+                    {
+                        ProductId = g.Key.ProductId,
+                        ProductName = string.IsNullOrWhiteSpace(g.Key.ProductName) ? "Unknown Product" : g.Key.ProductName,
+                        ProductCode = string.IsNullOrWhiteSpace(g.Key.ProductCode) ? "N/A" : g.Key.ProductCode,
+                        EarliestNextEntitlementDate = earliestNext == DateTime.MaxValue ? null : earliestNext,
+                        LatestEventDate = latestEvent,
+                        HasImminentEntitlement = hasImminent,
+                        Items = new ObservableCollection<SupplierProductEntitlementDto>(sortedItems)
+                    };
+                })
+                .OrderByDescending(g => g.HasImminentEntitlement)
+                .ThenBy(g => g.EarliestNextEntitlementDate ?? DateTime.MaxValue)
+                .ThenByDescending(g => g.LatestEventDate)
+                .ToList();
+
+            foreach (var group in groups)
+            {
+                GroupedEntitlements.Add(group);
+            }
+            OnPropertyChanged(nameof(HasEntitlements));
         }
         catch (Exception ex)
         {
@@ -257,19 +308,25 @@ public sealed class PurchasingViewModel : ViewModelBase
         AvailableProducts.Clear();
 
         List<ProductDto> matchedProducts = [];
-        if (!_showAllProducts && selectedSupplier is not null && !string.IsNullOrWhiteSpace(selectedSupplier.ProvidedProducts))
+        if (selectedSupplier is not null)
         {
-            var tokens = selectedSupplier.ProvidedProducts
-                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            if (!string.IsNullOrWhiteSpace(selectedSupplier.ProvidedProducts))
+            {
+                var tokens = selectedSupplier.ProvidedProducts
+                    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
-            matchedProducts = _allActiveProducts
-                .Where(p => tokens.Any(t => t.Equals(p.Name, StringComparison.OrdinalIgnoreCase) ||
-                                            t.Equals(p.SKU, StringComparison.OrdinalIgnoreCase)))
-                .ToList();
+                matchedProducts = _allActiveProducts
+                    .Where(p => tokens.Any(t => t.Equals(p.Name, StringComparison.OrdinalIgnoreCase) ||
+                                                t.Equals(p.SKU, StringComparison.OrdinalIgnoreCase)))
+                    .ToList();
+            }
+
+            if (_showAllProducts)
+            {
+                matchedProducts = _allActiveProducts;
+            }
         }
-
-        // Fallback: If "Show All Products" is selected, or no products matched, or supplier has no configured products, show all active products!
-        if (_showAllProducts || matchedProducts.Count == 0)
+        else
         {
             matchedProducts = _allActiveProducts;
         }
@@ -323,6 +380,8 @@ public sealed class PurchasingViewModel : ViewModelBase
     private void UpdateOrderSummary()
     {
         OnPropertyChanged(nameof(GrossTotal));
+        OnPropertyChanged(nameof(LineDiscountsTotal));
+        OnPropertyChanged(nameof(TotalDiscountAmount));
         OnPropertyChanged(nameof(TotalOrderCost));
         OnPropertyChanged(nameof(TotalPaidQuantity));
         OnPropertyChanged(nameof(TotalFreeQuantity));
@@ -431,13 +490,13 @@ public sealed class PurchasingViewModel : ViewModelBase
                 SelectedPaymentMethod!,
                 PaidAmount,
                 string.IsNullOrWhiteSpace(PaymentDetails) ? null : PaymentDetails.Trim(),
-                DiscountAmount);
+                TotalDiscountAmount);
 
             var createdPurchase = await _purchaseService.CreateAsync(createReq);
             await _purchaseService.ConfirmAsync(createdPurchase.Id);
             await _purchaseService.ReceiveStockAsync(createdPurchase.Id);
 
-            // Auto-record purchase and free item entitlements for the ledger
+            // Auto-record purchase, discounts, and free item entitlements for the ledger
             foreach (var item in validItems)
             {
                 try
@@ -453,6 +512,20 @@ public sealed class PurchasingViewModel : ViewModelBase
                             Value: item.TotalCost,
                             NextEntitlementDate: null,
                             SpecialNotes: $"Auto-recorded from Stock Purchase Order #{createdPurchase.Id}"
+                        ));
+                    }
+
+                    if (item.LineDiscountAmount > 0)
+                    {
+                        await _entitlementService.CreateEntitlementAsync(new CreateSupplierEntitlementDto(
+                            SupplierId: SelectedSupplierId.Value,
+                            ProductId: item.Product!.Id,
+                            Nature: "Obtaining Discount",
+                            EventDate: DateTime.Today,
+                            Quantity: null,
+                            Value: item.LineDiscountAmount,
+                            NextEntitlementDate: null,
+                            SpecialNotes: $"Line item discount ({item.DiscountRate:F2}%) on Stock Purchase Order #{createdPurchase.Id}"
                         ));
                     }
 
@@ -489,3 +562,15 @@ public sealed class PurchasingViewModel : ViewModelBase
         }
     }
 }
+
+public sealed class ProductEntitlementGroupViewModel
+{
+    public int ProductId { get; init; }
+    public string ProductName { get; init; } = string.Empty;
+    public string ProductCode { get; init; } = string.Empty;
+    public DateTime? EarliestNextEntitlementDate { get; init; }
+    public DateTime LatestEventDate { get; init; }
+    public bool HasImminentEntitlement { get; init; }
+    public ObservableCollection<SupplierProductEntitlementDto> Items { get; init; } = [];
+}
+
