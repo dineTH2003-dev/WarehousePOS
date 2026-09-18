@@ -81,10 +81,16 @@
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
-                    <DataGridTemplateColumn Header="Actions" Width="195">
+                    <DataGridTemplateColumn Header="Actions" Width="280">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <StackPanel Orientation="Horizontal">
+                                    <Button Content="🎁 Benefits"
+                                            Style="{StaticResource TableSecondaryButton}"
+                                            Width="85" Margin="0,0,8,0"
+                                            Command="{Binding DataContext.RecordEntitlementCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                            CommandParameter="{Binding}"
+                                            ToolTip="Record discount, free item, or entitlement for this supplier"/>
                                     <Button Content="Edit"
                                             Style="{StaticResource TableSecondaryButton}"
                                             Width="60" Margin="0,0,8,0"
