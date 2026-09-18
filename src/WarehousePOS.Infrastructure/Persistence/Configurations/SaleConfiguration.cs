@@ -69,7 +69,7 @@ public sealed class SaleConfiguration : IEntityTypeConfiguration<Sale>
                .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasMany(s => s.Payments)
-               .WithOne()
+               .WithOne(p => p.Sale)
                .HasForeignKey(p => p.SaleId)
                .OnDelete(DeleteBehavior.Cascade);
     }
