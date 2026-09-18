@@ -22,6 +22,7 @@ public static class ApplicationServiceRegistration
 
         // Suppliers
         services.AddScoped<ISupplierService, SupplierService>();
+        services.AddScoped<ISupplierEntitlementService, SupplierEntitlementService>();
 
         // Purchasing & Inventory
         services.AddScoped<IPurchaseService, PurchaseService>();
