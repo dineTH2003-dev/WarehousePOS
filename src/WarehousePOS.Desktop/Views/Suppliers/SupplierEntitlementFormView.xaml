@@ -1,0 +1,123 @@
+<Window x:Class="WarehousePOS.Desktop.Views.Suppliers.SupplierEntitlementFormView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:behaviors="clr-namespace:WarehousePOS.Desktop.Behaviors"
+        Title="{Binding Title}"
+        Icon="/Resources/Images/app-icon.png"
+        Height="640" Width="520"
+        ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner"
+        Background="{StaticResource BackgroundBrush}">
+
+    <Border Style="{StaticResource Card}" Margin="20">
+        <Grid behaviors:ArrowNavigationBehavior.IsEnabled="True">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Title -->
+            <StackPanel Grid.Row="0" Margin="0,0,0,16">
+                <TextBlock Text="{Binding Title}" Style="{StaticResource H3}" TextWrapping="Wrap"/>
+                <TextBlock Text="Record discount, free items, or supplier purchase entitlement details"
+                           Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" Margin="0,2,0,0"/>
+            </StackPanel>
+
+            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                <StackPanel>
+                    <!-- Product Selection -->
+                    <TextBlock Text="Product *" Style="{StaticResource LabelText}" Margin="0,0,0,6"/>
+                    <ComboBox ItemsSource="{Binding AvailableProducts}"
+                              SelectedItem="{Binding SelectedProduct}"
+                              DisplayMemberPath="Name"
+                              Height="38" Margin="0,0,0,4">
+                        <ComboBox.ToolTip>Select product to record entitlement/benefit for</ComboBox.ToolTip>
+                    </ComboBox>
+                    <TextBlock Text="{Binding ProductError}" Foreground="{StaticResource DangerBrush}" FontSize="11" Margin="0,0,0,10"
+                               Visibility="{Binding ProductError, Converter={StaticResource NullToVisibilityConverter}}" TextWrapping="Wrap"/>
+
+                    <!-- Status / Nature -->
+                    <TextBlock Text="Status / Nature *" Style="{StaticResource LabelText}" Margin="0,0,0,6"/>
+                    <ComboBox ItemsSource="{Binding NatureOptions}"
+                              SelectedItem="{Binding Nature}"
+                              Height="38" Margin="0,0,0,4">
+                        <ComboBox.ToolTip>Choose status/nature (Receiving Free Item, Obtaining Discount, Making Purchase, etc.)</ComboBox.ToolTip>
+                    </ComboBox>
+                    <TextBlock Text="{Binding NatureError}" Foreground="{StaticResource DangerBrush}" FontSize="11" Margin="0,0,0,10"
+                               Visibility="{Binding NatureError, Converter={StaticResource NullToVisibilityConverter}}" TextWrapping="Wrap"/>
+
+                    <!-- Quantity & Monetary Value Row -->
+                    <Grid Margin="0,0,0,12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="12"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Quantity -->
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="Quantity (Units)" Style="{StaticResource LabelText}" Margin="0,0,0,6"/>
+                            <TextBox Text="{Binding QuantityText, UpdateSourceTrigger=PropertyChanged}"
+                                     behaviors:IntegerOnlyBehavior.IsEnabled="True"
+                                     Style="{StaticResource FormTextBox}" Height="38"/>
+                            <TextBlock Text="{Binding QuantityError}" Foreground="{StaticResource DangerBrush}" FontSize="11" Margin="0,4,0,0"
+                                       Visibility="{Binding QuantityError, Converter={StaticResource NullToVisibilityConverter}}" TextWrapping="Wrap"/>
+                        </StackPanel>
+
+                        <!-- Discount Value (Rs.) -->
+                        <StackPanel Grid.Column="2">
+                            <TextBlock Text="Discount Value (Rs.)" Style="{StaticResource LabelText}" Margin="0,0,0,6"/>
+                            <TextBox Text="{Binding ValueText, UpdateSourceTrigger=PropertyChanged}"
+                                     behaviors:DecimalOnlyBehavior.IsEnabled="True"
+                                     Style="{StaticResource FormTextBox}" Height="38"/>
+                            <TextBlock Text="{Binding ValueError}" Foreground="{StaticResource DangerBrush}" FontSize="11" Margin="0,4,0,0"
+                                       Visibility="{Binding ValueError, Converter={StaticResource NullToVisibilityConverter}}" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- Event Date -->
+                    <TextBlock Text="Event / Status Date *" Style="{StaticResource LabelText}" Margin="0,0,0,6"/>
+                    <DatePicker SelectedDate="{Binding EventDate}" Height="38" Margin="0,0,0,14"/>
+
+                    <!-- Next Entitlement Date Section -->
+                    <Border Background="#F8FAFC" BorderBrush="#E2E8F0" BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,0,0,14">
+                        <StackPanel>
+                            <CheckBox Content="Set Date of Next Discount / Free Item Entitlement"
+                                      IsChecked="{Binding HasNextEntitlementDate}"
+                                      Style="{StaticResource ModernSwitch}" Margin="0,0,0,8"/>
+
+                            <StackPanel Visibility="{Binding HasNextEntitlementDate, Converter={StaticResource BoolToVisibilityConverter}}">
+                                <TextBlock Text="Next Entitlement Date" Style="{StaticResource LabelText}" Margin="0,4,0,6"/>
+                                <DatePicker SelectedDate="{Binding NextEntitlementDate}" Height="38"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Special Notes -->
+                    <TextBlock Text="Special Notes / Remarks" Style="{StaticResource LabelText}" Margin="0,0,0,6"/>
+                    <TextBox Text="{Binding SpecialNotes, UpdateSourceTrigger=PropertyChanged}"
+                             Style="{StaticResource FormTextBox}"
+                             Height="64" AcceptsReturn="True" TextWrapping="Wrap" Margin="0,0,0,14"
+                             Tag="Enter additional details or terms..."/>
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- Footer -->
+            <StackPanel Grid.Row="2" Margin="0,12,0,0">
+                <Border Background="#FEF2F2" BorderBrush="{StaticResource DangerBrush}"
+                        BorderThickness="1" CornerRadius="6" Padding="10,8" Margin="0,0,0,12"
+                        Visibility="{Binding HasError, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <TextBlock Text="{Binding ErrorMessage}" Foreground="{StaticResource DangerBrush}"
+                               FontSize="12" TextWrapping="Wrap"/>
+                </Border>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button Content="Cancel" Style="{StaticResource SecondaryButton}"
+                            Margin="0,0,8,0" Command="{Binding CancelCommand}"/>
+                    <Button Content="Save Entitlement Record 💾" Style="{StaticResource PrimaryButton}"
+                            Command="{Binding SaveCommand}"/>
+                </StackPanel>
+            </StackPanel>
+        </Grid>
+    </Border>
+</Window>

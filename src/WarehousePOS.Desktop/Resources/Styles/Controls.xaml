@@ -8,6 +8,7 @@
          ============================================================ -->
     <conv:BoolToVisibilityConverter        x:Key="BoolToVisibilityConverter" />
     <conv:InverseBoolToVisibilityConverter x:Key="InverseBoolToVisibilityConverter" />
+    <conv:InverseBoolToVisibilityConverter x:Key="InvertBoolToVisibilityConverter" />
     <conv:InvertBoolConverter              x:Key="InvertBoolConverter" />
     <conv:NullToVisibilityConverter  x:Key="NullToVisibilityConverter" />
     <conv:DecimalToCurrencyConverter x:Key="DecimalToCurrencyConverter" />

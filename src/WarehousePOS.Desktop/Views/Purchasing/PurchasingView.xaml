@@ -22,7 +22,7 @@
             </Grid.ColumnDefinitions>
             <StackPanel Grid.Column="0">
                 <TextBlock Text="Purchasing &amp; Stock Inbound" Style="{StaticResource H2}" VerticalAlignment="Center"/>
-                <TextBlock Text="Create purchase orders, receive supplier stock, record free items, and update product catalog prices"
+                <TextBlock Text="Create purchase orders, receive supplier stock, record discounts &amp; free items, and track supplier entitlements"
                            Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" Margin="0,2,0,0"/>
             </StackPanel>
         </Grid>
@@ -55,11 +55,18 @@
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
                             <TextBlock Grid.Column="0" Text="Select Supplier *" Style="{StaticResource LabelText}" VerticalAlignment="Center"/>
-                            <Button Grid.Column="1" Content="✨ Add New Supplier"
-                                    Style="{StaticResource SecondaryButton}"
-                                    Command="{Binding CreateNewSupplierCommand}"
-                                    Padding="8,3" FontSize="11"
-                                    ToolTip="Add a new supplier to the system"/>
+                            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                <Button Content="🎁 Record Benefit"
+                                        Style="{StaticResource SecondaryButton}"
+                                        Command="{Binding RecordEntitlementCommand}"
+                                        Padding="8,3" FontSize="11" Margin="0,0,6,0"
+                                        ToolTip="Record discount, free item, or entitlement for selected supplier"/>
+                                <Button Content="✨ Add New Supplier"
+                                        Style="{StaticResource SecondaryButton}"
+                                        Command="{Binding CreateNewSupplierCommand}"
+                                        Padding="8,3" FontSize="11"
+                                        ToolTip="Add a new supplier to the system"/>
+                            </StackPanel>
                         </Grid>
                         <ComboBox Width="340"
                                   Height="38"
@@ -68,7 +75,7 @@
                                   DisplayMemberPath="DisplayName"
                                   SelectedValue="{Binding SelectedSupplierId}"
                                   Tag="Select Supplier">
-                            <ComboBox.ToolTip>Choose the supplier providing these products (filters line item products)</ComboBox.ToolTip>
+                            <ComboBox.ToolTip>Choose the supplier providing these products (filters line item products &amp; loads benefits ledger)</ComboBox.ToolTip>
                         </ComboBox>
                         <CheckBox Content="Show all catalog products (bypass supplier filter)"
                                   IsChecked="{Binding ShowAllProducts}"
@@ -164,172 +171,255 @@
             </Grid>
         </Border>
 
-        <!-- ── Line Items Section ───────────────────────────── -->
-        <Border Grid.Row="2" Style="{StaticResource Card}" Padding="16">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
-                </Grid.RowDefinitions>
-
-                <!-- Line items bar header -->
-                <Grid Grid.Row="0" Margin="0,0,0,12">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-
-                    <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                        <TextBlock Text="Purchase Line Items" FontWeight="Bold" FontSize="15" Foreground="{StaticResource TextPrimaryBrush}"/>
-                        <TextBlock Text="{Binding TotalItemsCount, StringFormat=' ({0} items)'}"
-                                   Foreground="{StaticResource TextSecondaryBrush}" FontSize="13" VerticalAlignment="Center"/>
-                    </StackPanel>
-
-                    <StackPanel Grid.Column="1" Orientation="Horizontal">
-                        <Button Content="✨ Create New Product"
-                                Style="{StaticResource SecondaryButton}"
-                                Command="{Binding CreateNewProductCommand}"
-                                Margin="0,0,8,0" Padding="10,6" FontSize="12"
-                                ToolTip="Create a brand new product in the catalog and add to this purchase"/>
-
-                        <Button Content="+ Add Product Row"
-                                Style="{StaticResource PrimaryButton}"
-                                Command="{Binding AddLineItemCommand}"
-                                Padding="12,6" FontSize="12"
-                                ToolTip="Add another product row to this purchase order"/>
-                    </StackPanel>
-                </Grid>
-
-                <!-- Line Items Table -->
-                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
-                    <ItemsControl ItemsSource="{Binding LineItems}">
-                        <ItemsControl.ItemTemplate>
+        <!-- ── Main Tab Control (Line Items & Supplier Benefits Ledger) ── -->
+        <TabControl Grid.Row="2" Background="Transparent" BorderThickness="0"
+                    HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch">
+            <TabControl.Resources>
+                <Style TargetType="TabItem">
+                    <Setter Property="HeaderTemplate">
+                        <Setter.Value>
                             <DataTemplate>
-                                <Border Background="White" BorderBrush="#E2E8F0" BorderThickness="1" CornerRadius="8" Padding="12,10" Margin="0,0,0,10">
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="2*"/>
-                                            <ColumnDefinition Width="8"/>
-                                            <ColumnDefinition Width="75"/>
-                                            <ColumnDefinition Width="8"/>
-                                            <ColumnDefinition Width="75"/>
-                                            <ColumnDefinition Width="8"/>
-                                            <ColumnDefinition Width="90"/>
-                                            <ColumnDefinition Width="8"/>
-                                            <ColumnDefinition Width="100"/>
-                                            <ColumnDefinition Width="8"/>
-                                            <ColumnDefinition Width="100"/>
-                                            <ColumnDefinition Width="8"/>
-                                            <ColumnDefinition Width="100"/>
-                                            <ColumnDefinition Width="8"/>
-                                            <ColumnDefinition Width="100"/>
-                                            <ColumnDefinition Width="8"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                        </Grid.ColumnDefinitions>
-
-                                        <!-- Product Selection -->
-                                        <StackPanel Grid.Column="0">
-                                            <TextBlock Text="Product *" Style="{StaticResource LabelText}" FontSize="11" Margin="0,0,0,4"/>
-                                            <ComboBox ItemsSource="{Binding DataContext.AvailableProducts, RelativeSource={RelativeSource AncestorType=Page}}"
-                                                      SelectedItem="{Binding Product}"
-                                                      Height="38"
-                                                      DisplayMemberPath="Name"
-                                                      IsEditable="True"
-                                                      IsTextSearchEnabled="True"
-                                                      Tag="Select or search product">
-                                                <ComboBox.ToolTip>Select or type product name/SKU to purchase</ComboBox.ToolTip>
-                                            </ComboBox>
-                                            <TextBlock Text="{Binding ProductError}" Foreground="{StaticResource DangerBrush}" FontSize="10" Margin="0,2,0,0"
-                                                       Visibility="{Binding ProductError, Converter={StaticResource NullToVisibilityConverter}}" TextWrapping="Wrap"/>
-                                            <TextBlock Text="{Binding ClaimedText}" Foreground="#EF4444" FontWeight="SemiBold" FontSize="10" Margin="0,2,0,0"
-                                                       Visibility="{Binding HasPendingClaim, Converter={StaticResource BoolToVisibilityConverter}}"/>
-                                        </StackPanel>
-
-                                        <!-- Paid Quantity -->
-                                        <StackPanel Grid.Column="2">
-                                            <TextBlock Text="Paid Qty *" Style="{StaticResource LabelText}" FontSize="11" Margin="0,0,0,4"/>
-                                            <TextBox Text="{Binding Quantity, UpdateSourceTrigger=PropertyChanged}"
-                                                     behaviors:IntegerOnlyBehavior.IsEnabled="True"
-                                                     Style="{StaticResource FormTextBox}"
-                                                     ToolTip="Number of purchased/paid units"/>
-                                            <TextBlock Text="{Binding QuantityError}" Foreground="{StaticResource DangerBrush}" FontSize="10" Margin="0,2,0,0"
-                                                       Visibility="{Binding QuantityError, Converter={StaticResource NullToVisibilityConverter}}" TextWrapping="Wrap"/>
-                                        </StackPanel>
-
-                                        <!-- Free Quantity -->
-                                        <StackPanel Grid.Column="4">
-                                            <TextBlock Text="Free Qty" Style="{StaticResource LabelText}" FontSize="11" Margin="0,0,0,4"/>
-                                            <TextBox Text="{Binding FreeQuantity, UpdateSourceTrigger=PropertyChanged}"
-                                                     behaviors:IntegerOnlyBehavior.IsEnabled="True"
-                                                     Style="{StaticResource FormTextBox}"
-                                                     ToolTip="Bonus or free units provided by supplier (excluded from cost)"/>
-                                        </StackPanel>
-
-                                        <!-- Claimed Qty Received -->
-                                        <StackPanel Grid.Column="6">
-                                            <TextBlock Text="Claimed Recv" Style="{StaticResource LabelText}" FontSize="11" Foreground="#EF4444" Margin="0,0,0,4"/>
-                                            <TextBox Text="{Binding ClaimedQuantityReceived, UpdateSourceTrigger=PropertyChanged}"
-                                                     behaviors:IntegerOnlyBehavior.IsEnabled="True"
-                                                     Style="{StaticResource FormTextBox}"
-                                                     ToolTip="Claimed warranty replacement stock received from supplier (reduces red claim quantity)"/>
-                                            <TextBlock Text="{Binding ClaimedQtyError}" Foreground="{StaticResource DangerBrush}" FontSize="10" Margin="0,2,0,0"
-                                                       Visibility="{Binding ClaimedQtyError, Converter={StaticResource NullToVisibilityConverter}}" TextWrapping="Wrap"/>
-                                        </StackPanel>
-
-                                        <!-- Unit Cost -->
-                                        <StackPanel Grid.Column="8">
-                                            <TextBlock Text="Unit Cost (Rs.)" Style="{StaticResource LabelText}" FontSize="11" Margin="0,0,0,4"/>
-                                            <TextBox Text="{Binding UnitCostText, UpdateSourceTrigger=PropertyChanged}"
-                                                     behaviors:DecimalOnlyBehavior.IsEnabled="True"
-                                                     Style="{StaticResource FormTextBox}"
-                                                     ToolTip="Cost per paid unit (auto-calculates Total Cost)"/>
-                                        </StackPanel>
-
-                                        <!-- Total Cost -->
-                                        <StackPanel Grid.Column="10">
-                                            <TextBlock Text="Total Cost (Rs.)" Style="{StaticResource LabelText}" FontSize="11" Margin="0,0,0,4"/>
-                                            <TextBox Text="{Binding TotalCostText, UpdateSourceTrigger=PropertyChanged}"
-                                                     behaviors:DecimalOnlyBehavior.IsEnabled="True"
-                                                     Style="{StaticResource FormTextBox}"
-                                                     ToolTip="Total purchase cost for this product (auto-calculates Unit Cost)"/>
-                                        </StackPanel>
-
-                                        <!-- Retail Price -->
-                                        <StackPanel Grid.Column="12">
-                                            <TextBlock Text="Retail Price (Rs.)" Style="{StaticResource LabelText}" FontSize="11" Margin="0,0,0,4"/>
-                                            <TextBox Text="{Binding RetailPriceText, UpdateSourceTrigger=PropertyChanged}"
-                                                     behaviors:DecimalOnlyBehavior.IsEnabled="True"
-                                                     Style="{StaticResource FormTextBox}"
-                                                     ToolTip="Update selling retail price for this product"/>
-                                        </StackPanel>
-
-                                        <!-- Wholesale Price -->
-                                        <StackPanel Grid.Column="14">
-                                            <TextBlock Text="Wholesale Price" Style="{StaticResource LabelText}" FontSize="11" Margin="0,0,0,4"/>
-                                            <TextBox Text="{Binding WholesalePriceText, UpdateSourceTrigger=PropertyChanged}"
-                                                     behaviors:DecimalOnlyBehavior.IsEnabled="True"
-                                                     Style="{StaticResource FormTextBox}"
-                                                     ToolTip="Update selling wholesale price for this product"/>
-                                        </StackPanel>
-
-                                        <!-- Delete Button -->
-                                        <StackPanel Grid.Column="16">
-                                            <TextBlock Text=" " Style="{StaticResource LabelText}" FontSize="11" Margin="0,0,0,4"/>
-                                            <Button Content="✕"
-                                                    Style="{StaticResource SecondaryButton}"
-                                                    Command="{Binding RemoveCommand}"
-                                                    Height="38" MinWidth="38" Padding="8,0" FontSize="12"
-                                                    VerticalAlignment="Top"
-                                                    ToolTip="Remove this item from purchase order"/>
-                                        </StackPanel>
-                                    </Grid>
-                                </Border>
+                                <TextBlock Text="{Binding}" FontWeight="Bold" FontSize="14" Margin="14,8"/>
                             </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                </ScrollViewer>
-            </Grid>
-        </Border>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </TabControl.Resources>
+
+            <!-- TAB 1: Stock Purchase Line Items -->
+            <TabItem Header="📦 Stock Purchase Line Items">
+                <Border Style="{StaticResource Card}" Padding="16" Margin="0,8,0,0">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Line items bar header -->
+                        <Grid Grid.Row="0" Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock Text="Purchase Line Items" FontWeight="Bold" FontSize="15" Foreground="{StaticResource TextPrimaryBrush}"/>
+                                <TextBlock Text="{Binding TotalItemsCount, StringFormat=' ({0} items)'}"
+                                           Foreground="{StaticResource TextSecondaryBrush}" FontSize="13" VerticalAlignment="Center"/>
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                <Button Content="✨ Create New Product"
+                                        Style="{StaticResource SecondaryButton}"
+                                        Command="{Binding CreateNewProductCommand}"
+                                        Margin="0,0,8,0" Padding="10,6" FontSize="12"
+                                        ToolTip="Create a brand new product in the catalog and add to this purchase"/>
+
+                                <Button Content="+ Add Product Row"
+                                        Style="{StaticResource PrimaryButton}"
+                                        Command="{Binding AddLineItemCommand}"
+                                        Padding="12,6" FontSize="12"
+                                        ToolTip="Add another product row to this purchase order"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- Line Items Table -->
+                        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+                            <ItemsControl ItemsSource="{Binding LineItems}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Background="White" BorderBrush="#E2E8F0" BorderThickness="1" CornerRadius="8" Padding="12,10" Margin="0,0,0,10">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="2*"/>
+                                                    <ColumnDefinition Width="8"/>
+                                                    <ColumnDefinition Width="75"/>
+                                                    <ColumnDefinition Width="8"/>
+                                                    <ColumnDefinition Width="75"/>
+                                                    <ColumnDefinition Width="8"/>
+                                                    <ColumnDefinition Width="90"/>
+                                                    <ColumnDefinition Width="8"/>
+                                                    <ColumnDefinition Width="100"/>
+                                                    <ColumnDefinition Width="8"/>
+                                                    <ColumnDefinition Width="100"/>
+                                                    <ColumnDefinition Width="8"/>
+                                                    <ColumnDefinition Width="100"/>
+                                                    <ColumnDefinition Width="8"/>
+                                                    <ColumnDefinition Width="100"/>
+                                                    <ColumnDefinition Width="8"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+
+                                                <!-- Product Selection -->
+                                                <StackPanel Grid.Column="0">
+                                                    <TextBlock Text="Product *" Style="{StaticResource LabelText}" FontSize="11" Margin="0,0,0,4"/>
+                                                    <ComboBox ItemsSource="{Binding DataContext.AvailableProducts, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                              SelectedItem="{Binding Product}"
+                                                              Height="38"
+                                                              DisplayMemberPath="Name"
+                                                              Tag="Select Product">
+                                                        <ComboBox.ToolTip>Select product to purchase</ComboBox.ToolTip>
+                                                    </ComboBox>
+                                                    <TextBlock Text="{Binding ProductError}" Foreground="{StaticResource DangerBrush}" FontSize="10" Margin="0,2,0,0"
+                                                               Visibility="{Binding ProductError, Converter={StaticResource NullToVisibilityConverter}}" TextWrapping="Wrap"/>
+                                                    <TextBlock Text="{Binding ClaimedText}" Foreground="#EF4444" FontWeight="SemiBold" FontSize="10" Margin="0,2,0,0"
+                                                               Visibility="{Binding HasPendingClaim, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                                </StackPanel>
+
+                                                <!-- Paid Quantity -->
+                                                <StackPanel Grid.Column="2">
+                                                    <TextBlock Text="Paid Qty *" Style="{StaticResource LabelText}" FontSize="11" Margin="0,0,0,4"/>
+                                                    <TextBox Text="{Binding Quantity, UpdateSourceTrigger=PropertyChanged}"
+                                                             behaviors:IntegerOnlyBehavior.IsEnabled="True"
+                                                             Style="{StaticResource FormTextBox}"
+                                                             ToolTip="Number of purchased/paid units"/>
+                                                    <TextBlock Text="{Binding QuantityError}" Foreground="{StaticResource DangerBrush}" FontSize="10" Margin="0,2,0,0"
+                                                               Visibility="{Binding QuantityError, Converter={StaticResource NullToVisibilityConverter}}" TextWrapping="Wrap"/>
+                                                </StackPanel>
+
+                                                <!-- Free Quantity -->
+                                                <StackPanel Grid.Column="4">
+                                                    <TextBlock Text="Free Qty" Style="{StaticResource LabelText}" FontSize="11" Margin="0,0,0,4"/>
+                                                    <TextBox Text="{Binding FreeQuantity, UpdateSourceTrigger=PropertyChanged}"
+                                                             behaviors:IntegerOnlyBehavior.IsEnabled="True"
+                                                             Style="{StaticResource FormTextBox}"
+                                                             ToolTip="Bonus or free units provided by supplier (excluded from cost)"/>
+                                                </StackPanel>
+
+                                                <!-- Claimed Qty Received -->
+                                                <StackPanel Grid.Column="6">
+                                                    <TextBlock Text="Claimed Recv" Style="{StaticResource LabelText}" FontSize="11" Foreground="#EF4444" Margin="0,0,0,4"/>
+                                                    <TextBox Text="{Binding ClaimedQuantityReceived, UpdateSourceTrigger=PropertyChanged}"
+                                                             behaviors:IntegerOnlyBehavior.IsEnabled="True"
+                                                             Style="{StaticResource FormTextBox}"
+                                                             ToolTip="Claimed warranty replacement stock received from supplier (reduces red claim quantity)"/>
+                                                    <TextBlock Text="{Binding ClaimedQtyError}" Foreground="{StaticResource DangerBrush}" FontSize="10" Margin="0,2,0,0"
+                                                               Visibility="{Binding ClaimedQtyError, Converter={StaticResource NullToVisibilityConverter}}" TextWrapping="Wrap"/>
+                                                </StackPanel>
+
+                                                <!-- Unit Cost -->
+                                                <StackPanel Grid.Column="8">
+                                                    <TextBlock Text="Unit Cost (Rs.)" Style="{StaticResource LabelText}" FontSize="11" Margin="0,0,0,4"/>
+                                                    <TextBox Text="{Binding UnitCostText, UpdateSourceTrigger=PropertyChanged}"
+                                                             behaviors:DecimalOnlyBehavior.IsEnabled="True"
+                                                             Style="{StaticResource FormTextBox}"
+                                                             ToolTip="Cost per paid unit (auto-calculates Total Cost)"/>
+                                                </StackPanel>
+
+                                                <!-- Total Cost -->
+                                                <StackPanel Grid.Column="10">
+                                                    <TextBlock Text="Total Cost (Rs.)" Style="{StaticResource LabelText}" FontSize="11" Margin="0,0,0,4"/>
+                                                    <TextBox Text="{Binding TotalCostText, UpdateSourceTrigger=PropertyChanged}"
+                                                             behaviors:DecimalOnlyBehavior.IsEnabled="True"
+                                                             Style="{StaticResource FormTextBox}"
+                                                             ToolTip="Total purchase cost for this product (auto-calculates Unit Cost)"/>
+                                                </StackPanel>
+
+                                                <!-- Retail Price -->
+                                                <StackPanel Grid.Column="12">
+                                                    <TextBlock Text="Retail Price (Rs.)" Style="{StaticResource LabelText}" FontSize="11" Margin="0,0,0,4"/>
+                                                    <TextBox Text="{Binding RetailPriceText, UpdateSourceTrigger=PropertyChanged}"
+                                                             behaviors:DecimalOnlyBehavior.IsEnabled="True"
+                                                             Style="{StaticResource FormTextBox}"
+                                                             ToolTip="Update selling retail price for this product"/>
+                                                </StackPanel>
+
+                                                <!-- Wholesale Price -->
+                                                <StackPanel Grid.Column="14">
+                                                    <TextBlock Text="Wholesale Price" Style="{StaticResource LabelText}" FontSize="11" Margin="0,0,0,4"/>
+                                                    <TextBox Text="{Binding WholesalePriceText, UpdateSourceTrigger=PropertyChanged}"
+                                                             behaviors:DecimalOnlyBehavior.IsEnabled="True"
+                                                             Style="{StaticResource FormTextBox}"
+                                                             ToolTip="Update selling wholesale price for this product"/>
+                                                </StackPanel>
+
+                                                <!-- Delete Button -->
+                                                <StackPanel Grid.Column="16">
+                                                    <TextBlock Text=" " Style="{StaticResource LabelText}" FontSize="11" Margin="0,0,0,4"/>
+                                                    <Button Content="✕"
+                                                            Style="{StaticResource SecondaryButton}"
+                                                            Command="{Binding RemoveCommand}"
+                                                            Height="38" MinWidth="38" Padding="8,0" FontSize="12"
+                                                            VerticalAlignment="Top"
+                                                            ToolTip="Remove this item from purchase order"/>
+                                                </StackPanel>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Grid>
+                </Border>
+            </TabItem>
+
+            <!-- TAB 2: Supplier Discounts & Free Items Ledger -->
+            <TabItem Header="🎁 Supplier Discounts &amp; Free Items Ledger">
+                <Border Style="{StaticResource Card}" Padding="16" Margin="0,8,0,0">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Header Bar for Entitlements -->
+                        <Grid Grid.Row="0" Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="Supplier Entitlements &amp; Benefits History" FontWeight="Bold" FontSize="15" Foreground="{StaticResource TextPrimaryBrush}"/>
+                                <TextBlock Text="Record and track discounts, free items, and purchase entitlements for the selected supplier"
+                                           Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" Margin="0,2,0,0"/>
+                            </StackPanel>
+
+                            <Button Grid.Column="1" Content="🎁 + Record Discount / Free Item"
+                                    Style="{StaticResource PrimaryButton}"
+                                    Command="{Binding RecordEntitlementCommand}"
+                                    Padding="14,8" FontSize="12"
+                                    ToolTip="Record a new discount or free item entitlement for this supplier"/>
+                        </Grid>
+
+                        <!-- Entitlements Table -->
+                        <DataGrid Grid.Row="1" ItemsSource="{Binding Entitlements}" AutoGenerateColumns="False" IsReadOnly="True">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Product Code" Binding="{Binding ProductCode}" Width="110"/>
+                                <DataGridTextColumn Header="Product Name" Binding="{Binding ProductName}" Width="200"/>
+                                <DataGridTemplateColumn Header="Status / Nature" Width="170">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Border CornerRadius="12" Padding="8,3" HorizontalAlignment="Left" Background="#EFF6FF">
+                                                <TextBlock Text="{Binding Nature}" FontWeight="SemiBold" FontSize="11" Foreground="#1D4ED8"/>
+                                            </Border>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTextColumn Header="Quantity / Value" Binding="{Binding DisplayQuantityOrValue}" Width="160"/>
+                                <DataGridTextColumn Header="Date" Binding="{Binding EventDate, StringFormat='yyyy-MM-dd'}" Width="100"/>
+                                <DataGridTemplateColumn Header="Next Entitlement Date" Width="180">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <StackPanel VerticalAlignment="Center">
+                                                <Border CornerRadius="8" Padding="8,3" HorizontalAlignment="Left"
+                                                        Background="#FFF7ED" BorderBrush="#FED7AA" BorderThickness="1"
+                                                        Visibility="{Binding IsImminent, Converter={StaticResource BoolToVisibilityConverter}}">
+                                                    <TextBlock Text="{Binding NextEntitlementDisplay}" FontWeight="Bold" FontSize="11" Foreground="#C2410C"/>
+                                                </Border>
+                                                <TextBlock Text="{Binding NextEntitlementDisplay}" FontSize="12" Foreground="{StaticResource TextPrimaryBrush}"
+                                                           Visibility="{Binding IsImminent, Converter={StaticResource InvertBoolToVisibilityConverter}}"/>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTextColumn Header="Special Notes" Binding="{Binding SpecialNotes, TargetNullValue='-'}" Width="*"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
+                </Border>
+            </TabItem>
+        </TabControl>
 
         <!-- ── Order Summary & Actions Footer ────────────────── -->
         <Border Grid.Row="3" Style="{StaticResource Card}" Margin="0,16,0,0" Padding="16,14">

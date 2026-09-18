@@ -10,11 +10,12 @@ namespace WarehousePOS.Desktop.ViewModels.Purchasing;
 
 public sealed class PurchasingViewModel : ViewModelBase
 {
-    private readonly IPurchaseService   _purchaseService;
-    private readonly IProductService    _productService;
-    private readonly ISupplierService   _supplierService;
+    private readonly IPurchaseService _purchaseService;
+    private readonly IProductService _productService;
+    private readonly ISupplierService _supplierService;
+    private readonly ISupplierEntitlementService _entitlementService;
     private readonly INavigationService _nav;
-    private readonly SessionContext    _session;
+    private readonly SessionContext _session;
 
     private List<ProductDto> _allActiveProducts = [];
     private int? _selectedSupplierId;
@@ -29,10 +30,11 @@ public sealed class PurchasingViewModel : ViewModelBase
     private string _discountAmountText = "0.00";
     private string _errorMessage = string.Empty;
 
-    public ObservableCollection<SupplierDto> Suppliers          { get; } = [];
-    public ObservableCollection<ProductDto>  AvailableProducts  { get; } = [];
+    public ObservableCollection<SupplierDto> Suppliers { get; } = [];
+    public ObservableCollection<ProductDto> AvailableProducts { get; } = [];
     public ObservableCollection<PurchasingItemRowViewModel> LineItems { get; } = [];
-    public ObservableCollection<string> PaymentMethods         { get; } = ["Cash", "Cheque", "Bank Transfer", "Credit / Unpaid"];
+    public ObservableCollection<SupplierProductEntitlementDto> Entitlements { get; } = [];
+    public ObservableCollection<string> PaymentMethods { get; } = ["Cash", "Cheque", "Bank Transfer", "Credit / Unpaid"];
 
     public bool ShowAllProducts
     {
@@ -78,6 +80,7 @@ public sealed class PurchasingViewModel : ViewModelBase
             {
                 FilterProductsForSelectedSupplier();
                 OnPropertyChanged(nameof(SupplierError));
+                _ = LoadEntitlementsForSelectedSupplierAsync();
             }
         }
     }
@@ -109,7 +112,7 @@ public sealed class PurchasingViewModel : ViewModelBase
         }
     }
 
-    public string? SupplierError   => (!SelectedSupplierId.HasValue || SelectedSupplierId.Value <= 0) ? "Please select a supplier." : null;
+    public string? SupplierError => (!SelectedSupplierId.HasValue || SelectedSupplierId.Value <= 0) ? "Please select a supplier." : null;
     public string? PaidAmountError => (!decimal.TryParse(PaidAmountText, out var val) || val < 0) ? "Paid amount must be a valid number." : null;
 
     public string PaymentDetails
@@ -143,31 +146,36 @@ public sealed class PurchasingViewModel : ViewModelBase
 
     public event Action? CreateNewProductRequested;
     public event Action? CreateNewSupplierRequested;
+    public event Action<int, string, IEnumerable<ProductDto>>? RecordEntitlementRequested;
 
-    public RelayCommand AddLineItemCommand       { get; }
-    public RelayCommand CreateNewProductCommand  { get; }
+    public RelayCommand AddLineItemCommand { get; }
+    public RelayCommand CreateNewProductCommand { get; }
     public RelayCommand CreateNewSupplierCommand { get; }
-    public RelayCommand SaveAndReceiveCommand    { get; }
-    public RelayCommand ResetOrderCommand        { get; }
+    public RelayCommand SaveAndReceiveCommand { get; }
+    public RelayCommand ResetOrderCommand { get; }
+    public RelayCommand RecordEntitlementCommand { get; }
 
     public PurchasingViewModel(
         IPurchaseService purchaseService,
         IProductService productService,
         ISupplierService supplierService,
+        ISupplierEntitlementService entitlementService,
         INavigationService nav,
         SessionContext session)
     {
         _purchaseService = purchaseService;
-        _productService  = productService;
+        _productService = productService;
         _supplierService = supplierService;
-        _nav             = nav;
-        _session         = session;
+        _entitlementService = entitlementService;
+        _nav = nav;
+        _session = session;
 
-        AddLineItemCommand       = new RelayCommand(AddLineItem);
-        CreateNewProductCommand  = new RelayCommand(() => CreateNewProductRequested?.Invoke());
+        AddLineItemCommand = new RelayCommand(AddLineItem);
+        CreateNewProductCommand = new RelayCommand(() => CreateNewProductRequested?.Invoke());
         CreateNewSupplierCommand = new RelayCommand(() => CreateNewSupplierRequested?.Invoke());
-        SaveAndReceiveCommand    = new RelayCommand(async () => await SaveAndReceiveAsync(), () => !IsBusy);
-        ResetOrderCommand        = new RelayCommand(ResetOrder);
+        SaveAndReceiveCommand = new RelayCommand(async () => await SaveAndReceiveAsync(), () => !IsBusy);
+        ResetOrderCommand = new RelayCommand(ResetOrder);
+        RecordEntitlementCommand = new RelayCommand(OnRecordEntitlement);
 
         LineItems.CollectionChanged += (_, _) => UpdateOrderSummary();
     }
@@ -189,12 +197,14 @@ public sealed class PurchasingViewModel : ViewModelBase
             _selectedSupplierId = currentSupplierId.Value;
             OnPropertyChanged(nameof(SelectedSupplierId));
             FilterProductsForSelectedSupplier();
+            await LoadEntitlementsForSelectedSupplierAsync();
         }
         else
         {
             _selectedSupplierId = null;
             OnPropertyChanged(nameof(SelectedSupplierId));
             FilterProductsForSelectedSupplier();
+            Entitlements.Clear();
         }
 
         if (LineItems.Count == 0)
@@ -203,6 +213,42 @@ public sealed class PurchasingViewModel : ViewModelBase
         }
 
         UpdateOrderSummary();
+    }
+
+    public async Task LoadEntitlementsForSelectedSupplierAsync()
+    {
+        Entitlements.Clear();
+        if (!SelectedSupplierId.HasValue || SelectedSupplierId.Value <= 0)
+            return;
+
+        try
+        {
+            var records = await _entitlementService.GetEntitlementsBySupplierAsync(SelectedSupplierId.Value);
+            foreach (var r in records)
+            {
+                Entitlements.Add(r);
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error loading supplier entitlements: {ex.Message}");
+        }
+    }
+
+    private void OnRecordEntitlement()
+    {
+        if (!SelectedSupplierId.HasValue || SelectedSupplierId.Value <= 0)
+        {
+            ErrorMessage = "Please select a supplier first before recording entitlements.";
+            return;
+        }
+
+        var supplier = Suppliers.FirstOrDefault(s => s.Id == SelectedSupplierId.Value);
+        var supplierName = supplier?.Name ?? "Selected Supplier";
+
+        // Pass available products (or all active products if list empty)
+        IEnumerable<ProductDto> productsToPass = AvailableProducts.Count > 0 ? AvailableProducts : _allActiveProducts;
+        RecordEntitlementRequested?.Invoke(SelectedSupplierId.Value, supplierName, productsToPass);
     }
 
     private void FilterProductsForSelectedSupplier()
@@ -321,6 +367,7 @@ public sealed class PurchasingViewModel : ViewModelBase
         ErrorMessage = string.Empty;
 
         LineItems.Clear();
+        Entitlements.Clear();
         FilterProductsForSelectedSupplier();
 
         AddLineItem();
@@ -389,6 +436,45 @@ public sealed class PurchasingViewModel : ViewModelBase
             var createdPurchase = await _purchaseService.CreateAsync(createReq);
             await _purchaseService.ConfirmAsync(createdPurchase.Id);
             await _purchaseService.ReceiveStockAsync(createdPurchase.Id);
+
+            // Auto-record purchase and free item entitlements for the ledger
+            foreach (var item in validItems)
+            {
+                try
+                {
+                    if (item.Quantity > 0)
+                    {
+                        await _entitlementService.CreateEntitlementAsync(new CreateSupplierEntitlementDto(
+                            SupplierId: SelectedSupplierId.Value,
+                            ProductId: item.Product!.Id,
+                            Nature: "Making Purchase",
+                            EventDate: DateTime.Today,
+                            Quantity: item.Quantity,
+                            Value: item.TotalCost,
+                            NextEntitlementDate: null,
+                            SpecialNotes: $"Auto-recorded from Stock Purchase Order #{createdPurchase.Id}"
+                        ));
+                    }
+
+                    if (item.FreeQuantity > 0)
+                    {
+                        await _entitlementService.CreateEntitlementAsync(new CreateSupplierEntitlementDto(
+                            SupplierId: SelectedSupplierId.Value,
+                            ProductId: item.Product!.Id,
+                            Nature: "Receiving Free Item",
+                            EventDate: DateTime.Today,
+                            Quantity: item.FreeQuantity,
+                            Value: null,
+                            NextEntitlementDate: null,
+                            SpecialNotes: $"Auto-recorded from Stock Purchase Order #{createdPurchase.Id}"
+                        ));
+                    }
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Error auto-recording entitlement: {ex.Message}");
+                }
+            }
 
             ResetOrder();
             _nav.NavigateTo<ProductListViewModel>();
