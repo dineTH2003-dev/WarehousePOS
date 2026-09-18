@@ -34,6 +34,7 @@ public static class InfrastructureServiceRegistration
         services.AddScoped<IStoreSettingRepository, StoreSettingRepository>();
         services.AddScoped<WarehousePOS.Domain.Common.IUnitOfWork, UnitOfWork>();
         services.AddScoped<IExpenseRepository, ExpenseRepository>();
+        services.AddScoped<ISupplierEntitlementRepository, SupplierProductEntitlementRepository>();
 
         // Printing & Hardware
         services.AddScoped<Application.Printing.IReceiptPrinter, Printing.EpsonLq310Printer>();

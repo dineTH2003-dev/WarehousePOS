@@ -89,6 +89,23 @@ public static class DbInitializer
     {
         try
         {
+            await db.Database.ExecuteSqlRawAsync(@"
+                CREATE TABLE IF NOT EXISTS SupplierProductEntitlements (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    SupplierId INTEGER NOT NULL,
+                    ProductId INTEGER NOT NULL,
+                    Nature TEXT NOT NULL,
+                    Quantity INTEGER NULL,
+                    Value TEXT NULL,
+                    EventDate TEXT NOT NULL,
+                    NextEntitlementDate TEXT NULL,
+                    SpecialNotes TEXT NULL,
+                    CreatedAt TEXT NOT NULL,
+                    UpdatedAt TEXT NULL,
+                    FOREIGN KEY (SupplierId) REFERENCES Suppliers(Id) ON DELETE RESTRICT,
+                    FOREIGN KEY (ProductId) REFERENCES Products(Id) ON DELETE RESTRICT
+                );");
+
             var supplierColumns = await db.Database
                 .SqlQueryRaw<string>("SELECT name FROM pragma_table_info('Suppliers')")
                 .ToListAsync();
