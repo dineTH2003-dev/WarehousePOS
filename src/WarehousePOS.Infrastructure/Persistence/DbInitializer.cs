@@ -287,6 +287,76 @@ public static class DbInitializer
                 CREATE INDEX IF NOT EXISTS IX_SalePayments_SaleId ON SalePayments (SaleId);
                 CREATE INDEX IF NOT EXISTS IX_SalePayments_PaymentDate ON SalePayments (PaymentDate);
             ");
+
+            // --- Users table enhancements (BaseSalary & CommissionRate) ---
+            var userColumns = await db.Database
+                .SqlQueryRaw<string>("SELECT name FROM pragma_table_info('Users')")
+                .ToListAsync();
+
+            if (userColumns.Any())
+            {
+                if (!userColumns.Contains("BaseSalary", StringComparer.OrdinalIgnoreCase))
+                {
+                    await db.Database.ExecuteSqlRawAsync("ALTER TABLE Users ADD COLUMN BaseSalary TEXT NOT NULL DEFAULT '0';");
+                }
+                if (!userColumns.Contains("CommissionRate", StringComparer.OrdinalIgnoreCase))
+                {
+                    await db.Database.ExecuteSqlRawAsync("ALTER TABLE Users ADD COLUMN CommissionRate TEXT NOT NULL DEFAULT '0';");
+                }
+            }
+
+            // --- Executive Reporting Domain Tables ---
+            await db.Database.ExecuteSqlRawAsync(@"
+                CREATE TABLE IF NOT EXISTS DeliveryTrips (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    TripCode TEXT NOT NULL,
+                    DriverUserId INTEGER NOT NULL,
+                    DispatchedAtUtc TEXT NOT NULL,
+                    DeliveredAtUtc TEXT NULL,
+                    Status INTEGER NOT NULL,
+                    OdometerStartKm REAL NOT NULL,
+                    OdometerEndKm REAL NOT NULL,
+                    MileagePayout TEXT NOT NULL DEFAULT '0',
+                    BonusPayout TEXT NOT NULL DEFAULT '0',
+                    IsActive INTEGER NOT NULL DEFAULT 1,
+                    CreatedAt TEXT NOT NULL,
+                    UpdatedAt TEXT NULL,
+                    FOREIGN KEY (DriverUserId) REFERENCES Users (Id) ON DELETE RESTRICT
+                );
+
+                CREATE TABLE IF NOT EXISTS FuelLogs (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    DriverUserId INTEGER NOT NULL,
+                    FuelDateUtc TEXT NOT NULL,
+                    Liters TEXT NOT NULL DEFAULT '0',
+                    TotalCost TEXT NOT NULL DEFAULT '0',
+                    ReceiptNumber TEXT NOT NULL,
+                    IsActive INTEGER NOT NULL DEFAULT 1,
+                    CreatedAt TEXT NOT NULL,
+                    UpdatedAt TEXT NULL,
+                    FOREIGN KEY (DriverUserId) REFERENCES Users (Id) ON DELETE RESTRICT
+                );
+
+                CREATE TABLE IF NOT EXISTS ServiceTickets (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    TicketCode TEXT NOT NULL,
+                    TechnicianUserId INTEGER NOT NULL,
+                    ProductId INTEGER NOT NULL,
+                    DefectDescription TEXT NOT NULL,
+                    Status INTEGER NOT NULL,
+                    CreatedDateUtc TEXT NOT NULL,
+                    ResolvedDateUtc TEXT NULL,
+                    TurnaroundHours REAL NOT NULL DEFAULT 0,
+                    RepairLaborFee TEXT NOT NULL DEFAULT '0',
+                    SparePartsCost TEXT NOT NULL DEFAULT '0',
+                    TechnicianBonus TEXT NOT NULL DEFAULT '0',
+                    IsActive INTEGER NOT NULL DEFAULT 1,
+                    CreatedAt TEXT NOT NULL,
+                    UpdatedAt TEXT NULL,
+                    FOREIGN KEY (TechnicianUserId) REFERENCES Users (Id) ON DELETE RESTRICT,
+                    FOREIGN KEY (ProductId) REFERENCES Products (Id) ON DELETE RESTRICT
+                );
+            ");
         }
         catch (Exception ex)
         {
@@ -294,4 +364,5 @@ public static class DbInitializer
         }
     }
 }
+
 
