@@ -481,7 +481,11 @@ public sealed class ExpenseListViewModel : ViewModelBase
             // Update Category Breakdown Visual Items
             _categoryBreakdownItems.Clear();
             var brushConverter = new BrushConverter();
-            foreach (var catDto in analytics.CategoryBreakdown)
+            var sortedBreakdown = analytics.CategoryBreakdown
+                .OrderByDescending(c => c.TotalAmount)
+                .ThenBy(c => c.CategoryName);
+
+            foreach (var catDto in sortedBreakdown)
             {
                 var colorHex = GetCategoryHexColor(catDto.CategoryName);
                 var brush = (Brush)brushConverter.ConvertFromString(colorHex)!;
@@ -496,6 +500,7 @@ public sealed class ExpenseListViewModel : ViewModelBase
                     ColorBrush = brush
                 });
             }
+
 
             // Update Monthly Trend Bar Items
             _monthlyTrendItems.Clear();

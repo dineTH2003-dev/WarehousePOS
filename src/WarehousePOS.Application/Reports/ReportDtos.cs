@@ -360,5 +360,39 @@ public sealed record ProductAffinityPairDto(
     int TimesBoughtTogether,
     double AffinityScore);
 
+// [SYSTEM_TAG: EMPLOYEE_PAYROLL_EXPENSE_REPORT]
+public sealed record EmployeeReportSummaryDto(
+    int TotalEmployeesCount,
+    decimal TotalSalaryBudget,
+    decimal TotalPaidThisMonth,
+    decimal TotalAdvancesThisMonth,
+    IReadOnlyList<EmployeeReportDto> Employees);
 
+public sealed record EmployeeReportDto(
+    int EmployeeId,
+    string FullName,
+    string Username,
+    string Role,
+    decimal BaseSalary,
+    decimal TotalEarnings,
+    decimal TotalSalaryPaid,
+    decimal TotalAdvancesPaid,
+    decimal NetBalanceDue,
+    DateTime? LastPaidAt,
+    IReadOnlyList<EmployeePaymentRecordDto> PaymentHistory);
 
+public sealed record EmployeePaymentRecordDto(
+    int ExpenseId,
+    DateTime PaymentDate,
+    decimal Amount,
+    string PaymentType,
+    string Description,
+    string? ReferenceNo,
+    string RecordedByUserName);
+
+public sealed record CreateEmployeePaymentRequest(
+    int EmployeeId,
+    decimal Amount,
+    string PaymentType,
+    string? Description,
+    DateTime? PaymentDate = null);

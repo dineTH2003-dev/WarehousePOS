@@ -170,4 +170,73 @@ public sealed class ReportServiceTests
         result.TotalRevenue.Should().Be(0m);
         result.TotalTransactions.Should().Be(0);
     }
+
+    [Fact]
+    public async Task GetEmployeeReportSummaryAsync_CalculatesSalariesAndAdvancesCorrectly()
+    {
+        // Arrange
+        var userMock = new Mock<IUserRepository>();
+        var user = User.Create("john", "hash", "John Doe", UserRole.Worker);
+        user.UpdateProfile("John Doe", UserRole.Worker);
+        userMock.Setup(u => u.GetAllAsync(default)).ReturnsAsync([user]);
+
+        var service = new ReportService(
+            _saleRepoMock.Object,
+            _productRepoMock.Object,
+            _supplierRepoMock.Object,
+            _expenseRepoMock.Object,
+            _purchaseRepoMock.Object,
+            _customerRepoMock.Object,
+            _movementRepoMock.Object,
+            _categoryRepoMock.Object,
+            userMock.Object);
+
+        var cat = ExpenseCategory.Create("Wages & Salaries");
+        _expenseRepoMock.Setup(e => e.GetCategoriesAsync(true, default)).ReturnsAsync([cat]);
+
+        var advanceExp = Expense.Create(1, 15000m, "[Advance Payment] Advance for John Doe", 1, DateTime.UtcNow.AddDays(-2), $"EMP-{user.Id}:ADVANCE");
+        var salaryExp = Expense.Create(1, 35000m, "[Total Sum] Full salary for John Doe", 1, DateTime.UtcNow.AddDays(-1), $"EMP-{user.Id}:TOTAL_SUM");
+
+        _expenseRepoMock.Setup(e => e.GetAllAsync(default)).ReturnsAsync([advanceExp, salaryExp]);
+
+        // Act
+        var report = await service.GetEmployeeReportSummaryAsync(DateTime.Today.AddDays(-30), DateTime.Today);
+
+        // Assert
+        report.Should().NotBeNull();
+        report.TotalEmployeesCount.Should().Be(1);
+        report.TotalPaidThisMonth.Should().Be(35000m);
+        report.TotalAdvancesThisMonth.Should().Be(15000m);
+
+        var empReport = report.Employees.Should().ContainSingle().Subject;
+        empReport.EmployeeId.Should().Be(user.Id);
+        empReport.TotalSalaryPaid.Should().Be(35000m);
+        empReport.TotalAdvancesPaid.Should().Be(15000m);
+        empReport.PaymentHistory.Should().HaveCount(2);
+    }
+
+    [Fact]
+    public async Task RecordEmployeePaymentAsync_CreatesWagesExpenseEntry()
+    {
+        // Arrange
+        var cat = ExpenseCategory.Create("Wages & Salaries");
+        _expenseRepoMock.Setup(e => e.GetCategoriesAsync(true, default)).ReturnsAsync([cat]);
+
+        Expense? capturedExpense = null;
+        _expenseRepoMock.Setup(e => e.AddAsync(It.IsAny<Expense>(), default))
+            .Callback<Expense, CancellationToken>((exp, _) => capturedExpense = exp)
+            .Returns(Task.CompletedTask);
+
+        var req = new CreateEmployeePaymentRequest(1, 25000m, "Advance Payment", "Mid month advance", DateTime.UtcNow);
+
+        // Act
+        await _sut.RecordEmployeePaymentAsync(req, 1);
+
+        // Assert
+        capturedExpense.Should().NotBeNull();
+        capturedExpense!.Amount.Should().Be(25000m);
+        capturedExpense.Description.Should().Contain("[Advance Payment]");
+        capturedExpense.ReferenceNo.Should().Be("EMP-1:ADVANCE");
+    }
 }
+

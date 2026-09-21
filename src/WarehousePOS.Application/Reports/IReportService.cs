@@ -48,7 +48,8 @@ public interface IReportService
     Task<FleetTechPayrollReportDto> GetFleetTechPayrollReportAsync(DateTime from, DateTime to, CancellationToken ct = default);
     Task<CustomerValuationReportDto> GetCustomerValuationReportAsync(DateTime from, DateTime to, CancellationToken ct = default);
     Task<ItemPerformanceMatrixReportDto> GetItemPerformanceMatrixAsync(DateTime from, DateTime to, CancellationToken ct = default);
+
+    // Employee Payroll & Expense Report
+    Task<EmployeeReportSummaryDto> GetEmployeeReportSummaryAsync(DateTime from, DateTime to, CancellationToken ct = default);
+    Task RecordEmployeePaymentAsync(CreateEmployeePaymentRequest request, int recordedByUserId, CancellationToken ct = default);
 }
-
-
-

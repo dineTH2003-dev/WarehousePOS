@@ -92,8 +92,9 @@
                     <StackPanel Width="170" Margin="0,0,8,6">
                         <TextBlock Text="Category" Style="{StaticResource FormLabel}" Margin="0,0,0,4"/>
                         <ComboBox ItemsSource="{Binding FilterCategories}" DisplayMemberPath="Name" SelectedValuePath="Id"
-                                  SelectedValue="{Binding SelectedCategoryFilterId}" Height="36"/>
+                                  SelectedValue="{Binding SelectedCategoryFilterId}" Validation.ErrorTemplate="{x:Null}" Height="36"/>
                     </StackPanel>
+
 
                     <!-- Search Input -->
                     <StackPanel Width="200" Margin="0,0,8,6">
@@ -464,8 +465,9 @@
                         <StackPanel Grid.Row="2" Margin="0,0,0,6">
                             <TextBlock Text="Category *" Style="{StaticResource FormLabel}" FontSize="11" Margin="0,0,0,2"/>
                             <ComboBox ItemsSource="{Binding FormCategories}" DisplayMemberPath="Name" SelectedValuePath="Id"
-                                      SelectedValue="{Binding FormCategoryId}" Height="34"/>
+                                      SelectedValue="{Binding FormCategoryId}" Validation.ErrorTemplate="{x:Null}" Height="34"/>
                         </StackPanel>
+
 
                         <!-- Description Multi-line TextBox (Expands to absorb available vertical space!) -->
                         <Grid Grid.Row="3" Margin="0,0,0,6">
