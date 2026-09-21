@@ -17,6 +17,13 @@ public sealed class User : AggregateRoot
     public UserRole Role { get; private set; }
     public bool IsActive { get; private set; } = true;
     public DateTime? LastLoginAt { get; private set; }
+    public decimal BaseSalary { get; private set; } = 0m;
+    public decimal CommissionRate { get; private set; } = 0m;
+
+    public ICollection<DeliveryTrip> DeliveryTrips { get; private set; } = new List<DeliveryTrip>();
+    public ICollection<FuelLog> FuelLogs { get; private set; } = new List<FuelLog>();
+    public ICollection<ServiceTicket> ServiceTickets { get; private set; } = new List<ServiceTicket>();
+
 
     public static User Create(string username, string passwordHash, string fullName, UserRole role)
     {
