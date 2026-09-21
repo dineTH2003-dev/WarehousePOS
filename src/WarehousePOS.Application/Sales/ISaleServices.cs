@@ -27,4 +27,6 @@ public interface ISaleService
     Task<SaleDto> RecordPaymentAsync(RecordSalePaymentRequest request, CancellationToken ct = default);
     Task<SaleDto> ProcessReturnAsync(ProcessSaleReturnRequest request, CancellationToken ct = default);
     Task<SaleDto> AdjustSaleAsync(AdjustSaleRequest request, CancellationToken ct = default);
+    Task ProcessCustomerClaimAsync(ProcessCustomerClaimRequest request, CancellationToken ct = default);
 }
+

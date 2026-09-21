@@ -209,3 +209,156 @@ public sealed record CustomerReportSummaryDto(
     decimal OutstandingCustomerBalance,
     IReadOnlyList<CustomerReportDto> Customers);
 
+// 9. Production & Product Profitability Report
+public sealed record ProductProductionReportItemDto(
+    int ProductId,
+    string SKU,
+    string ProductName,
+    string CategoryName,
+    decimal UnitCost,
+    decimal WholesalePrice,
+    decimal RetailPrice,
+    int RetailQuantitySold,
+    decimal RetailRevenue,
+    decimal RetailProfit,
+    int WholesaleQuantitySold,
+    decimal WholesaleRevenue,
+    decimal WholesaleProfit,
+    int TotalQuantitySold,
+    decimal TotalRevenue,
+    decimal TotalCostOfGoodsSold,
+    decimal TotalProfit,
+    decimal ProfitMarginPercentage,
+    int ClaimQuantity,
+    decimal ClaimValue);
+
+public sealed record ProductProductionReportSummaryDto(
+    int TotalProductsCount,
+    int TotalVolumeSold,
+    decimal TotalRetailRevenue,
+    decimal TotalRetailProfit,
+    decimal TotalWholesaleRevenue,
+    decimal TotalWholesaleProfit,
+    decimal TotalCombinedRevenue,
+    decimal TotalCombinedProfit,
+    decimal OverallMarginPercentage,
+    int TotalClaimQuantity,
+    decimal TotalClaimValue,
+    IReadOnlyList<ProductProductionReportItemDto> Items);
+
+// 10. EXECUTIVE REPORTING SUITE (7 MODULES)
+
+// [SYSTEM_TAG: OVERVIEW_DASHBOARD]
+public sealed record OverviewDashboardReportDto(
+    decimal GrossRevenue,
+    decimal CostOfGoodsSold,
+    decimal FixedExpenses,
+    decimal VariableExpenses,
+    decimal NetProfit,
+    decimal AverageOrderValue,
+    decimal MonthOverMonthGrowthPercentage,
+    decimal GrossMarginPercentage);
+
+// [SYSTEM_TAG: REVENUE_VELOCITY_REPORT]
+public sealed record RevenueVelocityReportDto(
+    decimal GrossSales,
+    decimal NetSales,
+    decimal SalesTaxCollected,
+    IReadOnlyList<PaymentSplitDto> PaymentSplits,
+    IReadOnlyList<HourlySalesPointDto> VelocitySpikes);
+
+public sealed record PaymentSplitDto(
+    string Method,
+    decimal TotalAmount,
+    int TransactionCount);
+
+// [SYSTEM_TAG: INVENTORY_VALUATION_LEAN]
+public sealed record InventoryLeanReportDto(
+    decimal TotalStockValuation,
+    int LowStockAlertsCount,
+    decimal StockTurnoverRate,
+    int DeadStockCount,
+    IReadOnlyList<LowStockItemDto> DangerStockItems,
+    IReadOnlyList<SupplierValuationDto> SupplierValuations);
+
+public sealed record SupplierValuationDto(
+    string SupplierName,
+    decimal TotalValuation,
+    int ProductCount);
+
+// [SYSTEM_TAG: OPERATIONAL_EXPENSE_LEDGER]
+public sealed record ExpenseLedgerReportDto(
+    decimal FixedCostsTotal,
+    decimal VariableCostsTotal,
+    decimal FuelReceiptsTotal,
+    decimal VehicleMaintenanceTotal,
+    decimal TechToolsTotal,
+    IReadOnlyList<ExpenseCategoryBreakdownDto> Categories);
+
+public sealed record ExpenseCategoryBreakdownDto(
+    string CategoryName,
+    decimal Amount,
+    string ExpenseType);
+
+// [SYSTEM_TAG: FLEET_TECH_PAYROLL_ANALYTICS]
+public sealed record FleetTechPayrollReportDto(
+    decimal TotalAdminSalesSalary,
+    decimal TotalSalesCommissions,
+    decimal TotalDriverPayouts,
+    decimal TotalTechBonuses,
+    IReadOnlyList<PayrollConsolidationDto> Employees);
+
+public sealed record PayrollConsolidationDto(
+    int EmployeeId,
+    string EmployeeName,
+    string Role,
+    decimal BaseSalary,
+    decimal SalesCommission,
+    decimal DriverTripBonus,
+    decimal TechServiceBonus,
+    decimal TotalEarnings);
+
+// [SYSTEM_TAG: CUSTOMER_LIFETIME_VALUATION]
+public sealed record CustomerValuationReportDto(
+    int NewCustomersCount,
+    int ReturningCustomersCount,
+    decimal NewVsReturningRatio,
+    IReadOnlyList<CustomerVipDto> TopVipClients,
+    IReadOnlyList<AccountsReceivableAgingDto> AccountsReceivable);
+
+public sealed record CustomerVipDto(
+    int CustomerId,
+    string CustomerName,
+    decimal TotalSpend,
+    int OrderCount);
+
+public sealed record AccountsReceivableAgingDto(
+    int CustomerId,
+    string CustomerName,
+    decimal OutstandingBalance,
+    int DaysOverdue,
+    decimal CollectionProgressPercentage);
+
+// [SYSTEM_TAG: ITEM_PERFORMANCE_MATRIX]
+public sealed record ItemPerformanceMatrixReportDto(
+    IReadOnlyList<SkuScatterPointDto> SkuPoints,
+    IReadOnlyList<ProductAffinityPairDto> AffinityPairs);
+
+public sealed record SkuScatterPointDto(
+    int ProductId,
+    string SKU,
+    string ProductName,
+    decimal UnitMargin,
+    decimal MarginPercentage,
+    int SalesVelocity,
+    double DefectRatePercentage,
+    string Quadrant);
+
+public sealed record ProductAffinityPairDto(
+    string ItemA,
+    string ItemB,
+    int TimesBoughtTogether,
+    double AffinityScore);
+
+
+
