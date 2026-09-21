@@ -348,6 +348,50 @@ public sealed class SaleService(
         return Map(sale);
     }
 
+    public async Task ProcessCustomerClaimAsync(ProcessCustomerClaimRequest req, CancellationToken ct = default)
+    {
+        if (req.Quantity <= 0)
+            throw new ArgumentOutOfRangeException(nameof(req.Quantity), "Claim quantity must be a positive whole number.");
+
+        var product = await productRepo.GetByIdAsync(req.ProductId, ct)
+            ?? throw new EntityNotFoundException(nameof(Product), req.ProductId);
+
+        Customer? customer = null;
+        if (req.CustomerId.HasValue && req.CustomerId.Value > 0)
+        {
+            customer = await customerRepo.GetByIdAsync(req.CustomerId.Value, ct);
+        }
+
+        await unitOfWork.ExecuteInTransactionAsync(async () =>
+        {
+            product.RecordWarrantyClaim(req.Quantity);
+            await productRepo.UpdateAsync(product, ct);
+
+            string notesText = string.IsNullOrWhiteSpace(req.Reason)
+                ? $"Customer Claim for {product.Name} (Amount: Rs. {req.ClaimAmount:N2})"
+                : $"Customer Claim: {req.Reason} (Amount: Rs. {req.ClaimAmount:N2})";
+
+            if (customer != null)
+            {
+                notesText += $" [Customer: {customer.Name} ({customer.Phone ?? "No Phone"})]";
+            }
+
+            var movement = InventoryMovement.Create(
+                product.Id,
+                MovementType.Adjustment,
+                req.Quantity,
+                product.StockQuantity,
+                req.UserId,
+                referenceId: req.SaleId?.ToString() ?? req.CustomerId?.ToString(),
+                referenceType: "CustomerClaim",
+                notes: notesText);
+
+            await movementRepo.AddAsync(movement, ct);
+        }, ct);
+
+        logger.LogInformation("Customer claim recorded for Product {SKU}, Amount: {ClaimAmount:C2}, Qty: {Qty}", product.SKU, req.ClaimAmount, req.Quantity);
+    }
+
     private static SaleDto Map(Sale s) => new(
         s.Id,
         s.CustomerId,

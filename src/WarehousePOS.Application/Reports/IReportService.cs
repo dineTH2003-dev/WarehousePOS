@@ -36,5 +36,19 @@ public interface IReportService
 
     // Monthly Report (Notifications)
     Task<Notifications.MonthlyReportSummaryDto> GetMonthlyReportSummaryAsync(int year, int month, CancellationToken ct = default);
+
+    // Production & Product Profitability Report
+    Task<ProductProductionReportSummaryDto> GetProductProductionReportAsync(DateTime from, DateTime to, int? categoryId = null, CancellationToken ct = default);
+
+    // Executive Dashboard Suite (7 System Tags)
+    Task<OverviewDashboardReportDto> GetOverviewDashboardAsync(DateTime from, DateTime to, CancellationToken ct = default);
+    Task<RevenueVelocityReportDto> GetRevenueVelocityReportAsync(DateTime from, DateTime to, CancellationToken ct = default);
+    Task<InventoryLeanReportDto> GetInventoryLeanReportAsync(CancellationToken ct = default);
+    Task<ExpenseLedgerReportDto> GetExpenseLedgerReportAsync(DateTime from, DateTime to, CancellationToken ct = default);
+    Task<FleetTechPayrollReportDto> GetFleetTechPayrollReportAsync(DateTime from, DateTime to, CancellationToken ct = default);
+    Task<CustomerValuationReportDto> GetCustomerValuationReportAsync(DateTime from, DateTime to, CancellationToken ct = default);
+    Task<ItemPerformanceMatrixReportDto> GetItemPerformanceMatrixAsync(DateTime from, DateTime to, CancellationToken ct = default);
 }
+
+
 

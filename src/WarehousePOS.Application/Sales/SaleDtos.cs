@@ -144,3 +144,13 @@ public sealed record SaleSearchCriteria(
     SaleStatus? Status = null,
     PaymentMethod? PaymentMethod = null,
     SaleType? SaleType = null);
+
+public sealed record ProcessCustomerClaimRequest(
+    int ProductId,
+    int? CustomerId = null,
+    int? SaleId = null,
+    int Quantity = 1,
+    decimal ClaimAmount = 0m,
+    string Reason = "",
+    int UserId = 1);
+
