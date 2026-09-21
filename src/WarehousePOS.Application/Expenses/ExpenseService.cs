@@ -185,6 +185,13 @@ public sealed class ExpenseService(
                 catExpenses.Count));
         }
 
+        categoryBreakdown = categoryBreakdown
+            .OrderByDescending(c => c.TotalAmount)
+            .ThenBy(c => c.CategoryName)
+            .ToList();
+
+
+
         // Monthly Expense Trend (Monthly totals for selected year or last 12 months)
         var trendList = new List<ExpenseMonthlyTrendDto>();
 

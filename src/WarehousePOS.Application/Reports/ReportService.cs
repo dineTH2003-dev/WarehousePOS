@@ -1148,7 +1148,136 @@ public sealed class ReportService(
 
         return new ItemPerformanceMatrixReportDto(skuPoints, affinityPairs);
     }
+
+    // ── EMPLOYEE PAYROLL & EXPENSE REPORT ──────────────────────────────────────
+
+    public async Task<EmployeeReportSummaryDto> GetEmployeeReportSummaryAsync(DateTime from, DateTime to, CancellationToken ct = default)
+    {
+        var start = from.Date;
+        var end   = to.Date.AddDays(1).AddTicks(-1);
+
+        var users = userRepo != null ? await userRepo.GetAllAsync(ct) : [];
+        var activeUsers = users.Where(u => u.IsActive).ToList();
+
+        var allExpenses = await expenseRepo.GetAllAsync(ct);
+        var categories  = await expenseRepo.GetCategoriesAsync(true, ct);
+        var wagesCategory = categories.FirstOrDefault(c => c.Name.Equals("Wages & Salaries", StringComparison.OrdinalIgnoreCase));
+        int wagesCategoryId = wagesCategory?.Id ?? 0;
+
+        var periodExpenses = allExpenses.Where(e => e.ExpenseDate >= start && e.ExpenseDate <= end).ToList();
+
+        var employeeDtos = new List<EmployeeReportDto>();
+        decimal grandTotalPaid = 0m;
+        decimal grandTotalAdvances = 0m;
+        decimal grandTotalBudget = 0m;
+
+        var allUsersMap = users.ToDictionary(u => u.Id, u => u.FullName);
+
+        foreach (var emp in activeUsers)
+        {
+            grandTotalBudget += emp.BaseSalary;
+
+            var empExpenses = periodExpenses.Where(e =>
+                (!string.IsNullOrWhiteSpace(e.ReferenceNo) && e.ReferenceNo.StartsWith($"EMP-{emp.Id}", StringComparison.OrdinalIgnoreCase))
+                || (e.CategoryId == wagesCategoryId && e.Description.Contains(emp.FullName, StringComparison.OrdinalIgnoreCase))
+                || (e.CategoryId == wagesCategoryId && e.Description.Contains($"EMP-{emp.Id}", StringComparison.OrdinalIgnoreCase))
+            ).OrderByDescending(e => e.ExpenseDate).ToList();
+
+            var paymentHistory = new List<EmployeePaymentRecordDto>();
+            decimal totalSalaryPaid = 0m;
+            decimal totalAdvancesPaid = 0m;
+            DateTime? lastPaidAt = null;
+
+            foreach (var exp in empExpenses)
+            {
+                bool isAdvance = exp.Description.Contains("Advance", StringComparison.OrdinalIgnoreCase) ||
+                                 (!string.IsNullOrWhiteSpace(exp.ReferenceNo) && exp.ReferenceNo.Contains("ADVANCE", StringComparison.OrdinalIgnoreCase));
+
+                string paymentType = isAdvance ? "Advance Payment" : "Total Sum";
+                if (isAdvance)
+                    totalAdvancesPaid += exp.Amount;
+                else
+                    totalSalaryPaid += exp.Amount;
+
+                if (lastPaidAt == null || exp.ExpenseDate > lastPaidAt)
+                    lastPaidAt = exp.ExpenseDate;
+
+                string recordedByName = allUsersMap.TryGetValue(exp.RecordedByUserId, out var name) ? name : "Admin";
+
+                paymentHistory.Add(new EmployeePaymentRecordDto(
+                    exp.Id,
+                    exp.ExpenseDate,
+                    exp.Amount,
+                    paymentType,
+                    exp.Description,
+                    exp.ReferenceNo,
+                    recordedByName));
+            }
+
+            grandTotalPaid += totalSalaryPaid;
+            grandTotalAdvances += totalAdvancesPaid;
+
+            decimal totalEarnings = emp.BaseSalary;
+            decimal netBalanceDue = Math.Max(0m, totalEarnings - (totalSalaryPaid + totalAdvancesPaid));
+
+            employeeDtos.Add(new EmployeeReportDto(
+                emp.Id,
+                emp.FullName,
+                emp.Username,
+                emp.Role.ToString(),
+                emp.BaseSalary,
+                totalEarnings,
+                totalSalaryPaid,
+                totalAdvancesPaid,
+                netBalanceDue,
+                lastPaidAt,
+                paymentHistory));
+        }
+
+        return new EmployeeReportSummaryDto(
+            activeUsers.Count,
+            grandTotalBudget,
+            grandTotalPaid,
+            grandTotalAdvances,
+            employeeDtos);
+    }
+
+    public async Task RecordEmployeePaymentAsync(CreateEmployeePaymentRequest request, int recordedByUserId, CancellationToken ct = default)
+    {
+        if (request.Amount <= 0)
+            throw new ArgumentException("Payment amount must be greater than zero.", nameof(request.Amount));
+
+        var categories = await expenseRepo.GetCategoriesAsync(true, ct);
+        var wagesCat = categories.FirstOrDefault(c => c.Name.Equals("Wages & Salaries", StringComparison.OrdinalIgnoreCase));
+        if (wagesCat == null)
+        {
+            wagesCat = ExpenseCategory.Create("Wages & Salaries", "Staff payroll, salary payouts, and advances");
+            await expenseRepo.AddCategoryAsync(wagesCat, ct);
+        }
+
+        string userTag = request.EmployeeId > 0 ? $"EMP-{request.EmployeeId}" : "EMP-0";
+        string pType = string.IsNullOrWhiteSpace(request.PaymentType) ? "Total Sum" : request.PaymentType.Trim();
+        string cleanPType = pType.Equals("Advance Payment", StringComparison.OrdinalIgnoreCase) ? "ADVANCE" : "TOTAL_SUM";
+
+        string referenceNo = $"{userTag}:{cleanPType}";
+        string notes = !string.IsNullOrWhiteSpace(request.Description) ? request.Description.Trim() : $"{pType} Salary Payment";
+        string description = $"[{pType}] {notes}";
+
+        DateTime paymentTime = request.PaymentDate ?? DateTime.UtcNow;
+        int catId = wagesCat.Id > 0 ? wagesCat.Id : 1;
+
+        var expense = Expense.Create(
+            catId,
+            request.Amount,
+            description,
+            recordedByUserId,
+            paymentTime,
+            referenceNo);
+
+        await expenseRepo.AddAsync(expense, ct);
+    }
 }
+
 
 
 

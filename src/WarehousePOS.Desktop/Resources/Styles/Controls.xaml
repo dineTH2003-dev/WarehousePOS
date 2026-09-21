@@ -541,10 +541,12 @@
 
     <!-- Global ComboBox Style -->
     <Style TargetType="ComboBox">
+        <Setter Property="Validation.ErrorTemplate" Value="{x:Null}" />
         <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
         <Setter Property="Background" Value="White" />
         <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
         <Setter Property="BorderThickness" Value="1" />
+
         <Setter Property="FontSize" Value="13" />
         <Setter Property="MinHeight" Value="38" />
         <Setter Property="Padding" Value="12,6,32,6" />

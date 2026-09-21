@@ -7,6 +7,7 @@ using WarehousePOS.Application.Reports;
 using WarehousePOS.Application.Sales;
 using WarehousePOS.Application.Suppliers;
 using WarehousePOS.Desktop.Services;
+using WarehousePOS.Desktop.Views.Reports;
 using WarehousePOS.Desktop.Views.Sales;
 
 namespace WarehousePOS.Desktop.ViewModels.Reports;
@@ -59,6 +60,8 @@ public sealed class ReportsViewModel : ViewModelBase
     private string _productionSearchText = string.Empty;
     private string _selectedProductionCategoryFilter = "All";
 
+    private string _employeeSearchText = string.Empty;
+
     // Detail Panel Selection State
     private LowStockItemDto? _selectedLowStockItem;
     private GrnRecordDto? _selectedGrnRecord;
@@ -66,6 +69,7 @@ public sealed class ReportsViewModel : ViewModelBase
     private SupplierBalanceReportDto? _selectedSupplierBalance;
     private CustomerReportDto? _selectedCustomerReport;
     private ProductProductionReportItemDto? _selectedProductionItem;
+    private EmployeeReportDto? _selectedEmployeeReport;
 
     // Report DTO Data Properties
     private GeneralAnalyticsDto? _generalAnalytics;
@@ -77,6 +81,7 @@ public sealed class ReportsViewModel : ViewModelBase
     private SupplierBalanceSummaryDto? _supplierBalanceSummary;
     private CustomerReportSummaryDto? _customerSummary;
     private ProductProductionReportSummaryDto? _productionReportSummary;
+    private EmployeeReportSummaryDto? _employeeSummary;
 
     // Raw Collections
     private readonly ObservableCollection<SalesTrendPointDto> _salesTrend = [];
@@ -93,6 +98,7 @@ public sealed class ReportsViewModel : ViewModelBase
     private readonly ObservableCollection<ProductProductionReportItemDto> _productionItems = [];
     private readonly ObservableCollection<ProductProductionReportItemDto> _filteredProductionItems = [];
     private readonly ObservableCollection<string> _productionCategoryList = [];
+    private readonly ObservableCollection<EmployeeReportDto> _employeeReports = [];
 
     // Filtered Collections for Views
     private readonly ObservableCollection<LowStockItemDto> _filteredLowStockItems = [];
@@ -100,6 +106,7 @@ public sealed class ReportsViewModel : ViewModelBase
     private readonly ObservableCollection<ClaimRecordDto> _filteredClaimRecords = [];
     private readonly ObservableCollection<SupplierBalanceReportDto> _filteredSupplierBalances = [];
     private readonly ObservableCollection<CustomerReportDto> _filteredCustomerReports = [];
+    private readonly ObservableCollection<EmployeeReportDto> _filteredEmployeeReports = [];
 
     public int SelectedTabIndex
     {
@@ -526,7 +533,9 @@ public sealed class ReportsViewModel : ViewModelBase
         ClearSupplierSelectionCommand = new RelayCommand(() => SelectedSupplierBalance = null);
         ClearCustomerSelectionCommand = new RelayCommand(() => SelectedCustomerReport = null);
         ClearProductionSelectionCommand = new RelayCommand(() => SelectedProductionItem = null);
+        ClearEmployeeSelectionCommand = new RelayCommand(() => SelectedEmployeeReport = null);
         ProcessCustomerClaimCommand = new RelayCommand<object>(async param => await ExecuteProcessCustomerClaimAsync(param as CustomerReportDto));
+        ProcessEmployeePaymentCommand = new RelayCommand<object>(async param => await ExecuteProcessEmployeePaymentAsync(param as EmployeeReportDto));
         PrintCurrentReportCommand = new RelayCommand(async () => await PrintCurrentReportAsync(), () => !IsPrinting && _printer is not null);
 
         _ = InitialiseAsync();
@@ -739,6 +748,16 @@ public sealed class ReportsViewModel : ViewModelBase
                         }
                     }
                     ApplyProductionFilters();
+                    break;
+
+                case 8: // Employee Report
+                    EmployeeSummary = await _reportService.GetEmployeeReportSummaryAsync(FromDate, ToDate, ct);
+                    _employeeReports.Clear();
+                    if (EmployeeSummary != null)
+                    {
+                        foreach (var emp in EmployeeSummary.Employees) _employeeReports.Add(emp);
+                    }
+                    ApplyEmployeeFilters();
                     break;
             }
         }
@@ -1081,6 +1100,93 @@ public sealed class ReportsViewModel : ViewModelBase
         catch (Exception ex)
         {
             ErrorMessage = $"Unable to process customer claim: {ex.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    public string EmployeeSearchText
+    {
+        get => _employeeSearchText;
+        set
+        {
+            if (SetField(ref _employeeSearchText, value))
+                ApplyEmployeeFilters();
+        }
+    }
+
+    public EmployeeReportDto? SelectedEmployeeReport
+    {
+        get => _selectedEmployeeReport;
+        set => SetField(ref _selectedEmployeeReport, value);
+    }
+
+    public EmployeeReportSummaryDto? EmployeeSummary
+    {
+        get => _employeeSummary;
+        private set => SetField(ref _employeeSummary, value);
+    }
+
+    public ObservableCollection<EmployeeReportDto> FilteredEmployees => _filteredEmployeeReports;
+
+    public RelayCommand ClearEmployeeSelectionCommand { get; }
+    public RelayCommand<object> ProcessEmployeePaymentCommand { get; }
+
+    private void ApplyEmployeeFilters()
+    {
+        _filteredEmployeeReports.Clear();
+        IEnumerable<EmployeeReportDto> query = _employeeReports;
+        if (!string.IsNullOrWhiteSpace(EmployeeSearchText))
+        {
+            var term = EmployeeSearchText.Trim();
+            query = query.Where(e => e.FullName.Contains(term, StringComparison.OrdinalIgnoreCase)
+                                  || e.Username.Contains(term, StringComparison.OrdinalIgnoreCase)
+                                  || e.Role.Contains(term, StringComparison.OrdinalIgnoreCase));
+        }
+        foreach (var emp in query) _filteredEmployeeReports.Add(emp);
+    }
+
+    private async Task ExecuteProcessEmployeePaymentAsync(EmployeeReportDto? preselectedEmployee = null)
+    {
+        EnsureAdmin();
+
+        try
+        {
+            if (_employeeReports.Count == 0 && _reportService != null)
+            {
+                EmployeeSummary = await _reportService.GetEmployeeReportSummaryAsync(FromDate, ToDate);
+                _employeeReports.Clear();
+                if (EmployeeSummary != null)
+                {
+                    foreach (var emp in EmployeeSummary.Employees) _employeeReports.Add(emp);
+                }
+            }
+
+            var activeWindow = System.Windows.Application.Current?.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive)
+                               ?? System.Windows.Application.Current?.MainWindow;
+
+            var dialog = new ProcessEmployeePaymentDialog(_employeeReports, preselectedEmployee);
+            if (activeWindow != null)
+            {
+                dialog.Owner = activeWindow;
+            }
+
+            if (dialog.ShowDialog() == true && dialog.Request != null && _reportService != null)
+            {
+                IsBusy = true;
+                var currentUserId = _session.CurrentUser?.UserId ?? 1;
+                await _reportService.RecordEmployeePaymentAsync(dialog.Request, currentUserId);
+
+                string empName = _employeeReports.FirstOrDefault(e => e.EmployeeId == dialog.Request.EmployeeId)?.FullName ?? "Employee";
+                PrintStatusMessage = $"✅ {dialog.Request.PaymentType} of Rs. {dialog.Request.Amount:N2} logged for {empName}!";
+                await LoadAllReportsAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Unable to process employee payment: {ex.Message}";
         }
         finally
         {
