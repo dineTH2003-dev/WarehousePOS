@@ -303,6 +303,18 @@ public static class DbInitializer
                 {
                     await db.Database.ExecuteSqlRawAsync("ALTER TABLE Users ADD COLUMN CommissionRate TEXT NOT NULL DEFAULT '0';");
                 }
+                if (!userColumns.Contains("SalaryComponents", StringComparer.OrdinalIgnoreCase))
+                {
+                    await db.Database.ExecuteSqlRawAsync("ALTER TABLE Users ADD COLUMN SalaryComponents TEXT NULL;");
+                }
+                if (!userColumns.Contains("PaymentDueDate", StringComparer.OrdinalIgnoreCase))
+                {
+                    await db.Database.ExecuteSqlRawAsync("ALTER TABLE Users ADD COLUMN PaymentDueDate TEXT NULL;");
+                }
+                if (!userColumns.Contains("PaymentFrequency", StringComparer.OrdinalIgnoreCase))
+                {
+                    await db.Database.ExecuteSqlRawAsync("ALTER TABLE Users ADD COLUMN PaymentFrequency TEXT NULL DEFAULT 'Monthly';");
+                }
             }
 
             // --- Executive Reporting Domain Tables ---

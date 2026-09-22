@@ -19,6 +19,9 @@ public sealed class User : AggregateRoot
     public DateTime? LastLoginAt { get; private set; }
     public decimal BaseSalary { get; private set; } = 0m;
     public decimal CommissionRate { get; private set; } = 0m;
+    public string? SalaryComponents { get; private set; }
+    public string? PaymentDueDate { get; private set; }
+    public string? PaymentFrequency { get; private set; } = "Monthly";
 
     public ICollection<DeliveryTrip> DeliveryTrips { get; private set; } = new List<DeliveryTrip>();
     public ICollection<FuelLog> FuelLogs { get; private set; } = new List<FuelLog>();
@@ -38,6 +41,16 @@ public sealed class User : AggregateRoot
             FullName = fullName.Trim(),
             Role = role
         };
+    }
+
+    public void UpdateSalaryDetails(decimal baseSalary, string? salaryComponents, string? paymentDueDate, string? paymentFrequency = "Monthly", decimal commissionRate = 0m)
+    {
+        BaseSalary = baseSalary < 0 ? 0m : baseSalary;
+        SalaryComponents = salaryComponents?.Trim();
+        PaymentDueDate = paymentDueDate?.Trim();
+        PaymentFrequency = string.IsNullOrWhiteSpace(paymentFrequency) ? "Monthly" : paymentFrequency.Trim();
+        CommissionRate = commissionRate < 0 ? 0m : commissionRate;
+        SetUpdatedAt();
     }
 
     public void RecordLogin()

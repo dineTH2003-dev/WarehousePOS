@@ -1824,28 +1824,15 @@
 
                             <!-- Action Bar & Search -->
                             <Border Style="{StaticResource Card}" Margin="0,0,0,14" Padding="14,10">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-
-                                    <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                                        <TextBlock Text="👥 Employee Salary &amp; Expense Intelligence" Style="{StaticResource H3}" VerticalAlignment="Center"/>
-                                        <Border Style="{StaticResource SearchHoverCard}" Width="260" Padding="0" VerticalAlignment="Center" Margin="16,0,0,0">
-                                            <TextBox Style="{StaticResource SearchTextBox}"
-                                                     Text="{Binding EmployeeSearchText, UpdateSourceTrigger=PropertyChanged}"
-                                                     Tag="Search employee name or role..."
-                                                     ToolTip="Search employees by name, username, or role"/>
-                                        </Border>
-                                    </StackPanel>
-
-                                    <Button Grid.Column="1"
-                                            Content="➕  Record Employee Payment / Expense"
-                                            Style="{StaticResource PrimaryButton}"
-                                            Command="{Binding ProcessEmployeePaymentCommand}"
-                                            Height="36" Padding="16,0" VerticalAlignment="Center"/>
-                                </Grid>
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <TextBlock Text="👥 Employee Salary &amp; Expense Intelligence" Style="{StaticResource H3}" VerticalAlignment="Center"/>
+                                    <Border Style="{StaticResource SearchHoverCard}" Width="260" Padding="0" VerticalAlignment="Center" Margin="16,0,0,0">
+                                        <TextBox Style="{StaticResource SearchTextBox}"
+                                                 Text="{Binding EmployeeSearchText, UpdateSourceTrigger=PropertyChanged}"
+                                                 Tag="Search employee name or role..."
+                                                 ToolTip="Search employees by name, username, or role"/>
+                                    </Border>
+                                </StackPanel>
                             </Border>
 
                             <!-- Top KPI Cards Row -->
@@ -1897,22 +1884,10 @@
                                         <DataGridTextColumn Header="Total Sum Paid" Binding="{Binding TotalSalaryPaid, StringFormat=Rs. {0:N2}}" Width="130"/>
                                         <DataGridTextColumn Header="Advances" Binding="{Binding TotalAdvancesPaid, StringFormat=Rs. {0:N2}}" Width="120"/>
                                         <DataGridTextColumn Header="Balance Due" Binding="{Binding NetBalanceDue, StringFormat=Rs. {0:N2}}" Width="130"/>
-                                        <DataGridTemplateColumn Header="Last Received (Date &amp; Time)" Width="170">
+                                        <DataGridTemplateColumn Header="Last Received (Date &amp; Time)" Width="*">
                                             <DataGridTemplateColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <TextBlock Text="{Binding LastPaidAt, StringFormat='dd MMM yyyy HH:mm', TargetNullValue='No payout yet'}" VerticalAlignment="Center" Foreground="{StaticResource TextSecondaryBrush}"/>
-                                                </DataTemplate>
-                                            </DataGridTemplateColumn.CellTemplate>
-                                        </DataGridTemplateColumn>
-                                        <DataGridTemplateColumn Header="Action" Width="130">
-                                            <DataGridTemplateColumn.CellTemplate>
-                                                <DataTemplate>
-                                                    <Button Content="💵 Pay / Advance"
-                                                            Style="{StaticResource TablePrimaryButton}"
-                                                            HorizontalAlignment="Center"
-                                                            VerticalAlignment="Center"
-                                                            Command="{Binding DataContext.ProcessEmployeePaymentCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                                            CommandParameter="{Binding}"/>
                                                 </DataTemplate>
                                             </DataGridTemplateColumn.CellTemplate>
                                         </DataGridTemplateColumn>
@@ -1923,65 +1898,86 @@
                         </StackPanel>
                     </ScrollViewer>
 
-                    <!-- Employee Detail Inspector Drawer -->
-                    <Border Grid.Column="1" Width="350" Style="{StaticResource Card}" Padding="16" Margin="0,0,0,16"
+                    <!-- Employee Detail Inspector Drawer (Matching Image 2) -->
+                    <Border Grid.Column="1" Width="360" Style="{StaticResource Card}" Padding="18" Margin="0,0,0,16"
                             Visibility="{Binding SelectedEmployeeReport, Converter={StaticResource NotNullToVisibilityConverter}}">
                         <StackPanel>
-                            <Grid Margin="0,0,0,12">
-                                <TextBlock Text="👤 Employee Inspector" Style="{StaticResource H3}"/>
-                                <Button Content="✕" Style="{StaticResource SecondaryButton}" Command="{Binding ClearEmployeeSelectionCommand}" Width="28" Height="28" HorizontalAlignment="Right" Padding="0"/>
+                            <!-- Header Title & Close Button -->
+                            <Grid Margin="0,0,0,14">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <TextBlock Text="👤" FontSize="18" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Employee Inspector" FontSize="18" FontWeight="Bold" Foreground="#0F172A" VerticalAlignment="Center"/>
+                                </StackPanel>
+                                <Button Command="{Binding ClearEmployeeSelectionCommand}"
+                                        Width="28" Height="28" HorizontalAlignment="Right" Padding="0" Cursor="Hand">
+                                    <Button.Style>
+                                        <Style TargetType="Button">
+                                            <Setter Property="Background" Value="White"/>
+                                            <Setter Property="BorderBrush" Value="#16A34A"/>
+                                            <Setter Property="BorderThickness" Value="1.5"/>
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Border Background="{TemplateBinding Background}"
+                                                                BorderBrush="{TemplateBinding BorderBrush}"
+                                                                BorderThickness="{TemplateBinding BorderThickness}"
+                                                                CornerRadius="14">
+                                                            <TextBlock Text="✕" Foreground="#16A34A" FontWeight="Bold" FontSize="12" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                        </Border>
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
                             </Grid>
 
-                            <TextBlock Text="{Binding SelectedEmployeeReport.FullName}" FontWeight="Bold" FontSize="16" TextWrapping="Wrap" Margin="0,0,0,2"/>
-                            <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
-                                <Border Background="{StaticResource SurfaceAltBrush}" CornerRadius="4" Padding="6,2" Margin="0,0,6,0">
-                                    <TextBlock Text="{Binding SelectedEmployeeReport.Role}" FontSize="11" Foreground="{StaticResource PrimaryDarkBrush}" FontWeight="SemiBold"/>
+                            <!-- Employee Name & Badge -->
+                            <TextBlock Text="{Binding SelectedEmployeeReport.FullName}" FontWeight="Bold" FontSize="18" Foreground="#15803D" TextWrapping="Wrap" Margin="0,0,0,4"/>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
+                                <Border Background="#DCFCE7" CornerRadius="4" Padding="8,3" Margin="0,0,8,0">
+                                    <TextBlock Text="{Binding SelectedEmployeeReport.Role}" FontSize="12" Foreground="#15803D" FontWeight="Bold"/>
                                 </Border>
-                                <TextBlock Text="{Binding SelectedEmployeeReport.Username, StringFormat='@{0}'}" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" VerticalAlignment="Center"/>
+                                <TextBlock Text="{Binding SelectedEmployeeReport.Username, StringFormat='@{0}'}" Foreground="#64748B" FontSize="13" FontWeight="Bold" VerticalAlignment="Center"/>
                             </StackPanel>
 
-                            <Separator Margin="0,0,0,12"/>
+                            <Border Height="1" Background="#E2E8F0" Margin="0,0,0,14"/>
 
-                            <Grid Margin="0,4">
-                                <TextBlock Text="Base Salary:" Foreground="{StaticResource TextSecondaryBrush}"/>
-                                <TextBlock Text="{Binding SelectedEmployeeReport.BaseSalary, StringFormat=Rs. {0:N2}}" HorizontalAlignment="Right" FontWeight="SemiBold"/>
+                            <!-- Employee Metrics List (Image 2 format) -->
+                            <Grid Margin="0,6">
+                                <TextBlock Text="Base Salary:" Foreground="#334155" FontWeight="Bold" FontSize="13"/>
+                                <TextBlock Text="{Binding SelectedEmployeeReport.BaseSalary, StringFormat=Rs. {0:N2}}" HorizontalAlignment="Right" Foreground="#16A34A" FontWeight="Bold" FontSize="13"/>
                             </Grid>
 
-                            <Grid Margin="0,4">
-                                <TextBlock Text="Total Sums Paid:" Foreground="{StaticResource TextSecondaryBrush}"/>
-                                <TextBlock Text="{Binding SelectedEmployeeReport.TotalSalaryPaid, StringFormat=Rs. {0:N2}}" HorizontalAlignment="Right" Foreground="{StaticResource SuccessBrush}" FontWeight="SemiBold"/>
+                            <Grid Margin="0,6">
+                                <TextBlock Text="Total Sums Paid:" Foreground="#334155" FontWeight="Bold" FontSize="13"/>
+                                <TextBlock Text="{Binding SelectedEmployeeReport.TotalSalaryPaid, StringFormat=Rs. {0:N2}}" HorizontalAlignment="Right" Foreground="#16A34A" FontWeight="Bold" FontSize="13"/>
                             </Grid>
 
-                            <Grid Margin="0,4">
-                                <TextBlock Text="Advances Received:" Foreground="{StaticResource TextSecondaryBrush}"/>
-                                <TextBlock Text="{Binding SelectedEmployeeReport.TotalAdvancesPaid, StringFormat=Rs. {0:N2}}" HorizontalAlignment="Right" Foreground="{StaticResource WarningBrush}" FontWeight="SemiBold"/>
+                            <Grid Margin="0,6">
+                                <TextBlock Text="Advances Received:" Foreground="#334155" FontWeight="Bold" FontSize="13"/>
+                                <TextBlock Text="{Binding SelectedEmployeeReport.TotalAdvancesPaid, StringFormat=Rs. {0:N2}}" HorizontalAlignment="Right" Foreground="#D97706" FontWeight="Bold" FontSize="13"/>
                             </Grid>
 
-                            <Grid Margin="0,4">
-                                <TextBlock Text="Net Balance Due:" Foreground="{StaticResource TextSecondaryBrush}" FontWeight="Bold"/>
-                                <TextBlock Text="{Binding SelectedEmployeeReport.NetBalanceDue, StringFormat=Rs. {0:N2}}" HorizontalAlignment="Right" FontWeight="Bold" Foreground="{StaticResource PrimaryBrush}"/>
+                            <Grid Margin="0,6">
+                                <TextBlock Text="Net Balance Due:" Foreground="#334155" FontWeight="Bold" FontSize="13"/>
+                                <TextBlock Text="{Binding SelectedEmployeeReport.NetBalanceDue, StringFormat=Rs. {0:N2}}" HorizontalAlignment="Right" Foreground="#16A34A" FontWeight="Bold" FontSize="13"/>
                             </Grid>
 
-                            <Grid Margin="0,4">
-                                <TextBlock Text="Last Received Time:" Foreground="{StaticResource TextSecondaryBrush}"/>
-                                <TextBlock Text="{Binding SelectedEmployeeReport.LastPaidAt, StringFormat='dd MMM yyyy HH:mm', TargetNullValue='None'}" HorizontalAlignment="Right" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}"/>
+                            <Grid Margin="0,6">
+                                <TextBlock Text="Last Received Time:" Foreground="#334155" FontWeight="Bold" FontSize="13"/>
+                                <TextBlock Text="{Binding SelectedEmployeeReport.LastPaidAt, StringFormat='dd MMM yyyy HH:mm', TargetNullValue='None'}" HorizontalAlignment="Right" FontSize="13" FontWeight="Bold" Foreground="#64748B"/>
                             </Grid>
 
-                            <Separator Margin="0,10"/>
+                            <Border Height="1" Background="#E2E8F0" Margin="0,10,0,14"/>
 
-                            <Button Content="➕ Add Payment / Advance Expense"
-                                    Style="{StaticResource PrimaryButton}"
-                                    Command="{Binding ProcessEmployeePaymentCommand}"
-                                    CommandParameter="{Binding SelectedEmployeeReport}"
-                                    HorizontalAlignment="Stretch"
-                                    Height="36" Padding="0" Margin="0,0,0,12"/>
-
-                            <TextBlock Text="Received Payment &amp; Expense History" FontWeight="SemiBold" FontSize="12" Margin="0,0,0,6"/>
-                            <DataGrid ItemsSource="{Binding SelectedEmployeeReport.PaymentHistory}" AutoGenerateColumns="False" IsReadOnly="True" Height="200">
+                            <!-- Received Payment & Expense History Title & DataGrid -->
+                            <TextBlock Text="Received Payment &amp; Expense History" FontWeight="Bold" Foreground="#15803D" FontSize="13" Margin="0,0,0,8"/>
+                            <DataGrid ItemsSource="{Binding SelectedEmployeeReport.PaymentHistory}" AutoGenerateColumns="False" IsReadOnly="True" Height="220">
                                 <DataGrid.Columns>
-                                    <DataGridTextColumn Header="Date &amp; Time Received" Binding="{Binding PaymentDate, StringFormat='dd MMM yyyy HH:mm'}" Width="135"/>
+                                    <DataGridTextColumn Header="Date &amp; Time Receive" Binding="{Binding PaymentDate, StringFormat='dd MMM yyyy HH:mm'}" Width="140"/>
                                     <DataGridTextColumn Header="Amount" Binding="{Binding Amount, StringFormat=Rs. {0:N2}}" Width="95"/>
-                                    <DataGridTemplateColumn Header="Type" Width="100">
+                                    <DataGridTemplateColumn Header="Type" Width="*">
                                         <DataGridTemplateColumn.CellTemplate>
                                             <DataTemplate>
                                                 <Border CornerRadius="4" Padding="6,2" HorizontalAlignment="Center" VerticalAlignment="Center">
@@ -1995,7 +1991,7 @@
                                                             </Style.Triggers>
                                                         </Style>
                                                     </Border.Style>
-                                                    <TextBlock Text="{Binding PaymentType}" FontSize="10" FontWeight="Bold">
+                                                    <TextBlock Text="{Binding PaymentType}" FontSize="11" FontWeight="Bold">
                                                         <TextBlock.Style>
                                                             <Style TargetType="TextBlock">
                                                                 <Setter Property="Foreground" Value="#0369A1"/>

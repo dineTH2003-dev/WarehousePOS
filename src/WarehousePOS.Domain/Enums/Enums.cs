@@ -7,7 +7,10 @@ public enum UserRole
     Admin = 1,
 
     /// <summary>POS and inventory operations only.</summary>
-    Worker = 2
+    Worker = 2,
+
+    /// <summary>Cashier role for register and checkout access.</summary>
+    Cashier = 3
 }
 
 /// <summary>Type of a sale transaction.</summary>
