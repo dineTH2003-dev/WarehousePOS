@@ -80,10 +80,12 @@
                 </Grid.ColumnDefinitions>
 
                 <!-- Search Input -->
-                <TextBox Grid.Column="0" Text="{Binding SearchQuery, UpdateSourceTrigger=PropertyChanged}"
-                         Style="{StaticResource FormTextBox}" Height="34"
-                         Tag="Search Invoice #, Customer, Phone, Notes..."
-                         ToolTip="Search by bill number, customer name, phone, or notes"/>
+                <Border Grid.Column="0" Style="{StaticResource SearchHoverCard}" Height="34" Padding="0" VerticalAlignment="Center">
+                    <TextBox Style="{StaticResource SearchTextBox}" Height="34" MinHeight="34"
+                             Text="{Binding SearchQuery, UpdateSourceTrigger=PropertyChanged}"
+                             Tag="Search Invoice #, Customer, Phone, Notes..."
+                             ToolTip="Search by bill number, customer name, phone, or notes"/>
+                </Border>
 
                 <!-- From Date -->
                 <TextBlock Grid.Column="2" Text="From:" VerticalAlignment="Center" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}"/>
