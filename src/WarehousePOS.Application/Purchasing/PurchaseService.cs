@@ -50,6 +50,81 @@ public sealed class PurchaseService(
         return Map(purchase);
     }
 
+    public async Task<PurchaseDto> CreateAndReceiveAsync(CreatePurchaseRequest req, CancellationToken ct = default)
+    {
+        _ = await supplierRepo.GetByIdAsync(req.SupplierId, ct)
+            ?? throw new EntityNotFoundException(nameof(Supplier), req.SupplierId);
+
+        foreach (var item in req.Items)
+        {
+            var product = await productRepo.GetByIdAsync(item.ProductId, ct)
+                ?? throw new EntityNotFoundException(nameof(Product), item.ProductId);
+
+            if (item.ClaimedQuantityReceived > product.ClaimedQuantity)
+                throw new BusinessRuleViolationException("ExcessiveClaimFulfillment",
+                    $"Cannot receive {item.ClaimedQuantityReceived} claimed units for '{product.Name}' because only {product.ClaimedQuantity} claimed units are pending.");
+        }
+
+        Purchase? createdPurchase = null;
+
+        await unitOfWork.ExecuteInTransactionAsync(async () =>
+        {
+            var purchase = Purchase.Create(req.SupplierId, req.CreatedByUserId, req.Notes, req.PaymentMethod, req.PaidAmount, req.PaymentDetails, req.DiscountAmount);
+
+            foreach (var item in req.Items)
+            {
+                purchase.AddItem(item.ProductId, item.Quantity, item.UnitCost, item.FreeQuantity, item.RetailPrice, item.WholesalePrice, item.ClaimedQuantityReceived);
+            }
+
+            await purchaseRepo.AddAsync(purchase, ct);
+            purchase.Receive();
+
+            foreach (var item in purchase.Items)
+            {
+                var product = await productRepo.GetByIdAsync(item.ProductId, ct)
+                    ?? throw new EntityNotFoundException(nameof(Product), item.ProductId);
+
+                var before = product.StockQuantity;
+                var totalQuantityToAdd = item.Quantity + item.FreeQuantity;
+
+                if (item.RetailPrice > 0 || item.WholesalePrice > 0)
+                {
+                    product.ReceiveInboundStock(totalQuantityToAdd, item.RetailPrice, item.WholesalePrice);
+                }
+                else if (totalQuantityToAdd > 0)
+                {
+                    product.AddStock(totalQuantityToAdd);
+                }
+
+                if (item.ClaimedQuantityReceived > 0)
+                    product.FulfillClaim(item.ClaimedQuantityReceived);
+
+                await productRepo.UpdateAsync(product, ct);
+
+                var totalMovementQty = totalQuantityToAdd + item.ClaimedQuantityReceived;
+                var movement = InventoryMovement.Create(
+                    product.Id, MovementType.PurchaseReceive, totalMovementQty, before,
+                    purchase.CreatedByUserId,
+                    referenceId: purchase.Id.ToString(),
+                    referenceType: "Purchase");
+                await movementRepo.AddAsync(movement, ct);
+            }
+
+            var supplier = await supplierRepo.GetByIdAsync(purchase.SupplierId, ct);
+            if (supplier is not null && purchase.RemainingBalance > 0)
+            {
+                supplier.AddToBalance(purchase.RemainingBalance);
+                await supplierRepo.UpdateAsync(supplier, ct);
+            }
+
+            await purchaseRepo.UpdateAsync(purchase, ct);
+            createdPurchase = purchase;
+        }, ct);
+
+        logger.LogInformation("Purchase #{Id} created and received atomically — {Count} products stocked", createdPurchase!.Id, createdPurchase.Items.Count);
+        return Map(createdPurchase);
+    }
+
     public async Task ConfirmAsync(int purchaseId, CancellationToken ct = default)
     {
         var purchase = await purchaseRepo.GetByIdAsync(purchaseId, ct)

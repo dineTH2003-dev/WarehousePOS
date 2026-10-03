@@ -269,4 +269,108 @@ public sealed class PurchasingAndSalesServiceEnhancementTests
         created.Amount.Should().Be(1200m);
         expenseRepoMock.Verify(r => r.AddAsync(It.Is<Expense>(e => e.SaleId == 50 && e.Amount == 1200m), It.IsAny<CancellationToken>()), Times.Once);
     }
+
+    [Fact]
+    public async Task ProcessSaleAsync_ShouldSetMovementReferenceIdToGeneratedSaleId()
+    {
+        var product = CreateTestProduct(1, "Fan", 5000m, 4500m, stock: 10);
+        _productRepoMock.Setup(r => r.GetByIdAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(product);
+
+        _saleRepoMock.Setup(r => r.AddAsync(It.IsAny<Sale>(), It.IsAny<CancellationToken>()))
+            .Callback<Sale, CancellationToken>((s, _) =>
+            {
+                typeof(Entity).GetProperty(nameof(Entity.Id))?.SetValue(s, 777);
+            })
+            .Returns(Task.CompletedTask);
+
+        var service = new SaleService(
+            _saleRepoMock.Object,
+            _productRepoMock.Object,
+            _customerRepoMock.Object,
+            _movementRepoMock.Object,
+            _unitOfWorkMock.Object,
+            NullLogger<SaleService>.Instance);
+
+        var req = new CreateSaleRequest(
+            SaleType.Retail,
+            CreatedByUserId: 1,
+            CustomerId: null,
+            DiscountAmount: 0m,
+            AmountPaid: 5000m,
+            Notes: "Audit trail test",
+            Items: new[] { new CreateSaleItemRequest(1, 1, 5000m, 0m) },
+            PaymentMethod: PaymentMethod.Cash,
+            DeliveryFee: 0m);
+
+        var saleDto = await service.ProcessSaleAsync(req);
+
+        saleDto.Id.Should().Be(777);
+        _movementRepoMock.Verify(r => r.AddAsync(
+            It.Is<InventoryMovement>(m => m.ReferenceId == "777" && m.ReferenceType == "Sale"),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task CreateAndReceiveAsync_ShouldStockProductAndRecordMovementAtomically()
+    {
+        var purchaseRepoMock = new Mock<IPurchaseRepository>();
+        var productRepoMock = new Mock<IProductRepository>();
+        var supplierRepoMock = new Mock<ISupplierRepository>();
+        var movementRepoMock = new Mock<IInventoryMovementRepository>();
+
+        var supplier = Supplier.Create("Global Supplies", "Alice", "0112223333");
+        typeof(Entity).GetProperty(nameof(Entity.Id))?.SetValue(supplier, 10);
+        supplierRepoMock.Setup(r => r.GetByIdAsync(10, It.IsAny<CancellationToken>())).ReturnsAsync(supplier);
+
+        var product = CreateTestProduct(5, "Drill Machine", 15000m, 12000m, stock: 4);
+        productRepoMock.Setup(r => r.GetByIdAsync(5, It.IsAny<CancellationToken>())).ReturnsAsync(product);
+
+        purchaseRepoMock.Setup(r => r.AddAsync(It.IsAny<Purchase>(), It.IsAny<CancellationToken>()))
+            .Callback<Purchase, CancellationToken>((p, _) =>
+            {
+                typeof(Entity).GetProperty(nameof(Entity.Id))?.SetValue(p, 888);
+            })
+            .Returns(Task.CompletedTask);
+
+        var purchaseService = new WarehousePOS.Application.Purchasing.PurchaseService(
+            purchaseRepoMock.Object,
+            productRepoMock.Object,
+            supplierRepoMock.Object,
+            movementRepoMock.Object,
+            _unitOfWorkMock.Object,
+            NullLogger<WarehousePOS.Application.Purchasing.PurchaseService>.Instance);
+
+        var purchaseReq = new WarehousePOS.Application.Purchasing.CreatePurchaseRequest(
+            SupplierId: 10,
+            CreatedByUserId: 1,
+            Notes: "Atomic purchase test",
+            Items: new[]
+            {
+                new WarehousePOS.Application.Purchasing.CreatePurchaseItemRequest(
+                    ProductId: 5,
+                    Quantity: 6,
+                    UnitCost: 10000m,
+                    FreeQuantity: 1,
+                    RetailPrice: 15500m,
+                    WholesalePrice: 12500m,
+                    ClaimedQuantityReceived: 0)
+            },
+            PaymentMethod: "Credit / Unpaid",
+            PaidAmount: 20000m,
+            PaymentDetails: "Net 30 terms",
+            DiscountAmount: 0m);
+
+        var result = await purchaseService.CreateAndReceiveAsync(purchaseReq);
+
+        result.Id.Should().Be(888);
+        result.Status.Should().Be(PurchaseStatus.Received);
+        product.StockQuantity.Should().Be(11);
+        supplier.Balance.Should().Be(40000m);
+
+        movementRepoMock.Verify(r => r.AddAsync(
+            It.Is<InventoryMovement>(m => m.ReferenceId == "888" && m.ReferenceType == "Purchase" && m.Quantity == 7),
+            It.IsAny<CancellationToken>()), Times.Once);
+        purchaseRepoMock.Verify(r => r.AddAsync(It.IsAny<Purchase>(), It.IsAny<CancellationToken>()), Times.Once);
+        purchaseRepoMock.Verify(r => r.UpdateAsync(It.IsAny<Purchase>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
 }
