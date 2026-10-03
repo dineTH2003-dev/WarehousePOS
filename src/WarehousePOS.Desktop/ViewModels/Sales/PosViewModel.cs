@@ -69,6 +69,7 @@ public sealed class PosViewModel : ViewModelBase
     private readonly IStoreSettingService _settingService;
 
     private SaleDto? _lastCompletedSale;
+    private bool     _isProcessingSale;
 
     private ObservableCollection<ProductDto>  _searchResults = [];
     private ObservableCollection<CustomerDto> _customers     = [];
@@ -436,7 +437,7 @@ public sealed class PosViewModel : ViewModelBase
 
     private bool CanProcessSale()
     {
-        if (IsBusy || _cartItems.Count == 0)
+        if (_isProcessingSale || IsBusy || _cartItems.Count == 0)
             return false;
 
         // Unregistered walk-in customers MUST pay in full unless advance payment
@@ -583,6 +584,43 @@ public sealed class PosViewModel : ViewModelBase
         RecalculateTotals();
     }
 
+    public async Task<bool> QuickAddFirstMatchOrBarcodeAsync()
+    {
+        var query = SearchQuery?.Trim();
+        if (string.IsNullOrWhiteSpace(query)) return false;
+
+        // Try exact barcode/SKU match in current search results, then single result fallback
+        var exactMatch = _searchResults.FirstOrDefault(p =>
+            string.Equals(p.Barcode, query, StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(p.SKU, query, StringComparison.OrdinalIgnoreCase));
+
+        var targetProduct = exactMatch ?? (_searchResults.Count == 1 ? _searchResults[0] : null);
+
+        if (targetProduct is not null)
+        {
+            AddToCart(targetProduct);
+            SearchQuery = string.Empty;
+            return true;
+        }
+
+        // Direct search query if not yet loaded in current search results
+        var searchResults = await _productService.SearchAsync(query);
+        var activeMatch = searchResults.FirstOrDefault(p => p.IsActive && (
+            string.Equals(p.Barcode, query, StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(p.SKU, query, StringComparison.OrdinalIgnoreCase)))
+            ?? (searchResults.Count == 1 && searchResults[0].IsActive ? searchResults[0] : null);
+
+        if (activeMatch is not null)
+        {
+            AddToCart(activeMatch);
+            SearchQuery = string.Empty;
+            return true;
+        }
+
+        ErrorMessage = $"No matching product found for '{query}'.";
+        return false;
+    }
+
     private void RemoveFromCart(PosCartItem? item)
     {
         if (item is null) return;
@@ -640,24 +678,34 @@ public sealed class PosViewModel : ViewModelBase
 
     private async Task ProcessSaleAsync()
     {
+        if (_isProcessingSale) return;
+        _isProcessingSale = true;
+        ProcessSaleCommand.RaiseCanExecuteChanged();
+
         ErrorMessage   = string.Empty;
         SuccessMessage = string.Empty;
 
         if (!_cartItems.Any())
         {
             ErrorMessage = "Cart is empty.";
+            _isProcessingSale = false;
+            ProcessSaleCommand.RaiseCanExecuteChanged();
             return;
         }
 
         if (SelectedCustomer is null && !IsAdvancePayment && AmountPaid < TotalAmount)
         {
             ErrorMessage = $"Unregistered walk-in customers cannot make credit purchases. Amount paid (Rs. {AmountPaid:N2}) must be at least total amount (Rs. {TotalAmount:N2}).";
+            _isProcessingSale = false;
+            ProcessSaleCommand.RaiseCanExecuteChanged();
             return;
         }
 
         if (IsAdvancePayment && AmountPaid <= 0)
         {
             ErrorMessage = "Advance orders require an advance payment amount greater than zero.";
+            _isProcessingSale = false;
+            ProcessSaleCommand.RaiseCanExecuteChanged();
             return;
         }
 
@@ -739,6 +787,8 @@ public sealed class PosViewModel : ViewModelBase
         finally
         {
             IsBusy = false;
+            _isProcessingSale = false;
+            ProcessSaleCommand.RaiseCanExecuteChanged();
         }
     }
 
