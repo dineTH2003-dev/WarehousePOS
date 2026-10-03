@@ -220,6 +220,20 @@ public partial class App : System.Windows.Application
         {
             if (_host is not null)
             {
+                // Checkpoint and truncate WAL so the main DB file is fully up-to-date
+                using (var scope = _host.Services.CreateScope())
+                {
+                    try
+                    {
+                        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                        await db.Database.ExecuteSqlRawAsync("PRAGMA wal_checkpoint(TRUNCATE);");
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Warning(ex, "Failed to run PRAGMA wal_checkpoint on shutdown");
+                    }
+                }
+
                 var backupService = _host.Services.GetService<WarehousePOS.Application.Common.IBackupService>();
                 var cloudService = _host.Services.GetService<WarehousePOS.Application.Common.ICloudBackupService>();
                 if (backupService is not null)

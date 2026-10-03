@@ -15,8 +15,14 @@ public static class InfrastructureServiceRegistration
         string databasePath)
     {
         // EF Core + SQLite
+        var connectionStringBuilder = new Microsoft.Data.Sqlite.SqliteConnectionStringBuilder
+        {
+            DataSource = databasePath,
+            DefaultTimeout = 10,
+            ForeignKeys = true
+        };
         services.AddDbContext<AppDbContext>(options =>
-            options.UseSqlite($"Data Source={databasePath}"));
+            options.UseSqlite(connectionStringBuilder.ToString()));
 
         // Security
         services.AddSingleton<IPasswordHasher, BcryptPasswordHasher>();

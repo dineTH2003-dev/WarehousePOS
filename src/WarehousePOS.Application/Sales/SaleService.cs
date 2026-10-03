@@ -70,6 +70,8 @@ public sealed class SaleService(
                 req.CustomerPhone ?? customer?.Phone,
                 req.DeliveryAddress ?? customer?.Address);
 
+            var pendingMovements = new List<(int ProductId, int Quantity, int QtyBefore)>();
+
             foreach (var itemReq in req.Items)
             {
                 var product = await productRepo.GetByIdAsync(itemReq.ProductId, ct)
@@ -83,18 +85,7 @@ public sealed class SaleService(
                 product.DeductStock(itemReq.Quantity);
                 await productRepo.UpdateAsync(product, ct);
 
-                // Create InventoryMovement log
-                var movement = InventoryMovement.Create(
-                    product.Id,
-                    MovementType.StockOut,
-                    itemReq.Quantity,
-                    qtyBefore,
-                    req.CreatedByUserId,
-                    referenceId: sale.Id.ToString(),
-                    referenceType: "Sale",
-                    notes: req.IsAdvancePayment ? $"POS Sale ({req.SaleType}) [Advance Order]" : $"POS Sale ({req.SaleType})");
-
-                await movementRepo.AddAsync(movement, ct);
+                pendingMovements.Add((product.Id, itemReq.Quantity, qtyBefore));
             }
 
             if (req.DiscountAmount > 0)
@@ -115,6 +106,22 @@ public sealed class SaleService(
             }
 
             await saleRepo.AddAsync(sale, ct);
+
+            // Now that sale is persisted and sale.Id is generated, record inventory movements with the real sale ID
+            foreach (var (productId, quantity, qtyBefore) in pendingMovements)
+            {
+                var movement = InventoryMovement.Create(
+                    productId,
+                    MovementType.StockOut,
+                    quantity,
+                    qtyBefore,
+                    req.CreatedByUserId,
+                    referenceId: sale.Id.ToString(),
+                    referenceType: "Sale",
+                    notes: req.IsAdvancePayment ? $"POS Sale ({req.SaleType}) [Advance Order]" : $"POS Sale ({req.SaleType})");
+
+                await movementRepo.AddAsync(movement, ct);
+            }
         }, ct);
 
         logger.LogInformation("Sale processed successfully: #{SaleId}, Total: {TotalAmount:C2}", sale.Id, sale.TotalAmount);

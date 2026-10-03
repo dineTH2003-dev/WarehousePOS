@@ -38,7 +38,15 @@ public sealed class CustomerRepository(AppDbContext db) : ICustomerRepository
 
     public async Task UpdateAsync(Customer customer, CancellationToken ct = default)
     {
-        db.Customers.Update(customer);
+        var entry = db.ChangeTracker.Entries<Customer>().FirstOrDefault(e => e.Entity.Id == customer.Id);
+        if (entry is null)
+        {
+            db.Entry(customer).State = EntityState.Modified;
+        }
+        else if (!ReferenceEquals(entry.Entity, customer))
+        {
+            entry.CurrentValues.SetValues(customer);
+        }
         await db.SaveChangesAsync(ct);
     }
 }

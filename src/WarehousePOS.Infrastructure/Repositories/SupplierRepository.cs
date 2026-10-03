@@ -44,6 +44,10 @@ public sealed class SupplierRepository(AppDbContext db) : ISupplierRepository
         {
             db.Entry(supplier).State = EntityState.Modified;
         }
+        else if (!ReferenceEquals(entry.Entity, supplier))
+        {
+            entry.CurrentValues.SetValues(supplier);
+        }
         await db.SaveChangesAsync(ct);
     }
 }

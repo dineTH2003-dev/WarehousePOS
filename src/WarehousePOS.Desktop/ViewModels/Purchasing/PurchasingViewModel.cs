@@ -492,9 +492,7 @@ public sealed class PurchasingViewModel : ViewModelBase
                 string.IsNullOrWhiteSpace(PaymentDetails) ? null : PaymentDetails.Trim(),
                 TotalDiscountAmount);
 
-            var createdPurchase = await _purchaseService.CreateAsync(createReq);
-            await _purchaseService.ConfirmAsync(createdPurchase.Id);
-            await _purchaseService.ReceiveStockAsync(createdPurchase.Id);
+            var createdPurchase = await _purchaseService.CreateAndReceiveAsync(createReq);
 
             // Auto-record purchase, discounts, and free item entitlements for the ledger
             foreach (var item in validItems)

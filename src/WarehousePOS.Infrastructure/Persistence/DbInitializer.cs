@@ -36,6 +36,12 @@ public static class DbInitializer
             }
         }
 
+        // Configure SQLite PRAGMAs for high concurrency, WAL durability, and immediate busy retries
+        await db.Database.ExecuteSqlRawAsync("PRAGMA journal_mode = WAL;");
+        await db.Database.ExecuteSqlRawAsync("PRAGMA synchronous = NORMAL;");
+        await db.Database.ExecuteSqlRawAsync("PRAGMA busy_timeout = 5000;");
+        await db.Database.ExecuteSqlRawAsync("PRAGMA foreign_keys = ON;");
+
         // Seed Admin user if no users exist
         if (!await db.Users.AnyAsync())
         {

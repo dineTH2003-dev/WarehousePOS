@@ -7,6 +7,7 @@ public interface IPurchaseService
     Task<IReadOnlyList<PurchaseDto>> GetAllAsync(CancellationToken ct = default);
     Task<PurchaseDto?> GetByIdAsync(int id, CancellationToken ct = default);
     Task<PurchaseDto> CreateAsync(CreatePurchaseRequest request, CancellationToken ct = default);
+    Task<PurchaseDto> CreateAndReceiveAsync(CreatePurchaseRequest request, CancellationToken ct = default);
     Task ConfirmAsync(int purchaseId, CancellationToken ct = default);
     Task<PurchaseDto> ReceiveStockAsync(int purchaseId, CancellationToken ct = default);
     Task CancelAsync(int purchaseId, CancellationToken ct = default);

@@ -53,7 +53,7 @@ public sealed class EpsonLq310Printer(
                 byteList.AddRange(EscP2Commands.SetPageLengthInLines(33));
             }
 
-            byteList.AddRange(Encoding.ASCII.GetBytes(receiptText));
+            byteList.AddRange(EncodeForPrinter(receiptText));
 
             // Form feed or extra feed lines to advance directly to the tear-off perforation
             byteList.AddRange(EscP2Commands.FormFeed);
@@ -95,7 +95,7 @@ public sealed class EpsonLq310Printer(
             byteList.AddRange(EscP2Commands.Initialize);
             byteList.AddRange(EscP2Commands.SelectDraft);
             byteList.AddRange(EscP2Commands.LineSpacing1_6);
-            byteList.AddRange(Encoding.ASCII.GetBytes(text));
+            byteList.AddRange(EncodeForPrinter(text));
             byteList.AddRange(EscP2Commands.FormFeed);
 
             bool sentRaw = RawPrinterHelper.SendBytesToPrinter(printerName, byteList.ToArray(), $"PO_{purchase.Id}");
@@ -141,7 +141,7 @@ public sealed class EpsonLq310Printer(
             var byteList = new List<byte>();
             byteList.AddRange(EscP2Commands.Initialize);
             byteList.AddRange(EscP2Commands.SelectDraft);
-            byteList.AddRange(Encoding.ASCII.GetBytes(reportText));
+            byteList.AddRange(EncodeForPrinter(reportText));
             byteList.AddRange(EscP2Commands.FormFeed);
 
             bool sentRaw = RawPrinterHelper.SendBytesToPrinter(printerName, byteList.ToArray(), $"Report_{title}");
@@ -179,7 +179,7 @@ public sealed class EpsonLq310Printer(
             byteList.AddRange(EscP2Commands.Initialize);
             byteList.AddRange(EscP2Commands.SelectDraft);
             byteList.AddRange(EscP2Commands.SetPageLengthInLines(33));
-            byteList.AddRange(Encoding.ASCII.GetBytes(sb.ToString()));
+            byteList.AddRange(EncodeForPrinter(sb.ToString()));
             byteList.AddRange(EscP2Commands.FormFeed);
 
             bool sentRaw = RawPrinterHelper.SendBytesToPrinter(printerName, byteList.ToArray(), "WarehousePOS_TestPrint");
@@ -229,7 +229,7 @@ public sealed class EpsonLq310Printer(
         {
             if (!OperatingSystem.IsWindows()) return false;
 
-            var printDoc = new PrintDocument();
+            using var printDoc = new PrintDocument();
             printDoc.DocumentName = docName;
             if (!string.IsNullOrWhiteSpace(printerName))
             {
@@ -252,6 +252,27 @@ public sealed class EpsonLq310Printer(
             logger.LogError(ex, "GDI PrintDocument fallback failed for {DocName} on {PrinterName}", docName, printerName);
             return false;
         }
+    }
+
+    private static string SanitizeForDotMatrix(string text)
+    {
+        if (string.IsNullOrEmpty(text)) return string.Empty;
+
+        return text
+            .Replace('“', '"')
+            .Replace('”', '"')
+            .Replace('‘', '\'')
+            .Replace('’', '\'')
+            .Replace('—', '-')
+            .Replace('–', '-')
+            .Replace('×', 'x')
+            .Replace('•', '*')
+            .Replace("…", "...");
+    }
+
+    private static byte[] EncodeForPrinter(string text)
+    {
+        return Encoding.Latin1.GetBytes(SanitizeForDotMatrix(text));
     }
 
     /// <summary>

@@ -36,10 +36,12 @@
 
                 <!-- Search box -->
                 <Border Grid.Row="0" Style="{StaticResource SearchHoverCard}" Margin="0,0,0,16" Padding="0">
-                    <TextBox Style="{StaticResource SearchTextBox}"
+                    <TextBox x:Name="TxtProductSearch"
+                             Style="{StaticResource SearchTextBox}"
                              Text="{Binding SearchQuery, UpdateSourceTrigger=PropertyChanged}"
+                             PreviewKeyDown="TxtProductSearch_PreviewKeyDown"
                              Tag="Enter product name, SKU or barcode..."
-                             ToolTip="Search products by name, SKU or barcode" />
+                             ToolTip="Search products by name, SKU or barcode (Press Enter to add)" />
                 </Border>
 
                 <!-- Product DataGrid -->
