@@ -21,8 +21,7 @@ public sealed class ReportService(
 
     public async Task<GeneralAnalyticsDto> GetGeneralAnalyticsAsync(DateTime from, DateTime to, CancellationToken ct = default)
     {
-        var start = from.Date;
-        var end   = to.Date.AddDays(1).AddTicks(-1);
+        var (start, end) = ToUtcRange(from, to);
 
         var sales = await saleRepo.GetByDateRangeAsync(start, end, ct);
         var activeSales = sales.Where(s => s.Status == SaleStatus.Completed).ToList();
@@ -34,10 +33,9 @@ public sealed class ReportService(
         decimal aov            = totalTransactions > 0 ? netRevenue / totalTransactions : 0m;
 
         // Daily Sales KPI (today's sales within date range context)
-        var todayStart = DateTime.Today;
-        var todayEnd   = todayStart.AddDays(1).AddTicks(-1);
+        var (todayStart, todayEnd) = ToUtcRange(DateTime.Today, DateTime.Today);
         var todaySales = activeSales.Where(s => s.SaleDate >= todayStart && s.SaleDate <= todayEnd).ToList();
-        if (todaySales.Count == 0 && (start <= DateTime.Today && end >= DateTime.Today))
+        if (todaySales.Count == 0 && (start <= todayStart && end >= todayEnd))
         {
             // Fetch directly if not in filtered list
             var todayDirect = await saleRepo.GetByDateRangeAsync(todayStart, todayEnd, ct);
@@ -169,8 +167,7 @@ public sealed class ReportService(
 
     public async Task<DailySalesReportDto> GetDailySalesReportAsync(DateTime from, DateTime to, CancellationToken ct = default)
     {
-        var start = from.Date;
-        var end   = to.Date.AddDays(1).AddTicks(-1);
+        var (start, end) = ToUtcRange(from, to);
 
         var sales = await saleRepo.GetByDateRangeAsync(start, end, ct);
         var activeSales = sales.Where(s => s.Status == SaleStatus.Completed).ToList();
@@ -189,7 +186,7 @@ public sealed class ReportService(
         decimal wholesale= activeSales.Where(s => s.SaleType == SaleType.Wholesale).Sum(s => s.TotalAmount);
 
         return new DailySalesReportDto(
-            start,
+            from.Date,
             count,
             revenue,
             discounts,
@@ -206,14 +203,13 @@ public sealed class ReportService(
 
     public async Task<IReadOnlyList<SalesTrendPointDto>> GetSalesTrendAsync(DateTime from, DateTime to, CancellationToken ct = default)
     {
-        var start = from.Date;
-        var end   = to.Date.AddDays(1).AddTicks(-1);
+        var (start, end) = ToUtcRange(from, to);
 
         var sales = await saleRepo.GetByDateRangeAsync(start, end, ct);
         var activeSales = sales.Where(s => s.Status == SaleStatus.Completed).ToList();
 
         var grouped = activeSales
-            .GroupBy(s => s.SaleDate.Date)
+            .GroupBy(s => s.SaleDate.ToLocalTime().Date)
             .Select(g => new SalesTrendPointDto(
                 g.Key,
                 g.Key.ToString("MMM dd", CultureInfo.InvariantCulture),
@@ -247,13 +243,12 @@ public sealed class ReportService(
 
     public async Task<IReadOnlyList<HourlySalesPointDto>> GetHourlySalesAsync(DateTime date, CancellationToken ct = default)
     {
-        var start = date.Date;
-        var end   = start.AddDays(1).AddTicks(-1);
+        var (start, end) = ToUtcRange(date, date);
 
         var sales = await saleRepo.GetByDateRangeAsync(start, end, ct);
         var activeSales = sales.Where(s => s.Status == SaleStatus.Completed).ToList();
 
-        var map = activeSales.GroupBy(s => s.SaleDate.Hour)
+        var map = activeSales.GroupBy(s => s.SaleDate.ToLocalTime().Hour)
             .ToDictionary(g => g.Key, g => (Revenue: g.Sum(s => s.TotalAmount), Count: g.Count()));
 
         var result = new List<HourlySalesPointDto>();
@@ -340,8 +335,7 @@ public sealed class ReportService(
 
     public async Task<IReadOnlyList<FastMovingItemDto>> GetFastMovingItemsAsync(DateTime from, DateTime to, int topCount = 10, CancellationToken ct = default)
     {
-        var start = from.Date;
-        var end   = to.Date.AddDays(1).AddTicks(-1);
+        var (start, end) = ToUtcRange(from, to);
 
         var sales = await saleRepo.GetByDateRangeAsync(start, end, ct);
         var activeSales = sales.Where(s => s.Status == SaleStatus.Completed).ToList();
@@ -387,8 +381,7 @@ public sealed class ReportService(
 
     public async Task<SalesSummaryDto> GetSalesSummaryAsync(DateTime from, DateTime to, CancellationToken ct = default)
     {
-        var start = from.Date;
-        var end   = to.Date.AddDays(1).AddTicks(-1);
+        var (start, end) = ToUtcRange(from, to);
 
         var sales = await saleRepo.GetByDateRangeAsync(start, end, ct);
         var activeSales = sales.Where(s => s.Status == SaleStatus.Completed).ToList();
@@ -442,8 +435,7 @@ public sealed class ReportService(
 
     public async Task<GrnReportDto> GetGrnReportAsync(DateTime from, DateTime to, int? supplierId = null, CancellationToken ct = default)
     {
-        var start = from.Date;
-        var end   = to.Date.AddDays(1).AddTicks(-1);
+        var (start, end) = ToUtcRange(from, to);
 
         var purchases = await purchaseRepo.GetAllAsync(ct);
         var filtered = purchases
@@ -497,8 +489,7 @@ public sealed class ReportService(
 
     public async Task<ClaimItemReportDto> GetClaimItemsReportAsync(DateTime from, DateTime to, CancellationToken ct = default)
     {
-        var start = from.Date;
-        var end   = to.Date.AddDays(1).AddTicks(-1);
+        var (start, end) = ToUtcRange(from, to);
 
         var movements = await movementRepo.GetAllAsync(start, end, ct);
         var claimMovements = movements.Where(m =>
@@ -630,8 +621,7 @@ public sealed class ReportService(
 
     public async Task<CustomerReportSummaryDto> GetCustomerReportSummaryAsync(DateTime from, DateTime to, CancellationToken ct = default)
     {
-        var start = from.Date;
-        var end   = to.Date.AddDays(1).AddTicks(-1);
+        var (start, end) = ToUtcRange(from, to);
 
         var customers = await customerRepo.GetAllAsync(ct);
         var sales     = await saleRepo.GetByDateRangeAsync(start, end, ct);
@@ -726,8 +716,7 @@ public sealed class ReportService(
 
     public async Task<ProductProductionReportSummaryDto> GetProductProductionReportAsync(DateTime from, DateTime to, int? categoryId = null, CancellationToken ct = default)
     {
-        var start = from.Date;
-        var end   = to.Date.AddDays(1).AddTicks(-1);
+        var (start, end) = ToUtcRange(from, to);
 
         var sales = await saleRepo.GetByDateRangeAsync(start, end, ct);
         var activeSales = sales.Where(s => s.Status == SaleStatus.Completed).ToList();
@@ -1275,6 +1264,16 @@ public sealed class ReportService(
             referenceNo);
 
         await expenseRepo.AddAsync(expense, ct);
+    }
+
+    private static (DateTime StartUtc, DateTime EndUtc) ToUtcRange(DateTime from, DateTime to)
+    {
+        var startLocal = from.Kind == DateTimeKind.Utc ? from.ToLocalTime().Date : from.Date;
+        var endLocal = to.Kind == DateTimeKind.Utc ? to.ToLocalTime().Date : to.Date;
+
+        var startUtc = DateTime.SpecifyKind(startLocal, DateTimeKind.Local).ToUniversalTime();
+        var endUtc = DateTime.SpecifyKind(endLocal.AddDays(1).AddTicks(-1), DateTimeKind.Local).ToUniversalTime();
+        return (startUtc, endUtc);
     }
 }
 

@@ -224,8 +224,8 @@ public sealed class BillHistoryViewModel : ViewModelBase
         try
         {
             var criteria = new SaleSearchCriteria(
-                FromDate: FromDate.HasValue ? DateTime.SpecifyKind(FromDate.Value.Date, DateTimeKind.Utc) : null,
-                ToDate: ToDate.HasValue ? DateTime.SpecifyKind(ToDate.Value.Date.AddDays(1).AddTicks(-1), DateTimeKind.Utc) : null,
+                FromDate: FromDate.HasValue ? DateTime.SpecifyKind(FromDate.Value.Date, DateTimeKind.Local).ToUniversalTime() : null,
+                ToDate: ToDate.HasValue ? DateTime.SpecifyKind(ToDate.Value.Date.AddDays(1).AddTicks(-1), DateTimeKind.Local).ToUniversalTime() : null,
                 SearchTerm: string.IsNullOrWhiteSpace(SearchQuery) ? null : SearchQuery.Trim(),
                 Status: SelectedStatusOption.Status,
                 PaymentMethod: SelectedPaymentOption.Method);
