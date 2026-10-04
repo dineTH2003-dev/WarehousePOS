@@ -7,6 +7,7 @@ public interface IExpenseRepository
     Task<Expense?> GetByIdAsync(int id, CancellationToken ct = default);
     Task<IReadOnlyList<Expense>> GetAllAsync(CancellationToken ct = default);
     Task<IReadOnlyList<Expense>> GetByDateRangeAsync(DateTime from, DateTime to, CancellationToken ct = default);
+    Task<IReadOnlyList<Expense>> GetBySaleIdAsync(int saleId, CancellationToken ct = default);
     Task AddAsync(Expense expense, CancellationToken ct = default);
     Task UpdateAsync(Expense expense, CancellationToken ct = default);
     Task DeleteAsync(Expense expense, CancellationToken ct = default);
