@@ -148,20 +148,23 @@ public sealed class SaleService(
                 }
             }
 
-            // Revert stock for all items
+            // Revert stock for all items (only unreturned quantity to avoid phantom duplication)
             foreach (var item in sale.Items)
             {
+                var qtyToRevert = item.Quantity - item.ReturnedQuantity;
+                if (qtyToRevert <= 0) continue;
+
                 var product = await productRepo.GetByIdAsync(item.ProductId, ct);
                 if (product is not null)
                 {
                     var qtyBefore = product.StockQuantity;
-                    product.AddStock(item.Quantity);
+                    product.AddStock(qtyToRevert);
                     await productRepo.UpdateAsync(product, ct);
 
                     var movement = InventoryMovement.Create(
                         product.Id,
                         MovementType.ReturnIn,
-                        item.Quantity,
+                        qtyToRevert,
                         qtyBefore,
                         sale.CreatedByUserId,
                         referenceId: sale.Id.ToString(),
@@ -293,7 +296,7 @@ public sealed class SaleService(
                 var saleItem = sale.Items.FirstOrDefault(i => i.ProductId == returnItem.ProductId)
                     ?? throw new BusinessRuleViolationException("ItemNotFound", $"Product ID {returnItem.ProductId} is not on invoice #{sale.Id}.");
 
-                var unitRefund = saleItem.UnitPrice - (saleItem.Quantity > 0 ? (saleItem.Discount / saleItem.Quantity) : 0);
+                var unitRefund = Math.Round(saleItem.UnitPrice - (saleItem.Quantity > 0 ? (saleItem.Discount / saleItem.Quantity) : 0), 2, MidpointRounding.AwayFromZero);
                 totalRefundAmount += unitRefund * returnItem.Quantity;
 
                 sale.ProcessReturn(returnItem.ProductId, returnItem.Quantity);
