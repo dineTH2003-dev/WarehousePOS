@@ -234,8 +234,8 @@ public sealed class SaleItem
     public decimal Discount  { get; private set; }
     public decimal LineTotal => (UnitPrice * Quantity) - Discount;
 
-    public int UnclaimedQuantity => Quantity - ClaimedQuantity;
-    public int ReturnableQuantity => Quantity - ReturnedQuantity;
+    public int UnclaimedQuantity => Math.Max(0, Quantity - (ClaimedQuantity + ReturnedQuantity));
+    public int ReturnableQuantity => Math.Max(0, Quantity - (ReturnedQuantity + ClaimedQuantity));
 
     internal static SaleItem Create(int productId, int quantity, decimal unitPrice, decimal discount) =>
         new() { ProductId = productId, Quantity = quantity, UnitPrice = unitPrice, Discount = discount };
@@ -245,8 +245,8 @@ public sealed class SaleItem
         if (quantity <= 0)
             throw new ArgumentOutOfRangeException(nameof(quantity), "Claim quantity must be positive.");
 
-        if (ClaimedQuantity + quantity > Quantity)
-            throw new BusinessRuleViolationException("ExcessiveClaim", $"Cannot claim {quantity} units because only {UnclaimedQuantity} units remain unclaimed on this invoice line.");
+        if (ClaimedQuantity + ReturnedQuantity + quantity > Quantity)
+            throw new BusinessRuleViolationException("ExcessiveClaim", $"Cannot claim {quantity} units because only {UnclaimedQuantity} units remain eligible on this invoice line.");
 
         ClaimedQuantity += quantity;
     }
@@ -256,7 +256,7 @@ public sealed class SaleItem
         if (quantity <= 0)
             throw new ArgumentOutOfRangeException(nameof(quantity), "Return quantity must be positive.");
 
-        if (ReturnedQuantity + quantity > Quantity)
+        if (ReturnedQuantity + ClaimedQuantity + quantity > Quantity)
             throw new BusinessRuleViolationException("ExcessiveReturn", $"Cannot return {quantity} units because only {ReturnableQuantity} units remain on this line.");
 
         ReturnedQuantity += quantity;
