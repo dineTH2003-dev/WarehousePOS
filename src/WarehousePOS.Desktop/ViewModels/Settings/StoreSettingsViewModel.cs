@@ -7,13 +7,14 @@ using WarehousePOS.Desktop.ViewModels;
 
 namespace WarehousePOS.Desktop.ViewModels.Settings;
 
-public sealed class StoreSettingsViewModel : ViewModelBase
+public sealed class StoreSettingsViewModel : ViewModelBase, IDisposable
 {
     private readonly IStoreSettingService _settingService;
     private readonly IBackupService _backupService;
     private readonly ICloudBackupService _cloudBackupService;
     private readonly INotificationOrchestrator _notificationOrchestrator;
     private readonly IReceiptPrinter _printer;
+    private readonly Action _syncStatusChangedHandler;
 
     // Store settings fields
     private string _storeName = string.Empty;
@@ -197,11 +198,12 @@ public sealed class StoreSettingsViewModel : ViewModelBase
         _notificationOrchestrator = notificationOrchestrator;
         _printer = printer;
 
-        _cloudBackupService.SyncStatusChanged += () =>
+        _syncStatusChangedHandler = () =>
         {
             OnPropertyChanged(nameof(IsSyncPending));
             OnPropertyChanged(nameof(PendingSyncReason));
         };
+        _cloudBackupService.SyncStatusChanged += _syncStatusChangedHandler;
 
         SelectStoreTabCommand = new RelayCommand(() => SelectedTabIndex = 0);
         SelectBackupTabCommand = new RelayCommand(() => SelectedTabIndex = 1);
@@ -643,5 +645,10 @@ public sealed class StoreSettingsViewModel : ViewModelBase
         {
             IsPrinterTesting = false;
         }
+    }
+
+    public void Dispose()
+    {
+        _cloudBackupService.SyncStatusChanged -= _syncStatusChangedHandler;
     }
 }
