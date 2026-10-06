@@ -36,18 +36,13 @@ public sealed class StoreSettingsViewModel : ViewModelBase, IDisposable
     private string _lastLocalBackupDisplay = "No local backups found";
     private string _lastCloudBackupDisplay = "No cloud backups found";
 
-    // Notifications fields (Brevo & WhatsApp)
+    // Notifications fields (Brevo)
     private string _brevoApiKey = string.Empty;
     private string _brevoSenderEmail = string.Empty;
     private string _brevoSenderName = "WarehousePOS";
     private string _ownerEmail = string.Empty;
     private bool _isEmailLowStockAlertEnabled = true;
     private bool _isEmailMonthlyReportEnabled = true;
-
-    private bool _isWhatsAppEnabled;
-    private string _ownerPhone = string.Empty;
-    private string _whatsAppGatewayUrl = string.Empty;
-    private string _whatsAppApiKey = string.Empty;
     private string _notificationStatusMessage = string.Empty;
     private bool _isNotificationBusy;
 
@@ -78,10 +73,6 @@ public sealed class StoreSettingsViewModel : ViewModelBase, IDisposable
     public bool IsEmailLowStockAlertEnabled { get => _isEmailLowStockAlertEnabled; set => SetField(ref _isEmailLowStockAlertEnabled, value); }
     public bool IsEmailMonthlyReportEnabled { get => _isEmailMonthlyReportEnabled; set => SetField(ref _isEmailMonthlyReportEnabled, value); }
 
-    public bool IsWhatsAppEnabled { get => _isWhatsAppEnabled; set => SetField(ref _isWhatsAppEnabled, value); }
-    public string OwnerPhone { get => _ownerPhone; set => SetField(ref _ownerPhone, value); }
-    public string WhatsAppGatewayUrl { get => _whatsAppGatewayUrl; set => SetField(ref _whatsAppGatewayUrl, value); }
-    public string WhatsAppApiKey { get => _whatsAppApiKey; set => SetField(ref _whatsAppApiKey, value); }
     public string NotificationStatusMessage { get => _notificationStatusMessage; set => SetField(ref _notificationStatusMessage, value); }
     public bool IsNotificationBusy { get => _isNotificationBusy; private set => SetField(ref _isNotificationBusy, value); }
 
@@ -178,7 +169,6 @@ public sealed class StoreSettingsViewModel : ViewModelBase, IDisposable
     public RelayCommand RefreshBackupsCommand { get; }
     public RelayCommand SaveNotificationSettingsCommand { get; }
     public RelayCommand SendTestEmailCommand { get; }
-    public RelayCommand SendTestWhatsAppCommand { get; }
     public RelayCommand SendMonthlyReportNowCommand { get; }
     public RelayCommand CheckLowStockAlertsNowCommand { get; }
     public RelayCommand SavePrinterSettingsCommand { get; }
@@ -218,7 +208,6 @@ public sealed class StoreSettingsViewModel : ViewModelBase, IDisposable
 
         SaveNotificationSettingsCommand = new RelayCommand(async () => await SaveNotificationSettingsAsync(), () => !IsNotificationBusy);
         SendTestEmailCommand = new RelayCommand(async () => await SendTestEmailAsync(), () => !IsNotificationBusy);
-        SendTestWhatsAppCommand = new RelayCommand(async () => await SendTestWhatsAppAsync(), () => !IsNotificationBusy);
         SendMonthlyReportNowCommand = new RelayCommand(async () => await SendMonthlyReportNowAsync(), () => !IsNotificationBusy);
         CheckLowStockAlertsNowCommand = new RelayCommand(async () => await CheckLowStockAlertsNowAsync(), () => !IsNotificationBusy);
 
@@ -443,10 +432,6 @@ public sealed class StoreSettingsViewModel : ViewModelBase, IDisposable
             OwnerEmail = s.OwnerEmail;
             IsEmailLowStockAlertEnabled = s.IsEmailLowStockAlertEnabled;
             IsEmailMonthlyReportEnabled = s.IsEmailMonthlyReportEnabled;
-            IsWhatsAppEnabled = s.IsWhatsAppEnabled;
-            OwnerPhone = s.OwnerPhone;
-            WhatsAppGatewayUrl = s.WhatsAppGatewayUrl;
-            WhatsAppApiKey = s.WhatsAppApiKey;
         }
         catch (Exception ex)
         {
@@ -466,11 +451,7 @@ public sealed class StoreSettingsViewModel : ViewModelBase, IDisposable
                 BrevoSenderName,
                 OwnerEmail,
                 IsEmailLowStockAlertEnabled,
-                IsEmailMonthlyReportEnabled,
-                IsWhatsAppEnabled,
-                OwnerPhone,
-                WhatsAppGatewayUrl,
-                WhatsAppApiKey);
+                IsEmailMonthlyReportEnabled);
 
             await _notificationOrchestrator.SaveSettingsAsync(dto);
             NotificationStatusMessage = "Notification settings saved successfully!";
@@ -494,26 +475,6 @@ public sealed class StoreSettingsViewModel : ViewModelBase, IDisposable
             await SaveNotificationSettingsAsync();
             var (ok, msg) = await _notificationOrchestrator.SendTestEmailAsync(OwnerEmail);
             NotificationStatusMessage = ok ? "✅ Test email sent! Please check your inbox." : $"❌ {msg}";
-        }
-        catch (Exception ex)
-        {
-            NotificationStatusMessage = $"❌ Error: {ex.Message}";
-        }
-        finally
-        {
-            IsNotificationBusy = false;
-        }
-    }
-
-    public async Task SendTestWhatsAppAsync()
-    {
-        IsNotificationBusy = true;
-        NotificationStatusMessage = "Sending test WhatsApp message...";
-        try
-        {
-            await SaveNotificationSettingsAsync();
-            var (ok, msg) = await _notificationOrchestrator.SendTestWhatsAppAsync(OwnerPhone);
-            NotificationStatusMessage = ok ? "✅ Test WhatsApp message sent!" : $"❌ {msg}";
         }
         catch (Exception ex)
         {
