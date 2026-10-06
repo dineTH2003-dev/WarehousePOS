@@ -410,6 +410,7 @@ public sealed class PosViewModel : ViewModelBase
     public RelayCommand ClearCartCommand                 { get; }
     public RelayCommand ClearCustomerSelectionCommand    { get; }
     public RelayCommand RePrintLastReceiptCommand        { get; }
+    public RelayCommand PreviewLastReceiptCommand        { get; }
 
     public PosViewModel(
         IProductService productService,
@@ -432,6 +433,7 @@ public sealed class PosViewModel : ViewModelBase
         ClearCartCommand              = new RelayCommand(ClearCart);
         ClearCustomerSelectionCommand = new RelayCommand(ClearCustomerSelection);
         RePrintLastReceiptCommand     = new RelayCommand(async () => await RePrintLastReceiptAsync(), () => _lastCompletedSale is not null);
+        PreviewLastReceiptCommand     = new RelayCommand(async () => await PreviewLastReceiptAsync(), () => _lastCompletedSale is not null);
     }
 
     private bool CanProcessSale()
@@ -689,6 +691,7 @@ public sealed class PosViewModel : ViewModelBase
             _lastCompletedSale = sale;
             OnPropertyChanged(nameof(HasLastCompletedSale));
             RePrintLastReceiptCommand.RaiseCanExecuteChanged();
+            PreviewLastReceiptCommand.RaiseCanExecuteChanged();
 
             if (sale.Status == SaleStatus.AdvancePaid)
             {
@@ -753,6 +756,30 @@ public sealed class PosViewModel : ViewModelBase
         catch (Exception ex)
         {
             ErrorMessage = $"Failed to re-print bill: {ex.Message}";
+        }
+    }
+
+    public async Task PreviewLastReceiptAsync()
+    {
+        if (_lastCompletedSale is null) return;
+        try
+        {
+            var headerSettings = await _settingService.GetHeaderFooterSettingsAsync();
+            var window = new Views.Sales.ReceiptPreviewWindow(
+                _lastCompletedSale,
+                _printer,
+                headerSettings.StoreName,
+                headerSettings.StoreAddress,
+                headerSettings.StorePhone,
+                headerSettings.FooterMessage,
+                headerSettings.TaxRegNo);
+
+            window.Owner = System.Windows.Application.Current?.MainWindow;
+            window.ShowDialog();
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Failed to open receipt preview: {ex.Message}";
         }
     }
 

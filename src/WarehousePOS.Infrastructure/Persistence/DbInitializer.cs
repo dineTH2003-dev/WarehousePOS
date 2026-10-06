@@ -49,12 +49,12 @@ public static class DbInitializer
         {
             var settings = new[]
             {
-                StoreSetting.Create("STORE_NAME", "WarehousePOS Main Store", "Name of the business"),
-                StoreSetting.Create("STORE_ADDRESS", "123 Main Street, Colombo, Sri Lanka", "Store physical address"),
-                StoreSetting.Create("STORE_PHONE", "+94 11 234 5678", "Contact phone number"),
-                StoreSetting.Create("STORE_TAX_NO", "VAT-12345678-0000", "Tax Registration Number"),
-                StoreSetting.Create("RECEIPT_HEADER", "Welcome to WarehousePOS", "Text shown at top of thermal/matrix receipt"),
-                StoreSetting.Create("RECEIPT_FOOTER", "Thank you for your business! Please come again.", "Text shown at bottom of receipt")
+                StoreSetting.Create("STORE_NAME", "HAPPY PRODUCTS", "Name of the business"),
+                StoreSetting.Create("STORE_ADDRESS", "Bandaragama Rd, Waskaduwa", "Store physical address"),
+                StoreSetting.Create("STORE_PHONE", "Tel: 0711435343", "Contact phone number"),
+                StoreSetting.Create("STORE_TAX_NO", "Damro, Abans, Singer, Soft Logic, Arpico Authorised Dealer | Rg. No. B.B. 10500", "Dealer & Registration info"),
+                StoreSetting.Create("RECEIPT_HEADER", "Damro, Abans, Singer, Soft Logic, Arpico Authorised Dealer", "Text shown at top of receipt"),
+                StoreSetting.Create("RECEIPT_FOOTER", "During the warranty period, all goods must be delivered to the manufacturing facility for repairs. The company warranty or corporate bill must be presented. Items cannot be returned after sale; items should be fully inspected and accepted upon receipt.", "Text shown at bottom of receipt")
             };
             await db.StoreSettings.AddRangeAsync(settings);
         }

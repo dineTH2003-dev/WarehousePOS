@@ -346,7 +346,15 @@
                         <Button Grid.Column="2" Content="Complete Sale" Style="{StaticResource SuccessButton}" Command="{Binding ProcessSaleCommand}" Height="44" FontSize="16"/>
                     </Grid>
 
-                    <Button Content="🖨️ Re-print Last Bill" Style="{StaticResource SecondaryButton}" Command="{Binding RePrintLastReceiptCommand}" Margin="0,8,0,0" Height="36" Visibility="{Binding HasLastCompletedSale, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                    <Grid Visibility="{Binding HasLastCompletedSale, Converter={StaticResource BoolToVisibilityConverter}}" Margin="0,8,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="8"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Button Grid.Column="0" Content="👁️ Preview Bill" Style="{StaticResource SecondaryButton}" Command="{Binding PreviewLastReceiptCommand}" Height="36"/>
+                        <Button Grid.Column="2" Content="🖨️ Print Bill" Style="{StaticResource SuccessButton}" Command="{Binding RePrintLastReceiptCommand}" Height="36"/>
+                    </Grid>
                 </StackPanel>
             </Grid>
         </Border>

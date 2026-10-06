@@ -13,11 +13,11 @@ public partial class ReceiptPreviewWindow : Window
     public ReceiptPreviewWindow(
         SaleDto sale,
         IReceiptPrinter printer,
-        string storeName = "WAREHOUSE POS & WHOLESALE",
-        string storeAddress = "123 Main Street, Colombo, Sri Lanka",
-        string storePhone = "Tel: 011-2345678",
-        string footerMessage = "Thank you for your business!",
-        string taxRegNo = "")
+        string storeName = "HAPPY PRODUCTS",
+        string storeAddress = "Bandaragama Rd, Waskaduwa",
+        string storePhone = "Tel: 0711435343",
+        string footerMessage = "During the warranty period, all goods must be delivered to the manufacturing facility for repairs. The company warranty or corporate bill must be presented. Items cannot be returned after sale; items should be fully inspected and accepted upon receipt.",
+        string taxRegNo = "Damro, Abans, Singer, Soft Logic, Arpico Authorised Dealer")
     {
         InitializeComponent();
         _sale = sale;

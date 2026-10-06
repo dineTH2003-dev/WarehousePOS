@@ -27,11 +27,11 @@ public sealed class StoreSettingService(IStoreSettingRepository repo) : IStoreSe
 {
     public async Task<StoreHeaderFooterDto> GetHeaderFooterSettingsAsync(CancellationToken ct = default)
     {
-        var name    = await repo.GetValueAsync("STORE_NAME", ct) ?? "WAREHOUSE POS & WHOLESALE";
-        var address = await repo.GetValueAsync("STORE_ADDRESS", ct) ?? "123 Main Street, Colombo, Sri Lanka";
-        var phone   = await repo.GetValueAsync("STORE_PHONE", ct) ?? "Tel: 011-2345678 / 077-1234567";
-        var tax     = await repo.GetValueAsync("STORE_TAX_REG", ct) ?? "VAT Reg: 123456789-9000";
-        var footer  = await repo.GetValueAsync("STORE_FOOTER", ct) ?? "Thank you for your business!";
+        var name    = await repo.GetValueAsync("STORE_NAME", ct) ?? "HAPPY PRODUCTS";
+        var address = await repo.GetValueAsync("STORE_ADDRESS", ct) ?? "Bandaragama Rd, Waskaduwa";
+        var phone   = await repo.GetValueAsync("STORE_PHONE", ct) ?? "Tel: 0711435343";
+        var tax     = await repo.GetValueAsync("STORE_TAX_REG", ct) ?? await repo.GetValueAsync("STORE_TAX_NO", ct) ?? "Damro, Abans, Singer, Soft Logic, Arpico Authorised Dealer | Rg. No. B.B. 10500";
+        var footer  = await repo.GetValueAsync("STORE_FOOTER", ct) ?? await repo.GetValueAsync("RECEIPT_FOOTER", ct) ?? "During the warranty period, all goods must be delivered to the manufacturing facility for repairs. The company warranty or corporate bill must be presented. Items cannot be returned after sale; items should be fully inspected and accepted upon receipt.";
 
         return new StoreHeaderFooterDto(name, address, phone, tax, footer);
     }
