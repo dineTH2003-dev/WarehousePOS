@@ -40,20 +40,39 @@ public sealed class WhatsAppNotificationService : IWhatsAppNotificationService
 
         try
         {
-            // Standard normalized phone (remove spaces, hyphens, plus if needed by gateway)
+            // Standard normalized phone (remove spaces, hyphens)
             string normalizedPhone = recipientPhone.Replace(" ", "").Replace("-", "");
 
-            var payload = new Dictionary<string, object>
+            string json;
+            if (_gatewayUrl.Contains("graph.facebook.com", StringComparison.OrdinalIgnoreCase))
             {
-                ["to"] = normalizedPhone,
-                ["phone"] = normalizedPhone,
-                ["number"] = normalizedPhone,
-                ["body"] = message,
-                ["message"] = message,
-                ["text"] = message
-            };
+                // Meta WhatsApp Cloud API format
+                string cleanPhone = normalizedPhone.TrimStart('+');
+                var metaPayload = new
+                {
+                    messaging_product = "whatsapp",
+                    recipient_type = "individual",
+                    to = cleanPhone,
+                    type = "text",
+                    text = new { preview_url = false, body = message }
+                };
+                json = JsonSerializer.Serialize(metaPayload);
+            }
+            else
+            {
+                // Standard webhook / gateway payload format (UltraMsg, Waha, Evolution, etc.)
+                var payload = new Dictionary<string, object>
+                {
+                    ["to"] = normalizedPhone,
+                    ["phone"] = normalizedPhone,
+                    ["number"] = normalizedPhone,
+                    ["body"] = message,
+                    ["message"] = message,
+                    ["text"] = message
+                };
+                json = JsonSerializer.Serialize(payload);
+            }
 
-            var json = JsonSerializer.Serialize(payload);
             using var request = new HttpRequestMessage(HttpMethod.Post, _gatewayUrl);
             request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
