@@ -99,36 +99,24 @@ public sealed class SaleRepository(AppDbContext db) : ISaleRepository
         var customer = await db.Customers.AsNoTracking().FirstOrDefaultAsync(c => c.Id == customerId, ct);
         var phone = customer?.Phone?.Trim();
         var name = customer?.Name?.Trim();
+        var lowerName = name?.ToLower();
 
         var query = WithIncludesNoTracking();
 
+        List<int> matchingCustomerIds = [];
         if (!string.IsNullOrEmpty(phone))
         {
-            var matchingCustomerIds = await db.Customers.AsNoTracking()
+            matchingCustomerIds = await db.Customers.AsNoTracking()
                 .Where(c => c.Phone == phone)
                 .Select(c => c.Id)
-                .ToListAsync(ct);
-
-            return await query
-                .Where(s => (s.CustomerId.HasValue && matchingCustomerIds.Contains(s.CustomerId.Value)) ||
-                            s.CustomerId == customerId ||
-                            (s.CustomerPhone != null && s.CustomerPhone == phone))
-                .OrderByDescending(s => s.SaleDate)
-                .ToListAsync(ct);
-        }
-
-        if (!string.IsNullOrEmpty(name))
-        {
-            var lowerName = name.ToLower();
-            return await query
-                .Where(s => s.CustomerId == customerId ||
-                            (s.CustomerId == null && s.CustomerName != null && s.CustomerName.ToLower() == lowerName))
-                .OrderByDescending(s => s.SaleDate)
                 .ToListAsync(ct);
         }
 
         return await query
-            .Where(s => s.CustomerId == customerId)
+            .Where(s => s.CustomerId == customerId ||
+                        (s.CustomerId.HasValue && matchingCustomerIds.Contains(s.CustomerId.Value)) ||
+                        (!string.IsNullOrEmpty(phone) && s.CustomerPhone != null && s.CustomerPhone == phone) ||
+                        (!string.IsNullOrEmpty(lowerName) && s.CustomerName != null && s.CustomerName.ToLower() == lowerName))
             .OrderByDescending(s => s.SaleDate)
             .ToListAsync(ct);
     }
