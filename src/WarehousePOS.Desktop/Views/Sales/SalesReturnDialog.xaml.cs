@@ -56,8 +56,8 @@ public partial class SalesReturnDialog : Window
 
     public SalesReturnDialog(SaleDto sale)
     {
+        _sale = sale ?? throw new ArgumentNullException(nameof(sale));
         InitializeComponent();
-        _sale = sale;
 
         string custName = string.IsNullOrWhiteSpace(sale.CustomerName) ? "Walk-in Customer" : sale.CustomerName;
         InvoiceHeaderInfo.Text = $"Invoice #{sale.Id} ({sale.SaleDate.ToLocalTime():yyyy-MM-dd HH:mm}) — {custName}";
@@ -98,6 +98,8 @@ public partial class SalesReturnDialog : Window
 
     private void UpdateCalculations()
     {
+        if (TxtCalculatedRefund is null || TxtRefundAmount is null) return;
+
         decimal calculated = _rows.Sum(r => r.LineRefund);
         TxtCalculatedRefund.Text = $"Rs. {calculated:N2}";
 
@@ -113,6 +115,11 @@ public partial class SalesReturnDialog : Window
 
     private void UpdateFinancialImpact()
     {
+        if (_sale is null || TxtRefundAmount is null || TxtDebtOffset is null || TxtCashRefund is null || TxtNewBalanceDue is null || ChkRefundCash is null)
+        {
+            return;
+        }
+
         if (!decimal.TryParse(TxtRefundAmount.Text, out var refundVal) || refundVal < 0)
         {
             refundVal = 0m;
@@ -130,7 +137,7 @@ public partial class SalesReturnDialog : Window
 
     private void TxtRefundAmount_TextChanged(object sender, TextChangedEventArgs e)
     {
-        if (_isUpdatingText) return;
+        if (_isUpdatingText || _sale is null) return;
         _isManuallyOverridden = true;
         UpdateFinancialImpact();
     }
@@ -140,7 +147,10 @@ public partial class SalesReturnDialog : Window
         _isManuallyOverridden = false;
         decimal calculated = _rows.Sum(r => r.LineRefund);
         _isUpdatingText = true;
-        TxtRefundAmount.Text = calculated.ToString("F2");
+        if (TxtRefundAmount is not null)
+        {
+            TxtRefundAmount.Text = calculated.ToString("F2");
+        }
         _isUpdatingText = false;
         UpdateFinancialImpact();
     }
@@ -154,7 +164,7 @@ public partial class SalesReturnDialog : Window
     {
         var itemsToReturn = _rows
             .Where(r => r.ReturnQuantity > 0)
-            .Select(r => new ReturnItemRequest(r.ProductId, r.ReturnQuantity, TxtReason.Text?.Trim()))
+            .Select(r => new ReturnItemRequest(r.ProductId, r.ReturnQuantity, TxtReason?.Text?.Trim()))
             .ToList();
 
         if (!itemsToReturn.Any())
@@ -163,13 +173,13 @@ public partial class SalesReturnDialog : Window
             return;
         }
 
-        if (string.IsNullOrWhiteSpace(TxtReason.Text))
+        if (string.IsNullOrWhiteSpace(TxtReason?.Text))
         {
             MessageBox.Show("Please enter a return reason or notes for audit tracking.", "Reason Required", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
-        if (!decimal.TryParse(TxtRefundAmount.Text, out var refundAmount) || refundAmount < 0)
+        if (TxtRefundAmount is null || !decimal.TryParse(TxtRefundAmount.Text, out var refundAmount) || refundAmount < 0)
         {
             MessageBox.Show("Please enter a valid refund amount (0.00 or greater).", "Invalid Refund Amount", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
@@ -182,9 +192,9 @@ public partial class SalesReturnDialog : Window
         }
 
         ReturnItems = itemsToReturn;
-        ReturnReason = TxtReason.Text.Trim();
+        ReturnReason = TxtReason?.Text?.Trim() ?? string.Empty;
         RefundAmount = refundAmount;
-        RefundCash = ChkRefundCash.IsChecked ?? false;
+        RefundCash = ChkRefundCash?.IsChecked ?? false;
 
         DialogResult = true;
     }

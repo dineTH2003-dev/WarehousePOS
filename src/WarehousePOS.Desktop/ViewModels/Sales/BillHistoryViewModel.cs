@@ -358,37 +358,40 @@ public sealed class BillHistoryViewModel : ViewModelBase
     {
         if (SelectedSale is null) return;
 
-        var dialog = new Views.Sales.SalesReturnDialog(SelectedSale)
+        try
         {
-            Owner = System.Windows.Application.Current.MainWindow
-        };
+            var dialog = new Views.Sales.SalesReturnDialog(SelectedSale)
+            {
+                Owner = System.Windows.Application.Current?.MainWindow
+            };
 
-        if (dialog.ShowDialog() == true && dialog.ReturnItems.Any())
+            if (dialog.ShowDialog() == true && dialog.ReturnItems.Any())
+            {
+                IsLoading = true;
+                try
+                {
+                    var req = new ProcessSaleReturnRequest(
+                        SelectedSale.Id,
+                        _session.CurrentUser?.UserId ?? 1,
+                        dialog.ReturnItems,
+                        dialog.RefundAmount,
+                        dialog.RefundCash,
+                        dialog.ReturnReason);
+
+                    var updated = await _saleService.ProcessReturnAsync(req);
+                    SuccessMessage = $"Return processed successfully for Invoice #{updated.Id}!";
+                    await SearchAsync();
+                    SelectedSale = updated;
+                }
+                finally
+                {
+                    IsLoading = false;
+                }
+            }
+        }
+        catch (Exception ex)
         {
-            IsLoading = true;
-            try
-            {
-                var req = new ProcessSaleReturnRequest(
-                    SelectedSale.Id,
-                    _session.CurrentUser?.UserId ?? 1,
-                    dialog.ReturnItems,
-                    dialog.RefundAmount,
-                    dialog.RefundCash,
-                    dialog.ReturnReason);
-
-                var updated = await _saleService.ProcessReturnAsync(req);
-                SuccessMessage = $"Return processed successfully for Invoice #{updated.Id}!";
-                await SearchAsync();
-                SelectedSale = updated;
-            }
-            catch (Exception ex)
-            {
-                ErrorMessage = $"Failed to process return: {ex.Message}";
-            }
-            finally
-            {
-                IsLoading = false;
-            }
+            ErrorMessage = $"Failed to process return: {ex.Message}";
         }
     }
 
