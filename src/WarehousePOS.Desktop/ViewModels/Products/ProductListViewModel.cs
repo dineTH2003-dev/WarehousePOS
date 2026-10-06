@@ -66,8 +66,10 @@ public sealed class ProductListViewModel : ViewModelBase
 
     // Raised to tell the view to open the form
     public event Action<ProductDto?>? EditRequested;
+    public event Action? ImportRequested;
 
     public RelayCommand AddCommand              { get; }
+    public RelayCommand ImportCommand           { get; }
     public RelayCommand<ProductDto> EditCommand { get; }
     public RelayCommand<ProductDto> ToggleActiveCommand { get; }
     public RelayCommand RefreshCommand          { get; }
@@ -86,6 +88,7 @@ public sealed class ProductListViewModel : ViewModelBase
         _session         = session;
 
         AddCommand              = new RelayCommand(() => EditRequested?.Invoke(null));
+        ImportCommand           = new RelayCommand(() => ImportRequested?.Invoke());
         EditCommand             = new RelayCommand<ProductDto>(dto => EditRequested?.Invoke(dto));
         ToggleActiveCommand     = new RelayCommand<ProductDto>(async dto => await ToggleActiveAsync(dto));
         RefreshCommand          = new RelayCommand(async () => await LoadAsync());

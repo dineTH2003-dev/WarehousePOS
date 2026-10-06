@@ -32,6 +32,13 @@
                         Margin="0,0,10,0"
                         Height="38"
                         Padding="14,0"/>
+                <Button Content="📥 Import CSV"
+                        Style="{StaticResource SecondaryButton}"
+                        Command="{Binding ImportCommand}"
+                        Margin="0,0,10,0"
+                        Height="38"
+                        Padding="14,0"
+                        ToolTip="Bulk import products from CSV spreadsheet"/>
                 <Button Content="+ Add Product"
                         Style="{StaticResource PrimaryButton}"
                         Command="{Binding AddCommand}"
