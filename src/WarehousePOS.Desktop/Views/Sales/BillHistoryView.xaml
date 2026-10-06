@@ -114,7 +114,7 @@
         <!-- Main Content Area (Left: Sales Grid, Right: Details Drawer) -->
         <Grid Grid.Row="3">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="1.2*"/>
+                <ColumnDefinition Width="1.1*"/>
                 <ColumnDefinition Width="16"/>
                 <ColumnDefinition Width="1*"/>
             </Grid.ColumnDefinitions>
@@ -129,21 +129,15 @@
                           SelectionMode="Single"
                           HeadersVisibility="Column"
                           GridLinesVisibility="Horizontal">
+                    <DataGrid.CellStyle>
+                        <Style TargetType="DataGridCell" BasedOn="{StaticResource {x:Type DataGridCell}}">
+                            <Setter Property="Padding" Value="6,4"/>
+                        </Style>
+                    </DataGrid.CellStyle>
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header="Inv #" Binding="{Binding Id}" Width="65"/>
-                        <DataGridTextColumn Header="Date" Binding="{Binding SaleDate, Converter={StaticResource UtcToLocalDateTimeConverter}}" Width="140"/>
-                        <DataGridTemplateColumn Header="Customer" Width="*">
-                            <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
-                                    <StackPanel VerticalAlignment="Center">
-                                        <TextBlock Text="{Binding CustomerName}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
-                                        <TextBlock Text="{Binding CustomerPhone}" FontSize="11" Foreground="{StaticResource TextMutedBrush}"
-                                                   Visibility="{Binding CustomerPhone, Converter={StaticResource NullToVisibilityConverter}}"/>
-                                    </StackPanel>
-                                </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                        </DataGridTemplateColumn>
-                        <DataGridTextColumn Header="Type" Binding="{Binding SaleTypeLabel}" Width="80"/>
+                        <DataGridTextColumn Header="Inv #" Binding="{Binding Id}" Width="55"/>
+                        <DataGridTextColumn Header="Date" Binding="{Binding SaleDate, Converter={StaticResource UtcToLocalDateTimeConverter}}" Width="*"/>
+                        <DataGridTextColumn Header="Type" Binding="{Binding SaleTypeLabel}" Width="75"/>
                         <DataGridTemplateColumn Header="Status" Width="110">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
@@ -153,14 +147,14 @@
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
-                        <DataGridTextColumn Header="Total" Binding="{Binding TotalAmount, StringFormat=Rs. {0:N2}}" Width="100"/>
-                        <DataGridTextColumn Header="Paid" Binding="{Binding AmountPaid, StringFormat=Rs. {0:N2}}" Width="95"/>
-                        <DataGridTemplateColumn Header="Balance Due" Width="95">
+                        <DataGridTextColumn Header="Total" Binding="{Binding TotalAmount, StringFormat=Rs. {0:N2}}" Width="115"/>
+                        <DataGridTextColumn Header="Paid" Binding="{Binding AmountPaid, StringFormat=Rs. {0:N2}}" Width="110"/>
+                        <DataGridTemplateColumn Header="Balance Due" Width="115">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <TextBlock Text="{Binding UnpaidAmount, StringFormat=Rs. {0:N2}}"
-                                               FontWeight="SemiBold"
-                                               VerticalAlignment="Center">
+                                                FontWeight="SemiBold"
+                                                VerticalAlignment="Center">
                                         <TextBlock.Style>
                                             <Style TargetType="TextBlock">
                                                 <Setter Property="Foreground" Value="#DC2626"/>
@@ -244,12 +238,17 @@
                             <TabItem Header="Items">
                                 <DataGrid ItemsSource="{Binding SelectedSale.Items}" AutoGenerateColumns="False" CanUserAddRows="False"
                                           IsReadOnly="True" HeadersVisibility="Column" GridLinesVisibility="Horizontal" Margin="0,6,0,0">
+                                    <DataGrid.CellStyle>
+                                        <Style TargetType="DataGridCell" BasedOn="{StaticResource {x:Type DataGridCell}}">
+                                            <Setter Property="Padding" Value="6,4"/>
+                                        </Style>
+                                    </DataGrid.CellStyle>
                                     <DataGrid.Columns>
                                         <DataGridTextColumn Header="Product" Binding="{Binding ProductName}" Width="*"/>
                                         <DataGridTextColumn Header="Qty" Binding="{Binding Quantity}" Width="45"/>
-                                        <DataGridTextColumn Header="Price" Binding="{Binding UnitPrice, StringFormat=N2}" Width="75"/>
+                                        <DataGridTextColumn Header="Price" Binding="{Binding UnitPrice, StringFormat=N2}" Width="80"/>
                                         <DataGridTextColumn Header="Ret." Binding="{Binding ReturnedQuantity}" Width="45"/>
-                                        <DataGridTextColumn Header="Total" Binding="{Binding LineTotal, StringFormat=N2}" Width="80"/>
+                                        <DataGridTextColumn Header="Total" Binding="{Binding LineTotal, StringFormat=N2}" Width="85"/>
                                     </DataGrid.Columns>
                                 </DataGrid>
                             </TabItem>
@@ -258,10 +257,15 @@
                             <TabItem Header="Payments">
                                 <DataGrid ItemsSource="{Binding SelectedSale.Payments}" AutoGenerateColumns="False" CanUserAddRows="False"
                                           IsReadOnly="True" HeadersVisibility="Column" GridLinesVisibility="Horizontal" Margin="0,6,0,0">
+                                    <DataGrid.CellStyle>
+                                        <Style TargetType="DataGridCell" BasedOn="{StaticResource {x:Type DataGridCell}}">
+                                            <Setter Property="Padding" Value="6,4"/>
+                                        </Style>
+                                    </DataGrid.CellStyle>
                                     <DataGrid.Columns>
                                         <DataGridTextColumn Header="Date" Binding="{Binding PaymentDate, Converter={StaticResource UtcToLocalDateTimeConverter}}" Width="125"/>
                                         <DataGridTextColumn Header="Method" Binding="{Binding PaymentMethodLabel}" Width="80"/>
-                                        <DataGridTextColumn Header="Amount" Binding="{Binding Amount, StringFormat=Rs. {0:N2}}" Width="95"/>
+                                        <DataGridTextColumn Header="Amount" Binding="{Binding Amount, StringFormat=Rs. {0:N2}}" Width="105"/>
                                         <DataGridTextColumn Header="Notes" Binding="{Binding Notes}" Width="*"/>
                                     </DataGrid.Columns>
                                 </DataGrid>
@@ -271,9 +275,14 @@
                             <TabItem Header="Extra Outcomes">
                                 <DataGrid ItemsSource="{Binding SelectedSaleExpenses}" AutoGenerateColumns="False" CanUserAddRows="False"
                                           IsReadOnly="True" HeadersVisibility="Column" GridLinesVisibility="Horizontal" Margin="0,6,0,0">
+                                    <DataGrid.CellStyle>
+                                        <Style TargetType="DataGridCell" BasedOn="{StaticResource {x:Type DataGridCell}}">
+                                            <Setter Property="Padding" Value="6,4"/>
+                                        </Style>
+                                    </DataGrid.CellStyle>
                                     <DataGrid.Columns>
                                         <DataGridTextColumn Header="Category" Binding="{Binding CategoryName}" Width="100"/>
-                                        <DataGridTextColumn Header="Amount" Binding="{Binding Amount, StringFormat=Rs. {0:N2}}" Width="85"/>
+                                        <DataGridTextColumn Header="Amount" Binding="{Binding Amount, StringFormat=Rs. {0:N2}}" Width="100"/>
                                         <DataGridTextColumn Header="Description" Binding="{Binding Description}" Width="*"/>
                                         <DataGridTextColumn Header="By" Binding="{Binding CreatedBy}" Width="75"/>
                                     </DataGrid.Columns>
@@ -289,6 +298,7 @@
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
                                 <StackPanel Grid.Column="0">
                                     <TextBlock Text="Sub Total" FontSize="11" Foreground="{StaticResource TextMutedBrush}"/>
@@ -299,10 +309,14 @@
                                     <TextBlock Text="{Binding SelectedSale.DeliveryFee, StringFormat=Rs. {0:N2}}" FontWeight="SemiBold" FontSize="13"/>
                                 </StackPanel>
                                 <StackPanel Grid.Column="2">
+                                    <TextBlock Text="Labour Cost" FontSize="11" Foreground="{StaticResource TextMutedBrush}"/>
+                                    <TextBlock Text="{Binding SelectedSale.LabourCost, StringFormat=Rs. {0:N2}}" FontWeight="SemiBold" FontSize="13"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="3">
                                     <TextBlock Text="Total Bill" FontSize="11" Foreground="{StaticResource TextMutedBrush}"/>
                                     <TextBlock Text="{Binding SelectedSale.TotalAmount, StringFormat=Rs. {0:N2}}" FontWeight="Bold" FontSize="14" Foreground="{StaticResource PrimaryBrush}"/>
                                 </StackPanel>
-                                <StackPanel Grid.Column="3">
+                                <StackPanel Grid.Column="4">
                                     <TextBlock Text="Balance Due" FontSize="11" Foreground="{StaticResource TextMutedBrush}"/>
                                     <TextBlock Text="{Binding SelectedSale.UnpaidAmount, StringFormat=Rs. {0:N2}}" FontWeight="Bold" FontSize="14" Foreground="#DC2626"/>
                                 </StackPanel>

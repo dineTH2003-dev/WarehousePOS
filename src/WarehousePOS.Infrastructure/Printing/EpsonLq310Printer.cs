@@ -332,6 +332,8 @@ public sealed class EpsonLq310Printer(
             sb.AppendLine(string.Format("{0,64} {1,15:N2}", "Discount:", -sale.DiscountAmount));
         if (sale.DeliveryFee > 0)
             sb.AppendLine(string.Format("{0,64} {1,15:N2}", "Delivery Fee:", sale.DeliveryFee));
+        if (sale.LabourCost > 0)
+            sb.AppendLine(string.Format("{0,64} {1,15:N2}", "Labour Cost:", sale.LabourCost));
         sb.AppendLine(string.Format("{0,64} {1,15:N2}", "TOTAL AMOUNT (LKR):", sale.TotalAmount));
         sb.AppendLine(string.Format("{0,64} {1,15:N2}", "Amount Tendered:", sale.AmountPaid));
         sb.AppendLine(string.Format("{0,64} {1,15:N2}", "Change Due:", sale.Change));

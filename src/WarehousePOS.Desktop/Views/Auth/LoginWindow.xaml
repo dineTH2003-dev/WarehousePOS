@@ -11,7 +11,10 @@
         WindowState="Maximized"
         ResizeMode="CanResize"
         WindowStartupLocation="CenterScreen"
-        Background="#101820">
+        Background="#101820"
+        FontFamily="{StaticResource AppFontFamily}"
+        TextOptions.TextRenderingMode="ClearType"
+        TextOptions.TextFormattingMode="Display">
 
     <Grid>
         <!-- Local retail/POS image keeps the login usable offline. -->

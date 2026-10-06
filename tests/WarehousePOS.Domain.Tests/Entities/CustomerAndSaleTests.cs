@@ -28,6 +28,9 @@ public sealed class CustomerTests
     [InlineData("07123456789")]
     [InlineData("07123abc45")]
     [InlineData("07123-45678")]
+    [InlineData("1234567890")]
+    [InlineData("071234567")]
+    [InlineData("071")]
     public void Create_InvalidPhone_ShouldThrow(string phone)
     {
         var action = () => Customer.Create("Test", phone: phone);

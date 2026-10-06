@@ -79,7 +79,7 @@
             </Grid>
 
             <!-- Right Panel: Cart & Payment -->
-            <Border Grid.Column="2" Style="{StaticResource Card}">
+            <Border Grid.Column="2" Style="{StaticResource Card}" Padding="14,10">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -87,271 +87,352 @@
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
-                <!-- Customer Selection -->
-                <StackPanel Grid.Row="0" Margin="0,0,0,12">
-                    <TextBlock Text="Customer" Style="{StaticResource LabelText}" Margin="0,0,0,4"/>
-                    <!-- Search Input Row -->
-                    <Grid Margin="0,0,0,10">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <Border Grid.Column="0" Style="{StaticResource SearchHoverCard}" Padding="0">
-                            <TextBox x:Name="TxtCustomerSearch" Style="{StaticResource SearchTextBox}"
-                                     Text="{Binding CustomerSearchQuery, UpdateSourceTrigger=PropertyChanged}"
-                                     Tag="Phone number or name"
-                                     ToolTip="Search customer by phone number or name"
-                                     PreviewKeyDown="TxtCustomerSearch_PreviewKeyDown"/>
-                        </Border>
-                        <Button Grid.Column="1" Content="✕" Margin="6,0,0,0" Padding="10,6"
-                                Style="{StaticResource SecondaryButton}" BorderThickness="0" Foreground="#EF4444" FontWeight="Bold"
-                                Command="{Binding ClearCustomerSelectionCommand}"
-                                Visibility="{Binding SelectedCustomer, Converter={StaticResource NullToVisibilityConverter}}"
-                                ToolTip="Clear selected customer"/>
-
-                        <!-- Popup Dropdown for Search Results -->
-                        <Popup IsOpen="{Binding IsCustomerDropDownOpen, Mode=TwoWay}"
-                               PlacementTarget="{Binding ElementName=TxtCustomerSearch}"
-                               Placement="Bottom"
-                               StaysOpen="False"
-                               AllowsTransparency="True"
-                               PopupAnimation="Slide">
-                            <Border Background="White" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="8"
-                                    Margin="0,2,0,0" MaxHeight="200" Width="{Binding ActualWidth, ElementName=TxtCustomerSearch}">
-                                <Border.Effect>
-                                    <DropShadowEffect BlurRadius="12" ShadowDepth="3" Opacity="0.12" Color="Black" Direction="270"/>
-                                </Border.Effect>
-                                <ListBox x:Name="LstCustomerResults" ItemsSource="{Binding FilteredCustomers}"
-                                         DisplayMemberPath="DisplayName"
-                                         BorderThickness="0" Background="Transparent"
-                                         ScrollViewer.VerticalScrollBarVisibility="Auto"
-                                         PreviewMouseLeftButtonUp="LstCustomerResults_PreviewMouseLeftButtonUp">
-                                    <ListBox.ItemContainerStyle>
-                                        <Style TargetType="ListBoxItem">
-                                            <Setter Property="Padding" Value="12,10"/>
-                                            <Setter Property="FontSize" Value="13"/>
-                                            <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
-                                            <Setter Property="Cursor" Value="Hand"/>
-                                            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
-                                            <Setter Property="Template">
-                                                <Setter.Value>
-                                                    <ControlTemplate TargetType="ListBoxItem">
-                                                        <Border x:Name="Bd"
-                                                                Background="Transparent"
-                                                                CornerRadius="6"
-                                                                Padding="{TemplateBinding Padding}"
-                                                                Margin="2,1">
-                                                            <ContentPresenter HorizontalAlignment="Left" VerticalAlignment="Center"/>
-                                                        </Border>
-                                                        <ControlTemplate.Triggers>
-                                                            <Trigger Property="IsMouseOver" Value="True">
-                                                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource SurfaceAltBrush}"/>
-                                                                <Setter Property="Foreground" Value="{StaticResource PrimaryDarkBrush}"/>
-                                                            </Trigger>
-                                                            <Trigger Property="IsSelected" Value="True">
-                                                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource PrimaryBrush}"/>
-                                                                <Setter Property="Foreground" Value="White"/>
-                                                                <Setter Property="FontWeight" Value="SemiBold"/>
-                                                            </Trigger>
-                                                            <MultiTrigger>
-                                                                <MultiTrigger.Conditions>
-                                                                    <Condition Property="IsSelected" Value="True"/>
-                                                                    <Condition Property="IsMouseOver" Value="True"/>
-                                                                </MultiTrigger.Conditions>
-                                                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource PrimaryDarkBrush}"/>
-                                                                <Setter Property="Foreground" Value="White"/>
-                                                            </MultiTrigger>
-                                                        </ControlTemplate.Triggers>
-                                                    </ControlTemplate>
-                                                </Setter.Value>
-                                            </Setter>
-                                        </Style>
-                                    </ListBox.ItemContainerStyle>
-                                 </ListBox>
-                            </Border>
-                        </Popup>
-                    </Grid>
-
-                    <!-- Selected Customer Outstanding Balance Badge -->
-                    <Border Background="#FEF2F2" BorderBrush="#FCA5A5" BorderThickness="1" CornerRadius="6" Padding="10,6" Margin="0,0,0,10"
-                            Visibility="{Binding IsRegisteredCustomer, Converter={StaticResource BoolToVisibilityConverter}}">
-                        <Grid HorizontalAlignment="Stretch">
-                            <TextBlock Text="Outstanding Balance:" FontSize="13" FontWeight="SemiBold" Foreground="#991B1B" VerticalAlignment="Center"/>
-                            <TextBlock Text="{Binding SelectedCustomer.OutstandingBalance, StringFormat=Rs. {0:N2}}" HorizontalAlignment="Right" FontSize="13" FontWeight="Bold" Foreground="#DC2626" VerticalAlignment="Center"/>
-                        </Grid>
-                    </Border>
-
-                    <!-- Walk-in Customer / Ad-hoc Details (when not selecting a registered customer) -->
-                    <StackPanel Visibility="{Binding IsRegisteredCustomer, Converter={StaticResource InverseBoolToVisibilityConverter}}" Margin="0,0,0,8">
+                    <!-- Customer Selection (Row 0) -->
+                    <StackPanel Grid.Row="0" Margin="0,0,0,6">
+                        <TextBlock Text="Customer" Style="{StaticResource LabelText}" Margin="0,0,0,2"/>
+                        <!-- Search Input Row -->
                         <Grid Margin="0,0,0,4">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="6"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Border Grid.Column="0" Style="{StaticResource SearchHoverCard}" Padding="0">
+                                <TextBox x:Name="TxtCustomerSearch" Style="{StaticResource SearchTextBox}"
+                                         Text="{Binding CustomerSearchQuery, UpdateSourceTrigger=PropertyChanged}"
+                                         Tag="Phone number or name"
+                                         ToolTip="Search customer by phone number or name"
+                                         PreviewKeyDown="TxtCustomerSearch_PreviewKeyDown"/>
+                            </Border>
+                            <Button Grid.Column="1" Margin="4,0,0,0" Width="28" Height="28"
+                                    Command="{Binding ClearCustomerSelectionCommand}"
+                                    Visibility="{Binding SelectedCustomer, Converter={StaticResource NullToVisibilityConverter}}"
+                                    ToolTip="Clear selected customer" Cursor="Hand">
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border x:Name="Bd" Background="#FEE2E2" CornerRadius="6" Width="28" Height="28">
+                                            <Path Data="M 0,0 L 8,8 M 8,0 L 0,8"
+                                                  Stroke="#EF4444"
+                                                  StrokeThickness="2"
+                                                  StrokeStartLineCap="Round"
+                                                  StrokeEndLineCap="Round"
+                                                  Width="8"
+                                                  Height="8"
+                                                  HorizontalAlignment="Center"
+                                                  VerticalAlignment="Center" />
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="Bd" Property="Background" Value="#FCA5A5"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Button.Template>
+                            </Button>
+
+                            <!-- Popup Dropdown for Search Results -->
+                            <Popup IsOpen="{Binding IsCustomerDropDownOpen, Mode=TwoWay}"
+                                   PlacementTarget="{Binding ElementName=TxtCustomerSearch}"
+                                   Placement="Bottom"
+                                   StaysOpen="False"
+                                   AllowsTransparency="True"
+                                   PopupAnimation="Slide">
+                                <Border Background="White" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="8"
+                                        Margin="0,2,0,0" MaxHeight="200" Width="{Binding ActualWidth, ElementName=TxtCustomerSearch}">
+                                    <Border.Effect>
+                                        <DropShadowEffect BlurRadius="12" ShadowDepth="3" Opacity="0.12" Color="Black" Direction="270"/>
+                                    </Border.Effect>
+                                    <ListBox x:Name="LstCustomerResults" ItemsSource="{Binding FilteredCustomers}"
+                                             DisplayMemberPath="DisplayName"
+                                             BorderThickness="0" Background="Transparent"
+                                             ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                             PreviewMouseLeftButtonUp="LstCustomerResults_PreviewMouseLeftButtonUp">
+                                        <ListBox.ItemContainerStyle>
+                                            <Style TargetType="ListBoxItem">
+                                                <Setter Property="Padding" Value="10,6"/>
+                                                <Setter Property="FontSize" Value="13"/>
+                                                <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+                                                <Setter Property="Cursor" Value="Hand"/>
+                                                <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                                                <Setter Property="Template">
+                                                    <Setter.Value>
+                                                        <ControlTemplate TargetType="ListBoxItem">
+                                                            <Border x:Name="Bd"
+                                                                    Background="Transparent"
+                                                                    CornerRadius="6"
+                                                                    Padding="{TemplateBinding Padding}"
+                                                                    Margin="2,1">
+                                                                <ContentPresenter HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                                            </Border>
+                                                            <ControlTemplate.Triggers>
+                                                                <Trigger Property="IsMouseOver" Value="True">
+                                                                    <Setter TargetName="Bd" Property="Background" Value="{StaticResource SurfaceAltBrush}"/>
+                                                                    <Setter Property="Foreground" Value="{StaticResource PrimaryDarkBrush}"/>
+                                                                </Trigger>
+                                                                <Trigger Property="IsSelected" Value="True">
+                                                                    <Setter TargetName="Bd" Property="Background" Value="{StaticResource PrimaryBrush}"/>
+                                                                    <Setter Property="Foreground" Value="White"/>
+                                                                    <Setter Property="FontWeight" Value="SemiBold"/>
+                                                                </Trigger>
+                                                                <MultiTrigger>
+                                                                    <MultiTrigger.Conditions>
+                                                                        <Condition Property="IsSelected" Value="True"/>
+                                                                        <Condition Property="IsMouseOver" Value="True"/>
+                                                                    </MultiTrigger.Conditions>
+                                                                    <Setter TargetName="Bd" Property="Background" Value="{StaticResource PrimaryDarkBrush}"/>
+                                                                    <Setter Property="Foreground" Value="White"/>
+                                                                </MultiTrigger>
+                                                            </ControlTemplate.Triggers>
+                                                        </ControlTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </Style>
+                                        </ListBox.ItemContainerStyle>
+                                     </ListBox>
+                                </Border>
+                            </Popup>
+                        </Grid>
+
+                        <!-- Selected Customer Outstanding Balance Badge -->
+                        <Border Background="#FEF2F2" BorderBrush="#FCA5A5" BorderThickness="1" CornerRadius="6" Padding="8,3" Margin="0,0,0,4"
+                                Visibility="{Binding IsRegisteredCustomer, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <Grid HorizontalAlignment="Stretch">
+                                <TextBlock Text="Outstanding Balance:" FontSize="12" FontWeight="SemiBold" Foreground="#991B1B" VerticalAlignment="Center"/>
+                                <TextBlock Text="{Binding SelectedCustomer.OutstandingBalance, StringFormat=Rs. {0:N2}}" HorizontalAlignment="Right" FontSize="12" FontWeight="Bold" Foreground="#DC2626" VerticalAlignment="Center"/>
+                            </Grid>
+                        </Border>
+
+                        <!-- Walk-in Customer / Ad-hoc Details (when not selecting a registered customer) -->
+                        <StackPanel Visibility="{Binding IsRegisteredCustomer, Converter={StaticResource InverseBoolToVisibilityConverter}}" Margin="0,0,0,4">
+                            <Grid Margin="0,0,0,2">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="6"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBox Grid.Column="0" Text="{Binding CustomCustomerName, UpdateSourceTrigger=PropertyChanged}"
+                                         Tag="Walk-in Name (optional)" ToolTip="Walk-in / delivery customer name"
+                                         Style="{StaticResource FormTextBox}" Height="24" Padding="6,1" FontSize="12"/>
+                                <TextBox Grid.Column="2" Text="{Binding CustomCustomerPhone, UpdateSourceTrigger=PropertyChanged}"
+                                         behaviors:DigitsOnlyBehavior.IsEnabled="True"
+                                         MaxLength="10"
+                                         Tag="Phone (optional)" ToolTip="Walk-in / delivery customer phone"
+                                         Style="{StaticResource FormTextBox}" Height="24" Padding="6,1" FontSize="12"/>
+                            </Grid>
+                            <CheckBox Content="Save to Customer Directory" IsChecked="{Binding SaveAsNewCustomer}"
+                                      FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" Margin="2,1,0,0"/>
+                        </StackPanel>
+
+                        <!-- Radio Buttons -->
+                        <Grid Margin="0,2,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
-                            <TextBox Grid.Column="0" Text="{Binding CustomCustomerName, UpdateSourceTrigger=PropertyChanged}"
-                                     Tag="Walk-in Name (optional)" ToolTip="Walk-in / delivery customer name"
-                                     Style="{StaticResource FormTextBox}" Height="28" Padding="6,2"/>
-                            <TextBox Grid.Column="2" Text="{Binding CustomCustomerPhone, UpdateSourceTrigger=PropertyChanged}"
-                                     Tag="Phone (optional)" ToolTip="Walk-in / delivery customer phone"
-                                     Style="{StaticResource FormTextBox}" Height="28" Padding="6,2"/>
+                            <RadioButton Grid.Column="0" Content="Retail Price"
+                                         IsChecked="{Binding SaleType, Converter={StaticResource EnumToBoolConverter}, ConverterParameter=Retail}"
+                                         GroupName="SaleTypeGroup" FontWeight="SemiBold" FontSize="12"/>
+                            <RadioButton Grid.Column="1" Content="Wholesale Price"
+                                         IsChecked="{Binding SaleType, Converter={StaticResource EnumToBoolConverter}, ConverterParameter=Wholesale}"
+                                         GroupName="SaleTypeGroup" FontWeight="SemiBold" FontSize="12"/>
                         </Grid>
-                        <CheckBox Content="Save to Customer Directory" IsChecked="{Binding SaveAsNewCustomer}"
-                                  FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" Margin="2,0,0,0"/>
                     </StackPanel>
 
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <RadioButton Grid.Column="0" Content="Retail Price"
-                                     IsChecked="{Binding SaleType, Converter={StaticResource EnumToBoolConverter}, ConverterParameter=Retail}"
-                                     GroupName="SaleTypeGroup" FontWeight="SemiBold"/>
-                        <RadioButton Grid.Column="1" Content="Wholesale Price"
-                                     IsChecked="{Binding SaleType, Converter={StaticResource EnumToBoolConverter}, ConverterParameter=Wholesale}"
-                                     GroupName="SaleTypeGroup" FontWeight="SemiBold"/>
-                    </Grid>
-                </StackPanel>
+                    <!-- Cart DataGrid (Row 1) -->
+                    <DataGrid Grid.Row="1" ItemsSource="{Binding CartItems}" Margin="0,0,0,6"
+                              MinHeight="90"
+                              HorizontalScrollBarVisibility="Disabled"
+                              VerticalScrollBarVisibility="Auto">
+                        <DataGrid.CellStyle>
+                            <Style TargetType="DataGridCell" BasedOn="{StaticResource {x:Type DataGridCell}}">
+                                <Setter Property="Padding" Value="6,4"/>
+                            </Style>
+                        </DataGrid.CellStyle>
+                        <DataGrid.Columns>
+                            <DataGridTemplateColumn Header="Item" Width="*">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Product.Name}"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   VerticalAlignment="Center"
+                                                   ToolTip="{Binding Product.Name}"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
 
-                <!-- Cart DataGrid -->
-                <DataGrid Grid.Row="1" ItemsSource="{Binding CartItems}" Margin="0,0,0,12" HorizontalScrollBarVisibility="Disabled">
-                    <DataGrid.Columns>
-                        <DataGridTemplateColumn Header="Item" Width="*">
-                            <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
-                                    <TextBlock Text="{Binding Product.Name}"
-                                               TextTrimming="CharacterEllipsis"
-                                               VerticalAlignment="Center"
-                                               ToolTip="{Binding Product.Name}"/>
-                                </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                        </DataGridTemplateColumn>
+                            <!-- Editable Qty Input Box -->
+                            <DataGridTemplateColumn Header="Qty" Width="55">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBox Text="{Binding Quantity, UpdateSourceTrigger=PropertyChanged}"
+                                                 behaviors:IntegerOnlyBehavior.IsEnabled="True"
+                                                 Style="{StaticResource FormTextBox}"
+                                                 Height="24" Padding="2,1"
+                                                 HorizontalContentAlignment="Center"
+                                                 ToolTip="Enter item quantity"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
 
-                        <!-- Editable Qty Input Box -->
-                        <DataGridTemplateColumn Header="Qty" Width="60">
-                            <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
-                                    <TextBox Text="{Binding Quantity, UpdateSourceTrigger=PropertyChanged}"
-                                             behaviors:IntegerOnlyBehavior.IsEnabled="True"
-                                             Style="{StaticResource FormTextBox}"
-                                             Height="30" Padding="4,2"
-                                             HorizontalContentAlignment="Center"
-                                             ToolTip="Enter item quantity"/>
-                                </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                        </DataGridTemplateColumn>
+                            <DataGridTextColumn Header="Price" Binding="{Binding UnitPrice, StringFormat=N2}" Width="75"/>
+                            <DataGridTextColumn Header="Total" Binding="{Binding LineTotal, StringFormat=N2}" Width="85"/>
 
-                        <DataGridTextColumn Header="Price" Binding="{Binding UnitPrice, StringFormat=N2}" Width="80"/>
-                        <DataGridTextColumn Header="Total" Binding="{Binding LineTotal, StringFormat=N2}" Width="90"/>
+                            <!-- Clear Close / Delete Icon -->
+                            <DataGridTemplateColumn Width="36" Header="">
+                                <DataGridTemplateColumn.CellStyle>
+                                    <Style TargetType="DataGridCell" BasedOn="{StaticResource {x:Type DataGridCell}}">
+                                        <Setter Property="Padding" Value="0"/>
+                                        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                                    </Style>
+                                </DataGridTemplateColumn.CellStyle>
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Button Command="{Binding DataContext.RemoveFromCartCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                CommandParameter="{Binding}"
+                                                ToolTip="Remove product from cart"
+                                                Cursor="Hand"
+                                                Width="22" Height="22"
+                                                HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <Button.Template>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Border x:Name="Bd" Background="Transparent" CornerRadius="4" Width="22" Height="22">
+                                                        <Path Data="M 0,0 L 9,9 M 9,0 L 0,9"
+                                                              Stroke="#EF4444"
+                                                              StrokeThickness="2"
+                                                              StrokeStartLineCap="Round"
+                                                              StrokeEndLineCap="Round"
+                                                              Width="9"
+                                                              Height="9"
+                                                              HorizontalAlignment="Center"
+                                                              VerticalAlignment="Center" />
+                                                    </Border>
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter TargetName="Bd" Property="Background" Value="#FEE2E2"/>
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Button.Template>
+                                        </Button>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
 
-                        <!-- Clear Close / Delete Icon -->
-                        <DataGridTemplateColumn Width="40" Header="">
-                            <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
-                                    <Button Content="✕" Foreground="#EF4444" FontWeight="Bold" FontSize="16"
-                                            Background="Transparent" BorderThickness="0"
-                                            Padding="0" HorizontalAlignment="Center" VerticalAlignment="Center"
-                                            Command="{Binding DataContext.RemoveFromCartCommand, RelativeSource={RelativeSource AncestorType=Page}}"
-                                            CommandParameter="{Binding}"
-                                            ToolTip="Remove product from cart"/>
-                                </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                        </DataGridTemplateColumn>
-                    </DataGrid.Columns>
-                </DataGrid>
+                    <!-- Totals & Payment panel (Row 2) -->
+                    <StackPanel Grid.Row="2">
+                        <Separator Margin="0,0,0,4"/>
 
-                <!-- Totals & Payment panel -->
-                <StackPanel Grid.Row="2">
-                    <Separator Margin="0,0,0,12"/>
+                        <!-- Sub Total -->
+                        <Grid Margin="0,0,0,3">
+                            <TextBlock Text="Sub Total:" FontSize="13" Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center"/>
+                            <TextBlock Text="{Binding SubTotal, StringFormat=Rs. {0:N2}}" HorizontalAlignment="Right" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                        </Grid>
 
-                    <Grid Margin="0,0,0,6">
-                        <TextBlock Text="Sub Total:" FontSize="14" Foreground="{StaticResource TextMutedBrush}"/>
-                        <TextBlock Text="{Binding SubTotal, StringFormat=Rs. {0:N2}}" HorizontalAlignment="Right" FontSize="14" FontWeight="SemiBold"/>
-                    </Grid>
+                        <!-- Discount (Rs.) -->
+                        <Grid Margin="0,0,0,3">
+                            <TextBlock Text="Discount (Rs.):" FontSize="13" Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center"/>
+                            <TextBox Text="{Binding OverallDiscountText, UpdateSourceTrigger=PropertyChanged}" Width="100" HorizontalAlignment="Right" Style="{StaticResource FormTextBox}" Height="24" Padding="4,1" FontSize="12"
+                                     behaviors:IntegerOnlyBehavior.IsEnabled="True"
+                                     GotFocus="TextBox_GotFocus"
+                                     PreviewMouseLeftButtonDown="TextBox_PreviewMouseLeftButtonDown"/>
+                        </Grid>
 
-                    <Grid Margin="0,0,0,6">
-                        <TextBlock Text="Discount (Rs.):" FontSize="14" Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center"/>
-                        <TextBox Text="{Binding OverallDiscountText, UpdateSourceTrigger=PropertyChanged}" Width="100" HorizontalAlignment="Right" Style="{StaticResource FormTextBox}"
-                                 behaviors:IntegerOnlyBehavior.IsEnabled="True"
-                                 GotFocus="TextBox_GotFocus"
-                                 PreviewMouseLeftButtonDown="TextBox_PreviewMouseLeftButtonDown"/>
-                    </Grid>
+                        <!-- Delivery Fee (Rs.) -->
+                        <Grid Margin="0,0,0,3">
+                            <TextBlock Text="Delivery Fee (Rs.):" FontSize="13" Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center"/>
+                            <TextBox Text="{Binding DeliveryFeeText, UpdateSourceTrigger=PropertyChanged}" Width="100" HorizontalAlignment="Right" Style="{StaticResource FormTextBox}" Height="24" Padding="4,1" FontSize="12"
+                                     behaviors:IntegerOnlyBehavior.IsEnabled="True"
+                                     GotFocus="TextBox_GotFocus"
+                                     PreviewMouseLeftButtonDown="TextBox_PreviewMouseLeftButtonDown"/>
+                        </Grid>
 
-                    <!-- Delivery Fee (Rs.) -->
-                    <Grid Margin="0,0,0,6">
-                        <TextBlock Text="Delivery Fee (Rs.):" FontSize="14" Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center"/>
-                        <TextBox Text="{Binding DeliveryFeeText, UpdateSourceTrigger=PropertyChanged}" Width="100" HorizontalAlignment="Right" Style="{StaticResource FormTextBox}"
-                                 behaviors:IntegerOnlyBehavior.IsEnabled="True"
-                                 GotFocus="TextBox_GotFocus"
-                                 PreviewMouseLeftButtonDown="TextBox_PreviewMouseLeftButtonDown"/>
-                    </Grid>
+                        <!-- Labour Cost (Rs.) -->
+                        <Grid Margin="0,0,0,3">
+                            <TextBlock Text="Labour Cost (Rs.):" FontSize="13" Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center"/>
+                            <TextBox Text="{Binding LabourCostText, UpdateSourceTrigger=PropertyChanged}" Width="100" HorizontalAlignment="Right" Style="{StaticResource FormTextBox}" Height="24" Padding="4,1" FontSize="12"
+                                     behaviors:IntegerOnlyBehavior.IsEnabled="True"
+                                     GotFocus="TextBox_GotFocus"
+                                     PreviewMouseLeftButtonDown="TextBox_PreviewMouseLeftButtonDown"/>
+                        </Grid>
 
-                    <!-- Delivery Address (optional) -->
-                    <TextBox Text="{Binding CustomDeliveryAddress, UpdateSourceTrigger=PropertyChanged}"
-                             Tag="Delivery Address (optional)" ToolTip="Enter delivery destination address"
-                             Style="{StaticResource FormTextBox}" Height="28" Padding="6,2" Margin="0,0,0,8"/>
+                        <!-- Delivery Address (optional) -->
+                        <TextBox Text="{Binding CustomDeliveryAddress, UpdateSourceTrigger=PropertyChanged}"
+                                 Tag="Delivery Address (optional)" ToolTip="Enter delivery destination address"
+                                 Style="{StaticResource FormTextBox}" Height="24" Padding="6,1" FontSize="12" Margin="0,0,0,4"/>
 
-                    <Grid Margin="0,0,0,10">
-                        <TextBlock Text="TOTAL:" FontSize="18" FontWeight="Bold" Foreground="{StaticResource PrimaryBrush}"/>
-                        <TextBlock Text="{Binding TotalAmount, StringFormat=Rs. {0:N2}}" HorizontalAlignment="Right" FontSize="20" FontWeight="Bold" Foreground="{StaticResource PrimaryBrush}"/>
-                    </Grid>
+                        <!-- TOTAL -->
+                        <Grid Margin="0,0,0,4">
+                            <TextBlock Text="TOTAL:" FontSize="15" FontWeight="Bold" Foreground="{StaticResource PrimaryBrush}" VerticalAlignment="Center"/>
+                            <TextBlock Text="{Binding TotalAmount, StringFormat=Rs. {0:N2}}" HorizontalAlignment="Right" FontSize="16" FontWeight="Bold" Foreground="{StaticResource PrimaryBrush}" VerticalAlignment="Center"/>
+                        </Grid>
 
-                    <!-- Advance Order Toggle -->
-                    <CheckBox Content="📌 Mark as Advance / Layaway Order"
-                              IsChecked="{Binding IsAdvancePayment}"
-                              FontWeight="SemiBold" Foreground="{StaticResource PrimaryDarkBrush}"
-                              Margin="0,0,0,10"/>
+                        <!-- Advance Order Toggle -->
+                        <CheckBox Content="📌 Mark as Advance / Layaway Order"
+                                  IsChecked="{Binding IsAdvancePayment}"
+                                  FontWeight="SemiBold" FontSize="12" Foreground="{StaticResource PrimaryDarkBrush}"
+                                  Margin="0,0,0,4"/>
 
-                    <Grid Margin="0,0,0,10">
-                        <TextBlock Text="Payment Method:" FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                        <ComboBox ItemsSource="{Binding PaymentMethodOptions}"
-                                  SelectedValue="{Binding SelectedPaymentMethod}"
-                                  SelectedValuePath="Method"
-                                  DisplayMemberPath="DisplayName"
-                                  Width="160" HorizontalAlignment="Right" Height="32"/>
-                    </Grid>
+                        <!-- Payment Method -->
+                        <Grid Margin="0,0,0,3">
+                            <TextBlock Text="Payment Method:" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                            <ComboBox ItemsSource="{Binding PaymentMethodOptions}"
+                                      SelectedValue="{Binding SelectedPaymentMethod}"
+                                      SelectedValuePath="Method"
+                                      DisplayMemberPath="DisplayName"
+                                      Width="150" HorizontalAlignment="Right" Height="26" FontSize="12"/>
+                        </Grid>
 
-                    <Grid Margin="0,0,0,10">
-                        <TextBlock Text="Amount Paid (Rs.):" FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                        <TextBox Text="{Binding AmountPaidText, UpdateSourceTrigger=PropertyChanged}" Width="130" HorizontalAlignment="Right" Style="{StaticResource FormTextBox}" FontSize="16" FontWeight="Bold"
-                                 behaviors:IntegerOnlyBehavior.IsEnabled="True"
-                                 GotFocus="TextBox_GotFocus"
-                                 PreviewMouseLeftButtonDown="TextBox_PreviewMouseLeftButtonDown"/>
-                    </Grid>
+                        <!-- Amount Paid (Rs.) -->
+                        <Grid Margin="0,0,0,3">
+                            <TextBlock Text="Amount Paid (Rs.):" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                            <TextBox Text="{Binding AmountPaidText, UpdateSourceTrigger=PropertyChanged}" Width="120" HorizontalAlignment="Right" Style="{StaticResource FormTextBox}" FontSize="14" FontWeight="Bold" Height="26" Padding="6,1"
+                                     behaviors:IntegerOnlyBehavior.IsEnabled="True"
+                                     GotFocus="TextBox_GotFocus"
+                                     PreviewMouseLeftButtonDown="TextBox_PreviewMouseLeftButtonDown"/>
+                        </Grid>
 
-                    <Grid Margin="0,0,0,14">
-                        <TextBlock Text="{Binding BalanceLabel}" FontSize="16" FontWeight="Bold" Foreground="{Binding BalanceColor}"/>
-                        <TextBlock Text="{Binding BalanceDisplay}" HorizontalAlignment="Right" FontSize="18" FontWeight="Bold" Foreground="{Binding BalanceColor}"/>
-                    </Grid>
+                        <!-- Balance / Change -->
+                        <Grid Margin="0,0,0,4">
+                            <TextBlock Text="{Binding BalanceLabel}" FontSize="13" FontWeight="Bold" Foreground="{Binding BalanceColor}" VerticalAlignment="Center"/>
+                            <TextBlock Text="{Binding BalanceDisplay}" HorizontalAlignment="Right" FontSize="14" FontWeight="Bold" Foreground="{Binding BalanceColor}" VerticalAlignment="Center"/>
+                        </Grid>
 
-                    <!-- Status messages -->
-                    <Border Background="#FEF2F2" BorderBrush="{StaticResource DangerBrush}"
-                            BorderThickness="1" CornerRadius="6" Padding="10,8" Margin="0,0,0,10"
-                            Visibility="{Binding HasError, Converter={StaticResource BoolToVisibilityConverter}}">
-                        <TextBlock Text="{Binding ErrorMessage}" Foreground="{StaticResource DangerBrush}" FontSize="13" TextWrapping="Wrap"/>
-                    </Border>
+                        <!-- Status messages -->
+                        <Border Background="#FEF2F2" BorderBrush="{StaticResource DangerBrush}"
+                                BorderThickness="1" CornerRadius="6" Padding="6,3" Margin="0,0,0,4"
+                                Visibility="{Binding HasError, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <TextBlock Text="{Binding ErrorMessage}" Foreground="{StaticResource DangerBrush}" FontSize="12" TextWrapping="Wrap"/>
+                        </Border>
 
-                    <Border Background="#F0FDF4" BorderBrush="{StaticResource SuccessBrush}"
-                            BorderThickness="1" CornerRadius="6" Padding="10,8" Margin="0,0,0,10"
-                            Visibility="{Binding HasSuccess, Converter={StaticResource BoolToVisibilityConverter}}">
-                        <TextBlock Text="{Binding SuccessMessage}" Foreground="{StaticResource SuccessBrush}" FontSize="14" FontWeight="Bold" TextWrapping="Wrap"/>
-                    </Border>
+                        <Border Background="#F0FDF4" BorderBrush="{StaticResource SuccessBrush}"
+                                BorderThickness="1" CornerRadius="6" Padding="6,3" Margin="0,0,0,4"
+                                Visibility="{Binding HasSuccess, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <TextBlock Text="{Binding SuccessMessage}" Foreground="{StaticResource SuccessBrush}" FontSize="12" FontWeight="Bold" TextWrapping="Wrap"/>
+                        </Border>
 
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="10"/>
-                            <ColumnDefinition Width="2*"/>
-                        </Grid.ColumnDefinitions>
-                        <Button Grid.Column="0" Content="Clear" Style="{StaticResource SecondaryButton}" Command="{Binding ClearCartCommand}"/>
-                        <Button Grid.Column="2" Content="Complete Sale" Style="{StaticResource SuccessButton}" Command="{Binding ProcessSaleCommand}" Height="44" FontSize="16"/>
-                    </Grid>
+                        <!-- Action Buttons -->
+                        <Grid Margin="0,3,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="8"/>
+                                <ColumnDefinition Width="2*"/>
+                            </Grid.ColumnDefinitions>
+                            <Button Grid.Column="0" Content="Clear" Style="{StaticResource SecondaryButton}"
+                                    Command="{Binding ClearCartCommand}" Height="36" Padding="0" FontSize="13"
+                                    HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
+                            <Button Grid.Column="2" Content="Complete Sale" Style="{StaticResource SuccessButton}"
+                                    Command="{Binding ProcessSaleCommand}" Height="36" Padding="0" FontSize="14" FontWeight="SemiBold"
+                                    HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
+                        </Grid>
 
-                    <Button Content="🖨️ Re-print Last Bill" Style="{StaticResource SecondaryButton}" Command="{Binding RePrintLastReceiptCommand}" Margin="0,8,0,0" Height="36" Visibility="{Binding HasLastCompletedSale, Converter={StaticResource BoolToVisibilityConverter}}"/>
-                </StackPanel>
-            </Grid>
-        </Border>
+                        <Button Content="🖨️ Re-print Last Bill" Style="{StaticResource SecondaryButton}"
+                                Command="{Binding RePrintLastReceiptCommand}" Margin="0,4,0,0" Height="28" Padding="0" FontSize="12"
+                                HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+                                Visibility="{Binding HasLastCompletedSale, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
         </Grid>
     </Grid>
 </Page>

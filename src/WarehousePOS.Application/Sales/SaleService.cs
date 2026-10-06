@@ -66,6 +66,7 @@ public sealed class SaleService(
                 req.Notes,
                 req.PaymentMethod,
                 req.DeliveryFee,
+                req.LabourCost,
                 req.CustomerName ?? customer?.Name,
                 req.CustomerPhone ?? customer?.Phone,
                 req.DeliveryAddress ?? customer?.Address);
@@ -350,7 +351,7 @@ public sealed class SaleService(
 
         await unitOfWork.ExecuteInTransactionAsync(async () =>
         {
-            sale.AdjustBillDetails(req.DeliveryFee, req.Notes, req.CustomerName, req.CustomerPhone, req.DeliveryAddress);
+            sale.AdjustBillDetails(req.DeliveryFee, req.LabourCost, req.Notes, req.CustomerName, req.CustomerPhone, req.DeliveryAddress);
             await saleRepo.UpdateAsync(sale, ct);
         }, ct);
 
@@ -433,6 +434,7 @@ public sealed class SaleService(
             i.ReturnableQuantity)).ToList(),
         s.PaymentMethod,
         s.DeliveryFee,
+        s.LabourCost,
         s.CustomerPhone ?? s.Customer?.Phone,
         s.DeliveryAddress ?? s.Customer?.Address,
         s.UnpaidAmount,
