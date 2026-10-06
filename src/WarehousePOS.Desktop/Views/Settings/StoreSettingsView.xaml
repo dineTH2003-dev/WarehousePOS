@@ -230,7 +230,7 @@
 
                             <!-- Real-time Progress Bar & Status -->
                             <StackPanel Margin="0,16,0,0" Visibility="{Binding BackupStatusText, Converter={StaticResource NullToVisibilityConverter}}">
-                                <ProgressBar Height="8" Minimum="0" Maximum="100" Value="{Binding BackupProgress}"
+                                <ProgressBar Height="8" Minimum="0" Maximum="100" Value="{Binding BackupProgress, Mode=OneWay}"
                                              Foreground="{StaticResource PrimaryBrush}" Background="#E5E7EB" Margin="0,0,0,6"/>
                                 <TextBlock Text="{Binding BackupStatusText}" Style="{StaticResource CaptionText}"
                                            Foreground="{StaticResource TextPrimaryBrush}" FontWeight="Medium"/>
