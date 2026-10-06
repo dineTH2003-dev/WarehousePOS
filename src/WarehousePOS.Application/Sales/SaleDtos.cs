@@ -85,7 +85,9 @@ public sealed record SaleDto(
     string? CustomerPhone = null,
     string? DeliveryAddress = null,
     decimal UnpaidAmount = 0,
-    IReadOnlyList<SalePaymentDto>? Payments = null);
+    IReadOnlyList<SalePaymentDto>? Payments = null,
+    decimal RefundAmount = 0,
+    decimal NetTotal = 0);
 
 public sealed record CreateSaleRequest(
     SaleType SaleType,
@@ -126,6 +128,7 @@ public sealed record ProcessSaleReturnRequest(
     int SaleId,
     int CashierUserId,
     IReadOnlyList<ReturnItemRequest> Items,
+    decimal RefundAmount = 0m,
     bool RefundCash = true,
     string? Notes = null);
 

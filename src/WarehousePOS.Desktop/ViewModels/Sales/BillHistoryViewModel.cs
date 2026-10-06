@@ -372,6 +372,7 @@ public sealed class BillHistoryViewModel : ViewModelBase
                     SelectedSale.Id,
                     _session.CurrentUser?.UserId ?? 1,
                     dialog.ReturnItems,
+                    dialog.RefundAmount,
                     dialog.RefundCash,
                     dialog.ReturnReason);
 

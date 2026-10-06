@@ -299,26 +299,31 @@
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
                                 <StackPanel Grid.Column="0">
                                     <TextBlock Text="Sub Total" FontSize="11" Foreground="{StaticResource TextMutedBrush}"/>
-                                    <TextBlock Text="{Binding SelectedSale.SubTotal, StringFormat=Rs. {0:N2}}" FontWeight="SemiBold" FontSize="13"/>
+                                    <TextBlock Text="{Binding SelectedSale.SubTotal, StringFormat=Rs. {0:N2}}" FontWeight="SemiBold" FontSize="12"/>
                                 </StackPanel>
                                 <StackPanel Grid.Column="1">
-                                    <TextBlock Text="Delivery Fee" FontSize="11" Foreground="{StaticResource TextMutedBrush}"/>
-                                    <TextBlock Text="{Binding SelectedSale.DeliveryFee, StringFormat=Rs. {0:N2}}" FontWeight="SemiBold" FontSize="13"/>
+                                    <TextBlock Text="Total Bill" FontSize="11" Foreground="{StaticResource TextMutedBrush}"/>
+                                    <TextBlock Text="{Binding SelectedSale.TotalAmount, StringFormat=Rs. {0:N2}}" FontWeight="SemiBold" FontSize="12"/>
                                 </StackPanel>
                                 <StackPanel Grid.Column="2">
-                                    <TextBlock Text="Labour Cost" FontSize="11" Foreground="{StaticResource TextMutedBrush}"/>
-                                    <TextBlock Text="{Binding SelectedSale.LabourCost, StringFormat=Rs. {0:N2}}" FontWeight="SemiBold" FontSize="13"/>
+                                    <TextBlock Text="Refunded" FontSize="11" Foreground="{StaticResource TextMutedBrush}"/>
+                                    <TextBlock Text="{Binding SelectedSale.RefundAmount, StringFormat=Rs. {0:N2}}" FontWeight="SemiBold" FontSize="12" Foreground="{StaticResource DangerBrush}"/>
                                 </StackPanel>
                                 <StackPanel Grid.Column="3">
-                                    <TextBlock Text="Total Bill" FontSize="11" Foreground="{StaticResource TextMutedBrush}"/>
-                                    <TextBlock Text="{Binding SelectedSale.TotalAmount, StringFormat=Rs. {0:N2}}" FontWeight="Bold" FontSize="14" Foreground="{StaticResource PrimaryBrush}"/>
+                                    <TextBlock Text="Net Bill" FontSize="11" Foreground="{StaticResource TextMutedBrush}"/>
+                                    <TextBlock Text="{Binding SelectedSale.NetTotal, StringFormat=Rs. {0:N2}}" FontWeight="Bold" FontSize="13" Foreground="{StaticResource PrimaryBrush}"/>
                                 </StackPanel>
                                 <StackPanel Grid.Column="4">
+                                    <TextBlock Text="Paid" FontSize="11" Foreground="{StaticResource TextMutedBrush}"/>
+                                    <TextBlock Text="{Binding SelectedSale.AmountPaid, StringFormat=Rs. {0:N2}}" FontWeight="SemiBold" FontSize="12"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="5">
                                     <TextBlock Text="Balance Due" FontSize="11" Foreground="{StaticResource TextMutedBrush}"/>
-                                    <TextBlock Text="{Binding SelectedSale.UnpaidAmount, StringFormat=Rs. {0:N2}}" FontWeight="Bold" FontSize="14" Foreground="#DC2626"/>
+                                    <TextBlock Text="{Binding SelectedSale.UnpaidAmount, StringFormat=Rs. {0:N2}}" FontWeight="Bold" FontSize="13" Foreground="#DC2626"/>
                                 </StackPanel>
                             </Grid>
                         </Border>

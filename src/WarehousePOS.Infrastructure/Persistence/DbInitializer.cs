@@ -297,6 +297,10 @@ public static class DbInitializer
                 {
                     await db.Database.ExecuteSqlRawAsync("ALTER TABLE Sales ADD COLUMN DeliveryAddress TEXT NULL;");
                 }
+                if (!saleColumns.Contains("RefundAmount", StringComparer.OrdinalIgnoreCase))
+                {
+                    await db.Database.ExecuteSqlRawAsync("ALTER TABLE Sales ADD COLUMN RefundAmount TEXT NOT NULL DEFAULT '0';");
+                }
             }
 
             // --- SaleItems: Returned Quantity ---

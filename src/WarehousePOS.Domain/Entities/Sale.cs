@@ -24,9 +24,11 @@ public sealed class Sale : AggregateRoot
     public decimal DeliveryFee     { get; private set; }
     public decimal LabourCost      { get; private set; }
     public decimal TotalAmount     { get; private set; }   // (SubTotal - Discount) + DeliveryFee + LabourCost
+    public decimal RefundAmount    { get; private set; }   // Total refunds issued from returns
+    public decimal NetTotal        => Math.Max(0m, TotalAmount - RefundAmount);
     public decimal AmountPaid      { get; private set; }
-    public decimal Change          => Math.Max(0m, AmountPaid - TotalAmount);
-    public decimal UnpaidAmount    => Math.Max(0m, TotalAmount - AmountPaid);
+    public decimal Change          => Math.Max(0m, AmountPaid - NetTotal);
+    public decimal UnpaidAmount    => Math.Max(0m, NetTotal - AmountPaid);
     public PaymentMethod PaymentMethod { get; private set; } = PaymentMethod.Cash;
     public string? Notes           { get; private set; }
     public string? CustomerName    { get; private set; }
@@ -187,6 +189,21 @@ public sealed class Sale : AggregateRoot
         else
         {
             Status = SaleStatus.PartiallyReturned;
+        }
+        SetUpdatedAt();
+    }
+
+    public void ApplyReturnRefund(decimal refundAmount, decimal cashRefunded = 0m)
+    {
+        if (refundAmount < 0)
+            throw new ArgumentOutOfRangeException(nameof(refundAmount), "Refund amount cannot be negative.");
+        if (cashRefunded < 0)
+            throw new ArgumentOutOfRangeException(nameof(cashRefunded), "Cash refunded cannot be negative.");
+
+        RefundAmount += refundAmount;
+        if (cashRefunded > 0)
+        {
+            AmountPaid = Math.Max(0m, AmountPaid - cashRefunded);
         }
         SetUpdatedAt();
     }

@@ -6,6 +6,7 @@ using WarehousePOS.Application.Sales;
 using WarehousePOS.Domain.Common;
 using WarehousePOS.Domain.Entities;
 using WarehousePOS.Domain.Enums;
+using WarehousePOS.Domain.Exceptions;
 using WarehousePOS.Domain.Interfaces;
 using Xunit;
 
@@ -203,6 +204,79 @@ public sealed class PurchasingAndSalesServiceEnhancementTests
         updated.Status.Should().Be(SaleStatus.PartiallyReturned);
         _movementRepoMock.Verify(r => r.AddAsync(It.Is<InventoryMovement>(m => m.Type == MovementType.ReturnIn && m.Quantity == 1), It.IsAny<CancellationToken>()), Times.Once);
         _saleRepoMock.Verify(r => r.UpdateAsync(sale, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task ProcessReturnAsync_WithManualRefundOnCreditSale_ShouldReduceInvoiceDebtAndCustomerOutstandingBalance()
+    {
+        var customer = Customer.Create("Credit Customer", SaleType.Wholesale, phone: "0771234567");
+        typeof(Entity).GetProperty(nameof(Entity.Id))?.SetValue(customer, 50);
+        customer.IncreaseOutstandingBalance(3000m); // owes 3000
+
+        var sale = Sale.Create(SaleType.Wholesale, createdByUserId: 1, customerId: customer.Id);
+        typeof(Entity).GetProperty(nameof(Entity.Id))?.SetValue(sale, 201);
+        var product = CreateTestProduct(10, "Table", 2500m, 2000m, stock: 5);
+        sale.AddItem(product, 2, 2500m); // Total 5000
+        sale.RecordPayment(2000m, isRegisteredCustomer: true, isAdvancePayment: false); // Paid 2000, Unpaid 3000
+
+        _saleRepoMock.Setup(r => r.GetByIdAsync(201, It.IsAny<CancellationToken>())).ReturnsAsync(sale);
+        _productRepoMock.Setup(r => r.GetByIdAsync(10, It.IsAny<CancellationToken>())).ReturnsAsync(product);
+        _customerRepoMock.Setup(r => r.GetByIdAsync(50, It.IsAny<CancellationToken>())).ReturnsAsync(customer);
+
+        var service = new SaleService(
+            _saleRepoMock.Object,
+            _productRepoMock.Object,
+            _customerRepoMock.Object,
+            _movementRepoMock.Object,
+            _unitOfWorkMock.Object,
+            NullLogger<SaleService>.Instance);
+
+        // Return 1 unit (calculated value: 2500), but cashier specifies manual refund of 2200 (deducting 300 handling fee)
+        var req = new ProcessSaleReturnRequest(
+            201,
+            CashierUserId: 1,
+            Items: new[] { new ReturnItemRequest(10, 1, "Restocking fee applied") },
+            RefundAmount: 2200m,
+            RefundCash: true,
+            Notes: "Return with fee");
+
+        var updated = await service.ProcessReturnAsync(req);
+
+        product.StockQuantity.Should().Be(6); // restocked
+        updated.RefundAmount.Should().Be(2200m);
+        updated.NetTotal.Should().Be(2800m); // 5000 - 2200
+        updated.UnpaidAmount.Should().Be(800m); // 2800 - 2000
+        customer.OutstandingBalance.Should().Be(800m); // 3000 - 2200
+        _customerRepoMock.Verify(r => r.UpdateAsync(customer, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task ProcessReturnAsync_WithExcessiveRefund_ShouldThrowBusinessRuleViolationException()
+    {
+        var sale = Sale.Create(SaleType.Retail, createdByUserId: 1);
+        typeof(Entity).GetProperty(nameof(Entity.Id))?.SetValue(sale, 202);
+        var product = CreateTestProduct(11, "Chair", 1000m, 800m, stock: 5);
+        sale.AddItem(product, 1, 1000m);
+        sale.RecordPayment(1000m);
+
+        _saleRepoMock.Setup(r => r.GetByIdAsync(202, It.IsAny<CancellationToken>())).ReturnsAsync(sale);
+
+        var service = new SaleService(
+            _saleRepoMock.Object,
+            _productRepoMock.Object,
+            _customerRepoMock.Object,
+            _movementRepoMock.Object,
+            _unitOfWorkMock.Object,
+            NullLogger<SaleService>.Instance);
+
+        var req = new ProcessSaleReturnRequest(
+            202,
+            CashierUserId: 1,
+            Items: new[] { new ReturnItemRequest(11, 1) },
+            RefundAmount: 5000m); // Exceeds invoice total of 1000
+
+        var act = async () => await service.ProcessReturnAsync(req);
+        await act.Should().ThrowAsync<BusinessRuleViolationException>();
     }
 
     [Fact]

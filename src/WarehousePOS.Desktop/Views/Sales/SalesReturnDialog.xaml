@@ -4,7 +4,7 @@
         xmlns:behaviors="clr-namespace:WarehousePOS.Desktop.Behaviors"
         Title="Process Sales Item Return &amp; Restock"
         Icon="/Resources/Images/app-icon.png"
-        SizeToContent="Height" Width="680"
+        SizeToContent="Height" Width="740"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize"
         Background="{StaticResource BackgroundBrush}">
@@ -12,26 +12,46 @@
     <Border Style="{StaticResource Card}" Margin="20" Padding="20">
         <StackPanel behaviors:ArrowNavigationBehavior.IsEnabled="True">
             <!-- Header -->
-            <StackPanel Margin="0,0,0,14">
+            <StackPanel Margin="0,0,0,12">
                 <TextBlock Text="Return Sold Items &amp; Restock" Style="{StaticResource H3}"/>
                 <TextBlock x:Name="InvoiceHeaderInfo" Text="Invoice #123 — Customer Name"
                            Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" Margin="0,4,0,0"/>
-                <TextBlock Text="Enter the quantity of each item being returned. Returned items will automatically be restocked into warehouse inventory."
-                           Foreground="{StaticResource TextSecondaryBrush}" FontSize="11" Margin="0,2,0,0" TextWrapping="Wrap"/>
+                <!-- Invoice Financial Context Banner -->
+                <Border Background="#F1F5F9" CornerRadius="6" Padding="12,8" Margin="0,8,0,0">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="Total Bill" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}"/>
+                            <TextBlock x:Name="TxtInvoiceTotal" Text="Rs. 0.00" FontWeight="SemiBold" FontSize="13"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1">
+                            <TextBlock Text="Amount Paid" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}"/>
+                            <TextBlock x:Name="TxtInvoicePaid" Text="Rs. 0.00" FontWeight="SemiBold" FontSize="13" Foreground="{StaticResource PrimaryBrush}"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="2">
+                            <TextBlock Text="Balance Due" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}"/>
+                            <TextBlock x:Name="TxtInvoiceDue" Text="Rs. 0.00" FontWeight="Bold" FontSize="13" Foreground="#DC2626"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
             </StackPanel>
 
             <!-- Items Table -->
-            <Border BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="6" Margin="0,0,0,14" MaxHeight="240">
+            <Border BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="6" Margin="0,0,0,12" MaxHeight="220">
                 <DataGrid x:Name="GridReturnItems" AutoGenerateColumns="False" CanUserAddRows="False"
                           HeadersVisibility="Column" GridLinesVisibility="Horizontal"
                           Background="White" RowHeaderWidth="0">
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="Product / SKU" Binding="{Binding DisplayName}" Width="*" IsReadOnly="True"/>
-                        <DataGridTextColumn Header="Sold" Binding="{Binding SoldQuantity}" Width="55" IsReadOnly="True"/>
-                        <DataGridTextColumn Header="Returned" Binding="{Binding ReturnedQuantity}" Width="65" IsReadOnly="True"/>
-                        <DataGridTextColumn Header="Available" Binding="{Binding AvailableQuantity}" Width="65" IsReadOnly="True"/>
-                        <DataGridTextColumn Header="Unit Price" Binding="{Binding UnitPrice, StringFormat=N2}" Width="85" IsReadOnly="True"/>
-                        <DataGridTemplateColumn Header="Return Qty" Width="85">
+                        <DataGridTextColumn Header="Sold" Binding="{Binding SoldQuantity}" Width="50" IsReadOnly="True"/>
+                        <DataGridTextColumn Header="Ret." Binding="{Binding ReturnedQuantity}" Width="50" IsReadOnly="True"/>
+                        <DataGridTextColumn Header="Avail." Binding="{Binding AvailableQuantity}" Width="50" IsReadOnly="True"/>
+                        <DataGridTextColumn Header="Price (Rs.)" Binding="{Binding UnitRefund, StringFormat=N2}" Width="85" IsReadOnly="True"/>
+                        <DataGridTemplateColumn Header="Return Qty" Width="80">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <TextBox Text="{Binding ReturnQuantity, UpdateSourceTrigger=PropertyChanged}"
@@ -41,17 +61,72 @@
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
+                        <DataGridTextColumn Header="Return Val" Binding="{Binding LineRefund, StringFormat=N2}" Width="85" IsReadOnly="True"/>
                     </DataGrid.Columns>
                 </DataGrid>
             </Border>
 
+            <!-- Refund Money & Financial Impact Section -->
+            <Border Background="#F8FAFC" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="6" Padding="14,12" Margin="0,0,0,12">
+                <StackPanel>
+                    <!-- Row 1: Suggested vs. Manual Refund Input -->
+                    <Grid Margin="0,0,0,10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="190"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                            <TextBlock Text="Calculated Item Return Value:" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}"/>
+                            <TextBlock x:Name="TxtCalculatedRefund" Text="Rs. 0.00" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}"/>
+                        </StackPanel>
+                        
+                        <Button Grid.Column="1" x:Name="BtnResetRefund" Content="↺ Reset"
+                                Style="{StaticResource SecondaryButton}" Height="30" Padding="8,2" Margin="0,0,12,0"
+                                VerticalAlignment="Bottom" ToolTip="Reset refund amount to calculated item total" Click="BtnResetRefund_Click"/>
+
+                        <StackPanel Grid.Column="2">
+                            <TextBlock Text="Refund Money (Rs.) *" Style="{StaticResource LabelText}" Margin="0,0,0,3"/>
+                            <TextBox x:Name="TxtRefundAmount" Height="32" Style="{StaticResource FormTextBox}"
+                                     behaviors:DecimalOnlyBehavior.IsEnabled="True"
+                                     FontWeight="Bold" FontSize="13" TextAlignment="Right" Padding="8,4"
+                                     TextChanged="TxtRefundAmount_TextChanged"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <Separator Background="{StaticResource BorderBrush}" Margin="0,2,0,8"/>
+
+                    <!-- Row 2: Impact Breakdown Preview -->
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="Debt Offset (This Bill)" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}"/>
+                            <TextBlock x:Name="TxtDebtOffset" Text="Rs. 0.00" FontWeight="SemiBold" FontSize="12" Foreground="#D97706"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1">
+                            <TextBlock Text="Cash Payout (Register)" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}"/>
+                            <TextBlock x:Name="TxtCashRefund" Text="Rs. 0.00" FontWeight="SemiBold" FontSize="12" Foreground="{StaticResource DangerBrush}"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="2">
+                            <TextBlock Text="New Balance Due" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}"/>
+                            <TextBlock x:Name="TxtNewBalanceDue" Text="Rs. 0.00" FontWeight="Bold" FontSize="12" Foreground="#DC2626"/>
+                        </StackPanel>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
             <!-- Refund and Reason -->
-            <StackPanel Margin="0,0,0,16">
-                <CheckBox x:Name="ChkRefundCash" Content="💰 Refund Cash to Customer (deduct from register / refund payment)"
-                          IsChecked="True" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,10"/>
+            <StackPanel Margin="0,0,0,14">
+                <CheckBox x:Name="ChkRefundCash" Content="💰 Refund Cash to Customer (pay out from cash drawer / register)"
+                          IsChecked="True" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,8"
+                          Checked="ChkRefundCash_CheckedChanged" Unchecked="ChkRefundCash_CheckedChanged"/>
 
                 <TextBlock Text="Return Reason / Notes *" Style="{StaticResource LabelText}" Margin="0,0,0,4"/>
-                <TextBox x:Name="TxtReason" Style="{StaticResource FormTextBox}" MinHeight="36" Tag="e.g., Customer returned unused item, wrong model ordered..."/>
+                <TextBox x:Name="TxtReason" Style="{StaticResource FormTextBox}" MinHeight="36" Tag="e.g., Customer returned unused item, restocking fee deducted..."/>
             </StackPanel>
 
             <!-- Action Buttons -->

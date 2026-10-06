@@ -295,9 +295,15 @@ public sealed class SaleService(
         if (!req.Items.Any())
             throw new BusinessRuleViolationException("EmptyReturn", "No items specified for return.");
 
+        if (req.RefundAmount < 0)
+            throw new BusinessRuleViolationException("InvalidRefundAmount", "Refund amount cannot be negative.");
+
+        if (req.RefundAmount > sale.TotalAmount)
+            throw new BusinessRuleViolationException("ExcessiveRefundAmount", $"Refund amount (Rs. {req.RefundAmount:N2}) cannot exceed invoice total (Rs. {sale.TotalAmount:N2}).");
+
         await unitOfWork.ExecuteInTransactionAsync(async () =>
         {
-            decimal totalRefundAmount = 0;
+            decimal calculatedReturnVal = 0;
 
             foreach (var returnItem in req.Items)
             {
@@ -307,7 +313,7 @@ public sealed class SaleService(
                     ?? throw new BusinessRuleViolationException("ItemNotFound", $"Product ID {returnItem.ProductId} is not on invoice #{sale.Id}.");
 
                 var unitRefund = Math.Round(saleItem.UnitPrice - (saleItem.Quantity > 0 ? (saleItem.Discount / saleItem.Quantity) : 0), 2, MidpointRounding.AwayFromZero);
-                totalRefundAmount += unitRefund * returnItem.Quantity;
+                calculatedReturnVal += unitRefund * returnItem.Quantity;
 
                 sale.ProcessReturn(returnItem.ProductId, returnItem.Quantity);
 
@@ -331,22 +337,38 @@ public sealed class SaleService(
                 await movementRepo.AddAsync(movement, ct);
             }
 
-            // If sale had unpaid balance, reduce customer debt first
-            if (sale.CustomerId.HasValue && sale.UnpaidAmount > 0)
+            decimal effectiveRefundAmount = req.RefundAmount > 0 ? req.RefundAmount : calculatedReturnVal;
+
+            decimal invoiceDebtReduction = Math.Min(effectiveRefundAmount, sale.UnpaidAmount);
+            decimal remainingRefund = effectiveRefundAmount - invoiceDebtReduction;
+
+            if (sale.CustomerId.HasValue)
             {
                 var customer = await customerRepo.GetByIdAsync(sale.CustomerId.Value, ct);
                 if (customer is not null)
                 {
-                    decimal debtReduction = Math.Min(totalRefundAmount, sale.UnpaidAmount);
-                    customer.DecreaseOutstandingBalance(debtReduction);
+                    if (invoiceDebtReduction > 0)
+                    {
+                        customer.DecreaseOutstandingBalance(invoiceDebtReduction);
+                    }
+
+                    if (remainingRefund > 0 && !req.RefundCash && customer.OutstandingBalance > 0)
+                    {
+                        decimal extraCredit = Math.Min(remainingRefund, customer.OutstandingBalance);
+                        customer.DecreaseOutstandingBalance(extraCredit);
+                    }
+
                     await customerRepo.UpdateAsync(customer, ct);
                 }
             }
 
+            decimal cashToRefund = (req.RefundCash && remainingRefund > 0) ? remainingRefund : 0m;
+            sale.ApplyReturnRefund(effectiveRefundAmount, cashToRefund);
+
             await saleRepo.UpdateAsync(sale, ct);
         }, ct);
 
-        logger.LogInformation("Processed return for Sale #{SaleId}", sale.Id);
+        logger.LogInformation("Processed return for Sale #{SaleId}, RefundAmount: {Refund:C2}", sale.Id, req.RefundAmount);
         return Map(sale);
     }
 
@@ -455,5 +477,7 @@ public sealed class SaleService(
             p.PaymentMethod.ToString(),
             p.PaymentDate,
             p.CashierUserId,
-            p.Notes)).ToList());
+            p.Notes)).ToList(),
+        s.RefundAmount,
+        s.NetTotal);
 }

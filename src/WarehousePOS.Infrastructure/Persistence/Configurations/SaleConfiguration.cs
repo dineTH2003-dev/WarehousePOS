@@ -49,6 +49,7 @@ public sealed class SaleConfiguration : IEntityTypeConfiguration<Sale>
         builder.Property(s => s.SubTotal).HasColumnType("decimal(18,2)");
         builder.Property(s => s.DiscountAmount).HasColumnType("decimal(18,2)");
         builder.Property(s => s.TotalAmount).HasColumnType("decimal(18,2)");
+        builder.Property(s => s.RefundAmount).HasColumnType("decimal(18,2)").HasDefaultValue(0m);
         builder.Property(s => s.AmountPaid).HasColumnType("decimal(18,2)");
         builder.Property(s => s.DeliveryFee).HasColumnType("decimal(18,2)").HasDefaultValue(0m);
         builder.Property(s => s.LabourCost).HasColumnType("decimal(18,2)").HasDefaultValue(0m);

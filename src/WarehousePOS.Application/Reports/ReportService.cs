@@ -17,6 +17,8 @@ public sealed class ReportService(
     IUserRepository? userRepo = null) : IReportService
 
 {
+    private static bool IsActiveSale(Sale s) => s.Status != SaleStatus.Cancelled;
+
     // ── 1. General Analytics ──────────────────────────────────────────────────
 
     public async Task<GeneralAnalyticsDto> GetGeneralAnalyticsAsync(DateTime from, DateTime to, CancellationToken ct = default)
@@ -24,11 +26,11 @@ public sealed class ReportService(
         var (start, end) = ToUtcRange(from, to);
 
         var sales = await saleRepo.GetByDateRangeAsync(start, end, ct);
-        var activeSales = sales.Where(s => s.Status == SaleStatus.Completed).ToList();
+        var activeSales = sales.Where(IsActiveSale).ToList();
 
         decimal totalRevenue   = activeSales.Sum(s => s.SubTotal);
         decimal totalDiscounts = activeSales.Sum(s => s.DiscountAmount);
-        decimal netRevenue     = activeSales.Sum(s => s.TotalAmount);
+        decimal netRevenue     = activeSales.Sum(s => s.NetTotal);
         int totalTransactions  = activeSales.Count;
         decimal aov            = totalTransactions > 0 ? netRevenue / totalTransactions : 0m;
 
@@ -39,9 +41,9 @@ public sealed class ReportService(
         {
             // Fetch directly if not in filtered list
             var todayDirect = await saleRepo.GetByDateRangeAsync(todayStart, todayEnd, ct);
-            todaySales = todayDirect.Where(s => s.Status == SaleStatus.Completed).ToList();
+            todaySales = todayDirect.Where(IsActiveSale).ToList();
         }
-        decimal dailySalesRevenue = todaySales.Sum(s => s.TotalAmount);
+        decimal dailySalesRevenue = todaySales.Sum(s => s.NetTotal);
         int dailySalesCount       = todaySales.Count;
 
         // Expenses & COGS
@@ -170,20 +172,20 @@ public sealed class ReportService(
         var (start, end) = ToUtcRange(from, to);
 
         var sales = await saleRepo.GetByDateRangeAsync(start, end, ct);
-        var activeSales = sales.Where(s => s.Status == SaleStatus.Completed).ToList();
+        var activeSales = sales.Where(IsActiveSale).ToList();
 
         int count        = activeSales.Count;
         decimal revenue  = activeSales.Sum(s => s.SubTotal);
         decimal discounts= activeSales.Sum(s => s.DiscountAmount);
-        decimal netSales = activeSales.Sum(s => s.TotalAmount);
+        decimal netSales = activeSales.Sum(s => s.NetTotal);
         decimal aov      = count > 0 ? netSales / count : 0m;
 
         var expenses = await expenseRepo.GetByDateRangeAsync(start, end, ct);
         decimal totalExp = expenses.Sum(e => e.Amount);
         decimal trueProfit = netSales - totalExp;
 
-        decimal retail   = activeSales.Where(s => s.SaleType == SaleType.Retail).Sum(s => s.TotalAmount);
-        decimal wholesale= activeSales.Where(s => s.SaleType == SaleType.Wholesale).Sum(s => s.TotalAmount);
+        decimal retail   = activeSales.Where(s => s.SaleType == SaleType.Retail).Sum(s => s.NetTotal);
+        decimal wholesale= activeSales.Where(s => s.SaleType == SaleType.Wholesale).Sum(s => s.NetTotal);
 
         return new DailySalesReportDto(
             from.Date,
@@ -206,14 +208,14 @@ public sealed class ReportService(
         var (start, end) = ToUtcRange(from, to);
 
         var sales = await saleRepo.GetByDateRangeAsync(start, end, ct);
-        var activeSales = sales.Where(s => s.Status == SaleStatus.Completed).ToList();
+        var activeSales = sales.Where(IsActiveSale).ToList();
 
         var grouped = activeSales
             .GroupBy(s => s.SaleDate.ToLocalTime().Date)
             .Select(g => new SalesTrendPointDto(
                 g.Key,
                 g.Key.ToString("MMM dd", CultureInfo.InvariantCulture),
-                g.Sum(s => s.TotalAmount),
+                g.Sum(s => s.NetTotal),
                 g.Count()))
             .OrderBy(p => p.Date)
             .ToList();
@@ -246,10 +248,10 @@ public sealed class ReportService(
         var (start, end) = ToUtcRange(date, date);
 
         var sales = await saleRepo.GetByDateRangeAsync(start, end, ct);
-        var activeSales = sales.Where(s => s.Status == SaleStatus.Completed).ToList();
+        var activeSales = sales.Where(IsActiveSale).ToList();
 
         var map = activeSales.GroupBy(s => s.SaleDate.ToLocalTime().Hour)
-            .ToDictionary(g => g.Key, g => (Revenue: g.Sum(s => s.TotalAmount), Count: g.Count()));
+            .ToDictionary(g => g.Key, g => (Revenue: g.Sum(s => s.NetTotal), Count: g.Count()));
 
         var result = new List<HourlySalesPointDto>();
         for (int h = 8; h <= 21; h++) // business hours 08:00 to 21:00
@@ -338,7 +340,7 @@ public sealed class ReportService(
         var (start, end) = ToUtcRange(from, to);
 
         var sales = await saleRepo.GetByDateRangeAsync(start, end, ct);
-        var activeSales = sales.Where(s => s.Status == SaleStatus.Completed).ToList();
+        var activeSales = sales.Where(IsActiveSale).ToList();
 
         var itemGroups = activeSales
             .SelectMany(s => s.Items)
@@ -384,9 +386,9 @@ public sealed class ReportService(
         var (start, end) = ToUtcRange(from, to);
 
         var sales = await saleRepo.GetByDateRangeAsync(start, end, ct);
-        var activeSales = sales.Where(s => s.Status == SaleStatus.Completed).ToList();
+        var activeSales = sales.Where(IsActiveSale).ToList();
 
-        decimal totalRevenue  = activeSales.Sum(s => s.TotalAmount);
+        decimal totalRevenue  = activeSales.Sum(s => s.NetTotal);
         int totalTransactions = activeSales.Count;
         int totalUnits        = activeSales.Sum(s => s.Items.Sum(i => i.Quantity));
         decimal aov           = totalTransactions > 0 ? totalRevenue / totalTransactions : 0m;
@@ -511,6 +513,7 @@ public sealed class ReportService(
             {
                 "WarrantyClaim" => "Customer Warranty Claim",
                 "SaleCancellation" => "Customer Return (Cancellation)",
+                "SaleReturn" => "Customer Return",
                 _ => m.Type.ToString()
             };
 
@@ -625,7 +628,7 @@ public sealed class ReportService(
 
         var customers = await customerRepo.GetAllAsync(ct);
         var sales     = await saleRepo.GetByDateRangeAsync(start, end, ct);
-        var activeSales = sales.Where(s => s.Status == SaleStatus.Completed).ToList();
+        var activeSales = sales.Where(IsActiveSale).ToList();
 
         var salesByCustomer = activeSales.Where(s => s.CustomerId.HasValue).GroupBy(s => s.CustomerId!.Value).ToDictionary(g => g.Key, g => g.ToList());
 
@@ -641,7 +644,7 @@ public sealed class ReportService(
             if (salesByCustomer.TryGetValue(c.Id, out var custSales))
             {
                 orders = custSales.Count;
-                spent  = custSales.Sum(s => s.TotalAmount);
+                spent  = custSales.Sum(s => s.NetTotal);
             }
 
             if (orders > 0) activeCount++;
@@ -676,12 +679,12 @@ public sealed class ReportService(
         var end   = start.AddMonths(1).AddTicks(-1);
 
         var sales = await saleRepo.GetByDateRangeAsync(start, end, ct);
-        var activeSales = sales.Where(s => s.Status == SaleStatus.Completed).ToList();
+        var activeSales = sales.Where(IsActiveSale).ToList();
 
         var count = activeSales.Count;
         var revenue = activeSales.Sum(s => s.SubTotal);
         var discounts = activeSales.Sum(s => s.DiscountAmount);
-        var netSales = activeSales.Sum(s => s.TotalAmount);
+        var netSales = activeSales.Sum(s => s.NetTotal);
 
         var expenses = await expenseRepo.GetByDateRangeAsync(start, end, ct);
         var totalExp = expenses.Sum(e => e.Amount);
@@ -719,7 +722,7 @@ public sealed class ReportService(
         var (start, end) = ToUtcRange(from, to);
 
         var sales = await saleRepo.GetByDateRangeAsync(start, end, ct);
-        var activeSales = sales.Where(s => s.Status == SaleStatus.Completed).ToList();
+        var activeSales = sales.Where(IsActiveSale).ToList();
 
         var movements = await movementRepo.GetAllAsync(start, end, ct);
         var claimMovements = movements.Where(m =>
@@ -852,9 +855,9 @@ public sealed class ReportService(
         var end = to.Date.AddDays(1).AddTicks(-1);
 
         var sales = await saleRepo.GetByDateRangeAsync(start, end, ct);
-        var activeSales = sales.Where(s => s.Status == SaleStatus.Completed).ToList();
+        var activeSales = sales.Where(IsActiveSale).ToList();
 
-        decimal grossRevenue = activeSales.Sum(s => s.TotalAmount);
+        decimal grossRevenue = activeSales.Sum(s => s.NetTotal);
         decimal cogs = activeSales.SelectMany(s => s.Items).Sum(i => i.Quantity * i.UnitPrice); // Approximate cost from sale item
         
         var expenses = await expenseRepo.GetByDateRangeAsync(start, end, ct);
@@ -868,7 +871,7 @@ public sealed class ReportService(
         var prevStart = start.AddMonths(-1);
         var prevEnd = end.AddMonths(-1);
         var prevSales = await saleRepo.GetByDateRangeAsync(prevStart, prevEnd, ct);
-        decimal prevRevenue = prevSales.Where(s => s.Status == SaleStatus.Completed).Sum(s => s.TotalAmount);
+        decimal prevRevenue = prevSales.Where(IsActiveSale).Sum(s => s.NetTotal);
         decimal momGrowth = prevRevenue > 0 ? Math.Round(((grossRevenue - prevRevenue) / prevRevenue) * 100m, 1) : 0m;
         decimal grossMargin = grossRevenue > 0 ? Math.Round(((grossRevenue - cogs) / grossRevenue) * 100m, 1) : 0m;
 
@@ -890,15 +893,15 @@ public sealed class ReportService(
         var end = to.Date.AddDays(1).AddTicks(-1);
 
         var sales = await saleRepo.GetByDateRangeAsync(start, end, ct);
-        var activeSales = sales.Where(s => s.Status == SaleStatus.Completed).ToList();
+        var activeSales = sales.Where(IsActiveSale).ToList();
 
         decimal grossSales = activeSales.Sum(s => s.SubTotal);
-        decimal netSales = activeSales.Sum(s => s.TotalAmount);
+        decimal netSales = activeSales.Sum(s => s.NetTotal);
         decimal tax = 0m; // No direct TaxAmount property on Sale entity
 
         var paymentSplits = activeSales
             .GroupBy(s => s.PaymentMethod.ToString())
-            .Select(g => new PaymentSplitDto(g.Key, g.Sum(s => s.TotalAmount), g.Count()))
+            .Select(g => new PaymentSplitDto(g.Key, g.Sum(s => s.NetTotal), g.Count()))
             .ToList();
 
         var velocitySpikes = await GetHourlySalesAsync(from.Date, ct);
@@ -1031,9 +1034,9 @@ public sealed class ReportService(
 
         var sales = await saleRepo.GetByDateRangeAsync(from, to, ct);
         var customerSales = sales
-            .Where(s => s.CustomerId.HasValue && s.Status == SaleStatus.Completed)
+            .Where(s => s.CustomerId.HasValue && IsActiveSale(s))
             .GroupBy(s => s.CustomerId!.Value)
-            .ToDictionary(g => g.Key, g => new { TotalSpend = g.Sum(s => s.TotalAmount), Count = g.Count() });
+            .ToDictionary(g => g.Key, g => new { TotalSpend = g.Sum(s => s.NetTotal), Count = g.Count() });
 
         int newCustomers = activeCustomers.Count(c => c.CreatedAt >= from && c.CreatedAt <= to);
         int returningCustomers = activeCustomers.Count - newCustomers;
@@ -1073,7 +1076,7 @@ public sealed class ReportService(
     {
         var products = await productRepo.GetAllAsync(ct);
         var sales = await saleRepo.GetByDateRangeAsync(from, to, ct);
-        var completedSales = sales.Where(s => s.Status == SaleStatus.Completed).ToList();
+        var completedSales = sales.Where(IsActiveSale).ToList();
 
         var productSalesDict = completedSales
             .SelectMany(s => s.Items)

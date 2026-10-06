@@ -131,6 +131,36 @@ public sealed class PurchasingAndSalesEnhancementTests
     }
 
     [Fact]
+    public void Sale_ApplyReturnRefund_ShouldUpdateRefundAmountNetTotalAndUnpaidAmount()
+    {
+        var sale = Sale.Create(SaleType.Retail, createdByUserId: 1);
+        var product = CreateProduct(1, "Item A", 1000, 800);
+        sale.AddItem(product, quantity: 5, unitPrice: 1000); // Total: 5000
+        sale.RecordPayment(3000, isRegisteredCustomer: true, isAdvancePayment: false); // Unpaid: 2000
+
+        sale.TotalAmount.Should().Be(5000m);
+        sale.AmountPaid.Should().Be(3000m);
+        sale.UnpaidAmount.Should().Be(2000m);
+
+        // Return items with 1500 refund to reduce debt
+        sale.ProcessReturn(product.Id, 2);
+        sale.ApplyReturnRefund(refundAmount: 1500m, cashRefunded: 0m);
+
+        sale.RefundAmount.Should().Be(1500m);
+        sale.NetTotal.Should().Be(3500m); // 5000 - 1500
+        sale.AmountPaid.Should().Be(3000m);
+        sale.UnpaidAmount.Should().Be(500m); // 3500 - 3000
+
+        // Additional return with 1000 refund: 500 clears remaining debt, 500 refunded in cash
+        sale.ApplyReturnRefund(refundAmount: 1000m, cashRefunded: 500m);
+
+        sale.RefundAmount.Should().Be(2500m);
+        sale.NetTotal.Should().Be(2500m); // 5000 - 2500
+        sale.AmountPaid.Should().Be(2500m); // 3000 - 500 cash returned
+        sale.UnpaidAmount.Should().Be(0m);
+    }
+
+    [Fact]
     public void Sale_AdjustBillDetails_ShouldUpdateDetailsAndAudit()
     {
         var sale = Sale.Create(SaleType.Retail, createdByUserId: 1);
