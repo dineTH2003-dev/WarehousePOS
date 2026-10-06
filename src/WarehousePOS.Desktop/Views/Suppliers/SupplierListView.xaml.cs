@@ -14,6 +14,7 @@ public partial class SupplierListView : Page
     private readonly ICategoryService _categoryService;
     private readonly ISupplierEntitlementService _entitlementService;
     private readonly IProductService _productService;
+    private readonly ISupplierImportService _importService;
 
     public SupplierListView(
         SupplierListViewModel vm,
@@ -21,7 +22,8 @@ public partial class SupplierListView : Page
         ProductFormViewModel productFormVm,
         ICategoryService categoryService,
         ISupplierEntitlementService entitlementService,
-        IProductService productService)
+        IProductService productService,
+        ISupplierImportService importService)
     {
         InitializeComponent();
         _vm = vm;
@@ -30,12 +32,28 @@ public partial class SupplierListView : Page
         _categoryService = categoryService;
         _entitlementService = entitlementService;
         _productService = productService;
+        _importService = importService;
         DataContext = vm;
         vm.EditRequested += OnEditRequested;
         vm.RecordEntitlementRequested += OnRecordEntitlementRequested;
+        vm.ImportRequested += OnImportRequested;
     }
 
     public async Task InitAsync() => await _vm.LoadAsync();
+
+    private async void OnImportRequested()
+    {
+        var window = System.Windows.Window.GetWindow(this);
+        var dialog = new ImportSuppliersDialog(_importService)
+        {
+            Owner = window
+        };
+        var result = dialog.ShowDialog();
+        if (result == true || dialog.HasImportedAny)
+        {
+            await _vm.LoadAsync();
+        }
+    }
 
     private async void OnRecordEntitlementRequested(SupplierDto supplier)
     {
