@@ -138,13 +138,27 @@ public sealed class PurchasingAndSalesEnhancementTests
         sale.AddItem(product, quantity: 2, unitPrice: 100); // 200
         sale.RecordPayment(200);
 
-        sale.AdjustBillDetails(newDeliveryFee: 75, newNotes: "Deliver after 5 PM", customerName: "Jane", customerPhone: "0719876543", address: "Kandy");
+        sale.AdjustBillDetails(newDeliveryFee: 75, newLabourCost: 50, newNotes: "Deliver after 5 PM", customerName: "Jane", customerPhone: "0719876543", address: "Kandy");
 
         sale.DeliveryFee.Should().Be(75);
-        sale.TotalAmount.Should().Be(275);
+        sale.LabourCost.Should().Be(50);
+        sale.TotalAmount.Should().Be(325); // 200 + 75 + 50
         sale.CustomerName.Should().Be("Jane");
         sale.CustomerPhone.Should().Be("0719876543");
         sale.DeliveryAddress.Should().Be("Kandy");
         sale.Notes.Should().Be("Deliver after 5 PM");
+    }
+
+    [Fact]
+    public void Sale_WithLabourCost_ShouldCalculateTotalCorrectly()
+    {
+        var sale = Sale.Create(SaleType.Retail, createdByUserId: 1, deliveryFee: 100, labourCost: 250);
+        var product = CreateProduct(1, "Item A", 500, 400);
+        sale.AddItem(product, quantity: 2, unitPrice: 500); // 1000
+        sale.ApplyDiscount(100); // SubTotal 1000 - Discount 100 = 900
+
+        sale.TotalAmount.Should().Be(1250); // 900 + 100 (Delivery) + 250 (Labour)
+        sale.LabourCost.Should().Be(250);
+        sale.DeliveryFee.Should().Be(100);
     }
 }

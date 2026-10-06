@@ -5,6 +5,7 @@ using WarehousePOS.Application.Products;
 using WarehousePOS.Application.Sales;
 using WarehousePOS.Application.Settings;
 using WarehousePOS.Desktop.Services;
+using WarehousePOS.Desktop.Validation;
 using WarehousePOS.Desktop.ViewModels;
 using WarehousePOS.Domain.Enums;
 
@@ -270,6 +271,8 @@ public sealed class PosViewModel : ViewModelBase
 
     private decimal _deliveryFee;
     private string  _deliveryFeeText = string.Empty;
+    private decimal _labourCost;
+    private string  _labourCostText = string.Empty;
     private string  _customCustomerName = string.Empty;
     private string  _customCustomerPhone = string.Empty;
     private string  _customDeliveryAddress = string.Empty;
@@ -300,6 +303,30 @@ public sealed class PosViewModel : ViewModelBase
 
     public decimal DeliveryFee => _deliveryFee;
 
+    public string LabourCostText
+    {
+        get => _labourCostText;
+        set
+        {
+            if (SetField(ref _labourCostText, value))
+            {
+                if (decimal.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out var cost) ||
+                    decimal.TryParse(value, NumberStyles.Any, CultureInfo.CurrentCulture, out cost))
+                {
+                    _labourCost = Math.Max(0, cost);
+                }
+                else
+                {
+                    _labourCost = 0;
+                }
+                OnPropertyChanged(nameof(LabourCost));
+                RecalculateTotals();
+            }
+        }
+    }
+
+    public decimal LabourCost => _labourCost;
+
     public string CustomCustomerName
     {
         get => _customCustomerName;
@@ -309,16 +336,7 @@ public sealed class PosViewModel : ViewModelBase
     public string CustomCustomerPhone
     {
         get => _customCustomerPhone;
-        set
-        {
-            if (SetField(ref _customCustomerPhone, value))
-            {
-                if (SelectedCustomer is null && !string.IsNullOrWhiteSpace(value))
-                {
-                    CustomerSearchQuery = value;
-                }
-            }
-        }
+        set => SetField(ref _customCustomerPhone, value);
     }
 
     public string CustomDeliveryAddress
@@ -347,7 +365,7 @@ public sealed class PosViewModel : ViewModelBase
     }
 
     public decimal SubTotal      => _cartItems.Sum(i => i.LineTotal);
-    public decimal TotalAmount   => Math.Max(0, SubTotal - OverallDiscount) + DeliveryFee;
+    public decimal TotalAmount   => Math.Max(0, SubTotal - OverallDiscount) + DeliveryFee + LabourCost;
     public decimal ChangeAmount  => Math.Max(0, AmountPaid - TotalAmount);
     public decimal UnpaidBalance => Math.Max(0, TotalAmount - AmountPaid);
     public bool IsDeficit        => AmountPaid < TotalAmount && _cartItems.Count > 0;
@@ -709,6 +727,18 @@ public sealed class PosViewModel : ViewModelBase
             return;
         }
 
+        if (!string.IsNullOrWhiteSpace(CustomCustomerPhone))
+        {
+            var phoneError = ContactValidation.GetPhoneError(CustomCustomerPhone);
+            if (phoneError is not null)
+            {
+                ErrorMessage = phoneError;
+                _isProcessingSale = false;
+                ProcessSaleCommand.RaiseCanExecuteChanged();
+                return;
+            }
+        }
+
         IsBusy = true;
         try
         {
@@ -727,6 +757,7 @@ public sealed class PosViewModel : ViewModelBase
                 items,
                 SelectedPaymentMethod,
                 DeliveryFee,
+                LabourCost,
                 string.IsNullOrWhiteSpace(CustomCustomerName) ? null : CustomCustomerName.Trim(),
                 string.IsNullOrWhiteSpace(CustomCustomerPhone) ? null : CustomCustomerPhone.Trim(),
                 string.IsNullOrWhiteSpace(CustomDeliveryAddress) ? null : CustomDeliveryAddress.Trim(),
@@ -824,6 +855,10 @@ public sealed class PosViewModel : ViewModelBase
         _deliveryFeeText = string.Empty;
         OnPropertyChanged(nameof(DeliveryFee));
         OnPropertyChanged(nameof(DeliveryFeeText));
+        _labourCost = 0;
+        _labourCostText = string.Empty;
+        OnPropertyChanged(nameof(LabourCost));
+        OnPropertyChanged(nameof(LabourCostText));
         CustomCustomerName = string.Empty;
         CustomCustomerPhone = string.Empty;
         CustomDeliveryAddress = string.Empty;

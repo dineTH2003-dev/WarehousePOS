@@ -22,7 +22,8 @@ public sealed class Sale : AggregateRoot
     public decimal SubTotal        { get; private set; }   // before discount
     public decimal DiscountAmount  { get; private set; }
     public decimal DeliveryFee     { get; private set; }
-    public decimal TotalAmount     { get; private set; }   // (SubTotal - Discount) + DeliveryFee
+    public decimal LabourCost      { get; private set; }
+    public decimal TotalAmount     { get; private set; }   // (SubTotal - Discount) + DeliveryFee + LabourCost
     public decimal AmountPaid      { get; private set; }
     public decimal Change          => Math.Max(0m, AmountPaid - TotalAmount);
     public decimal UnpaidAmount    => Math.Max(0m, TotalAmount - AmountPaid);
@@ -44,12 +45,16 @@ public sealed class Sale : AggregateRoot
         string? notes   = null,
         PaymentMethod paymentMethod = PaymentMethod.Cash,
         decimal deliveryFee = 0,
+        decimal labourCost = 0,
         string? customerName = null,
         string? customerPhone = null,
         string? deliveryAddress = null)
     {
         if (deliveryFee < 0)
             throw new ArgumentOutOfRangeException(nameof(deliveryFee), "Delivery fee cannot be negative.");
+
+        if (labourCost < 0)
+            throw new ArgumentOutOfRangeException(nameof(labourCost), "Labour cost cannot be negative.");
 
         return new Sale
         {
@@ -60,6 +65,7 @@ public sealed class Sale : AggregateRoot
             SaleDate        = DateTime.UtcNow,
             PaymentMethod   = paymentMethod,
             DeliveryFee     = deliveryFee,
+            LabourCost      = labourCost,
             CustomerName    = customerName?.Trim(),
             CustomerPhone   = customerPhone?.Trim(),
             DeliveryAddress = deliveryAddress?.Trim()
@@ -185,7 +191,7 @@ public sealed class Sale : AggregateRoot
         SetUpdatedAt();
     }
 
-    public void AdjustBillDetails(decimal? newDeliveryFee, string? newNotes, string? customerName, string? customerPhone, string? address)
+    public void AdjustBillDetails(decimal? newDeliveryFee = null, decimal? newLabourCost = null, string? newNotes = null, string? customerName = null, string? customerPhone = null, string? address = null)
     {
         if (Status == SaleStatus.Cancelled)
             throw new BusinessRuleViolationException("CancelledSale", "Cannot adjust a cancelled sale.");
@@ -194,6 +200,11 @@ public sealed class Sale : AggregateRoot
         {
             if (newDeliveryFee.Value < 0) throw new ArgumentOutOfRangeException(nameof(newDeliveryFee));
             DeliveryFee = newDeliveryFee.Value;
+        }
+        if (newLabourCost.HasValue)
+        {
+            if (newLabourCost.Value < 0) throw new ArgumentOutOfRangeException(nameof(newLabourCost));
+            LabourCost = newLabourCost.Value;
         }
         if (newNotes != null) Notes = newNotes.Trim();
         if (customerName != null) CustomerName = customerName.Trim();
@@ -215,7 +226,7 @@ public sealed class Sale : AggregateRoot
     private void RecalculateTotals()
     {
         SubTotal    = _items.Sum(i => i.LineTotal);
-        TotalAmount = Math.Max(0m, SubTotal - DiscountAmount) + DeliveryFee;
+        TotalAmount = Math.Max(0m, SubTotal - DiscountAmount) + DeliveryFee + LabourCost;
     }
 }
 

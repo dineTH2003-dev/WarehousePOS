@@ -26,13 +26,19 @@
                 <TextBox x:Name="TxtCustomerName" Style="{StaticResource FormTextBox}" MinHeight="36" Margin="0,0,0,10"/>
 
                 <TextBlock Text="Customer Phone" Style="{StaticResource LabelText}" Margin="0,0,0,4"/>
-                <TextBox x:Name="TxtCustomerPhone" Style="{StaticResource FormTextBox}" MinHeight="36" Margin="0,0,0,10"/>
+                <TextBox x:Name="TxtCustomerPhone" Style="{StaticResource FormTextBox}" MinHeight="36" Margin="0,0,0,10"
+                         behaviors:DigitsOnlyBehavior.IsEnabled="True"
+                         MaxLength="10"/>
 
                 <TextBlock Text="Delivery Address" Style="{StaticResource LabelText}" Margin="0,0,0,4"/>
                 <TextBox x:Name="TxtDeliveryAddress" Style="{StaticResource FormTextBox}" MinHeight="36" Margin="0,0,0,10"/>
 
                 <TextBlock Text="Delivery Fee (Rs.)" Style="{StaticResource LabelText}" Margin="0,0,0,4"/>
                 <TextBox x:Name="TxtDeliveryFee" Style="{StaticResource FormTextBox}" MinHeight="36" Margin="0,0,0,10"
+                         behaviors:IntegerOnlyBehavior.IsEnabled="True"/>
+
+                <TextBlock Text="Labour Cost (Rs.)" Style="{StaticResource LabelText}" Margin="0,0,0,4"/>
+                <TextBox x:Name="TxtLabourCost" Style="{StaticResource FormTextBox}" MinHeight="36" Margin="0,0,0,10"
                          behaviors:IntegerOnlyBehavior.IsEnabled="True"/>
 
                 <TextBlock Text="Order Notes / Reason for Amendment" Style="{StaticResource LabelText}" Margin="0,0,0,4"/>

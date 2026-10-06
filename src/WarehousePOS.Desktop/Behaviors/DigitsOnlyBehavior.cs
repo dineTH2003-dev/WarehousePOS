@@ -24,17 +24,28 @@ public static class DigitsOnlyBehavior
 
         if ((bool)args.NewValue)
         {
-            textBox.PreviewTextInput += OnPreviewTextInput;
-            textBox.GotFocus         += OnGotFocus;
+            textBox.PreviewKeyDown           += OnPreviewKeyDown;
+            textBox.PreviewTextInput         += OnPreviewTextInput;
+            textBox.GotFocus                 += OnGotFocus;
             textBox.PreviewMouseLeftButtonDown += OnPreviewMouseLeftButtonDown;
             DataObject.AddPastingHandler(textBox, OnPasting);
         }
         else
         {
-            textBox.PreviewTextInput -= OnPreviewTextInput;
-            textBox.GotFocus         -= OnGotFocus;
+            textBox.PreviewKeyDown           -= OnPreviewKeyDown;
+            textBox.PreviewTextInput         -= OnPreviewTextInput;
+            textBox.GotFocus                 -= OnGotFocus;
             textBox.PreviewMouseLeftButtonDown -= OnPreviewMouseLeftButtonDown;
             DataObject.RemovePastingHandler(textBox, OnPasting);
+        }
+    }
+
+    private static void OnPreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        // Block space key while typing
+        if (e.Key == Key.Space)
+        {
+            e.Handled = true;
         }
     }
 
@@ -62,10 +73,33 @@ public static class DigitsOnlyBehavior
     {
         if (!e.DataObject.GetDataPresent(typeof(string)) ||
             !IsValidInsertion((TextBox)sender, (string)e.DataObject.GetData(typeof(string))!))
+        {
             e.CancelCommand();
+        }
     }
 
-    private static bool IsValidInsertion(TextBox textBox, string insertedText) =>
-        insertedText.All(character => character is >= '0' and <= '9') &&
-        textBox.Text.Remove(textBox.SelectionStart, textBox.SelectionLength).Length + insertedText.Length <= 10;
+    private static bool IsValidInsertion(TextBox textBox, string insertedText)
+    {
+        if (string.IsNullOrEmpty(insertedText))
+            return true;
+
+        // 1. Only integers / digits allowed (no spaces, letters, or symbols)
+        if (!insertedText.All(character => character is >= '0' and <= '9'))
+            return false;
+
+        var currentText = textBox.Text ?? string.Empty;
+        var start = Math.Min(textBox.SelectionStart, currentText.Length);
+        var length = Math.Min(textBox.SelectionLength, currentText.Length - start);
+        var proposedText = currentText.Remove(start, length).Insert(start, insertedText);
+
+        // 2. Length should not be greater than 10 integers
+        if (proposedText.Length > 10)
+            return false;
+
+        // 3. Start phone number with 0
+        if (proposedText.Length > 0 && !proposedText.StartsWith('0'))
+            return false;
+
+        return true;
+    }
 }

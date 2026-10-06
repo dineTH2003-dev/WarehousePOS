@@ -1,8 +1,46 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
-    <!-- Default text styles -->
+    <!-- ============================================================
+         GLOBAL COMMON FONT FAMILIES FOR POS
+         ============================================================ -->
+    <FontFamily x:Key="AppFontFamily">Segoe UI, Aptos, Inter, -apple-system, BlinkMacSystemFont, Roboto, Helvetica Neue, Arial, sans-serif</FontFamily>
+    <FontFamily x:Key="MonospaceFontFamily">Consolas, Cascadia Code, Courier New, monospace</FontFamily>
+
+    <!-- ============================================================
+         GLOBAL IMPLICIT ELEMENT STYLES (App-Wide Inheritance)
+         ============================================================ -->
+    <Style TargetType="{x:Type Window}">
+        <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}" />
+        <Setter Property="TextOptions.TextFormattingMode" Value="Display" />
+        <Setter Property="TextOptions.TextRenderingMode" Value="ClearType" />
+        <Setter Property="UseLayoutRounding" Value="True" />
+    </Style>
+
+    <Style TargetType="{x:Type Page}">
+        <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}" />
+        <Setter Property="TextOptions.TextFormattingMode" Value="Display" />
+        <Setter Property="TextOptions.TextRenderingMode" Value="ClearType" />
+        <Setter Property="UseLayoutRounding" Value="True" />
+    </Style>
+
+    <Style TargetType="{x:Type TextBlock}">
+        <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}" />
+        <Setter Property="TextOptions.TextFormattingMode" Value="Display" />
+        <Setter Property="TextOptions.TextRenderingMode" Value="ClearType" />
+    </Style>
+
+    <Style TargetType="{x:Type Control}">
+        <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}" />
+        <Setter Property="TextOptions.TextFormattingMode" Value="Display" />
+        <Setter Property="TextOptions.TextRenderingMode" Value="ClearType" />
+    </Style>
+
+    <!-- ============================================================
+         TYPOGRAPHY UTILITY STYLES
+         ============================================================ -->
     <Style x:Key="H1" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}" />
         <Setter Property="FontSize" Value="28" />
         <Setter Property="FontWeight" Value="Bold" />
         <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
@@ -10,28 +48,33 @@
     </Style>
 
     <Style x:Key="H2" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}" />
         <Setter Property="FontSize" Value="22" />
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
     </Style>
 
     <Style x:Key="H3" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}" />
         <Setter Property="FontSize" Value="18" />
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
     </Style>
 
     <Style x:Key="BodyText" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}" />
         <Setter Property="FontSize" Value="14" />
         <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
     </Style>
 
     <Style x:Key="CaptionText" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}" />
         <Setter Property="FontSize" Value="12" />
         <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}" />
     </Style>
 
     <Style x:Key="LabelText" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}" />
         <Setter Property="FontSize" Value="13" />
         <Setter Property="FontWeight" Value="Medium" />
         <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}" />

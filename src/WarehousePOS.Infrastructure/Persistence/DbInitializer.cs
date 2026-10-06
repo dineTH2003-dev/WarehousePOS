@@ -178,9 +178,16 @@ public static class DbInitializer
                 .SqlQueryRaw<string>("SELECT name FROM pragma_table_info('Sales')")
                 .ToListAsync();
 
-            if (saleColumns.Any() && !saleColumns.Contains("PaymentMethod", StringComparer.OrdinalIgnoreCase))
+            if (saleColumns.Any())
             {
-                await db.Database.ExecuteSqlRawAsync("ALTER TABLE Sales ADD COLUMN PaymentMethod TEXT NOT NULL DEFAULT 'Cash';");
+                if (!saleColumns.Contains("PaymentMethod", StringComparer.OrdinalIgnoreCase))
+                {
+                    await db.Database.ExecuteSqlRawAsync("ALTER TABLE Sales ADD COLUMN PaymentMethod TEXT NOT NULL DEFAULT 'Cash';");
+                }
+                if (!saleColumns.Contains("LabourCost", StringComparer.OrdinalIgnoreCase))
+                {
+                    await db.Database.ExecuteSqlRawAsync("ALTER TABLE Sales ADD COLUMN LabourCost TEXT NOT NULL DEFAULT '0';");
+                }
             }
 
             var customerColumns = await db.Database

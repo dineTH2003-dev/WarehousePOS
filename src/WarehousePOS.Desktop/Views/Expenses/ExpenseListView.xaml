@@ -97,10 +97,14 @@
 
 
                     <!-- Search Input -->
-                    <StackPanel Width="200" Margin="0,0,8,6">
+                    <StackPanel Width="220" Margin="0,0,8,6">
                         <TextBlock Text="Search Expenses" Style="{StaticResource FormLabel}" Margin="0,0,0,4"/>
-                        <TextBox Text="{Binding SearchTerm, UpdateSourceTrigger=PropertyChanged}" 
-                                 Style="{StaticResource FormTextBox}" Height="36"/>
+                        <Border Style="{StaticResource SearchHoverCard}" Height="36" Padding="0">
+                            <TextBox Style="{StaticResource SearchTextBox}" Height="36" MinHeight="36"
+                                     Text="{Binding SearchTerm, UpdateSourceTrigger=PropertyChanged}" 
+                                     Tag="Description, ref no..."
+                                     ToolTip="Search expenses by description or reference number"/>
+                        </Border>
                     </StackPanel>
 
                     <!-- Filter Buttons -->
@@ -212,7 +216,7 @@
                 </UniformGrid>
 
                 <!-- ANALYTICS CARDS (Category Donut & Monthly Trend) -->
-                <Grid Grid.Row="1" Margin="0,0,0,10" Height="190">
+                <Grid Grid.Row="1" Margin="0,0,0,10" Height="210">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="12"/>
@@ -221,12 +225,17 @@
 
                     <!-- Left Analytics: Expenses by Category -->
                     <Border Grid.Column="0" Style="{StaticResource Card}" Padding="14,10">
-                        <StackPanel>
-                            <TextBlock Text="Expenses by Category" Style="{StaticResource H3}" FontSize="13" Margin="0,0,0,8"/>
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
 
-                            <Grid Height="145">
+                            <TextBlock Grid.Row="0" Text="Expenses by Category" Style="{StaticResource H3}" FontSize="13" Margin="0,0,0,6"/>
+
+                            <Grid Grid.Row="1" VerticalAlignment="Center">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="130"/>
+                                    <ColumnDefinition Width="120"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
 
@@ -235,81 +244,109 @@
                                     <controls:DonutPieChart Width="104" Height="104" ItemsSource="{Binding CategoryBreakdownItems}"/>
                                     <Ellipse Width="72" Height="72" Fill="White" IsHitTestVisible="False"/>
                                     <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" IsHitTestVisible="False">
-                                        <TextBlock Text="{Binding TotalExpensesFormatted}" FontSize="11" FontWeight="Bold" HorizontalAlignment="Center"/>
+                                        <TextBlock Text="{Binding TotalExpensesFormatted}" FontSize="11" HorizontalAlignment="Center"/>
                                         <TextBlock Text="Total" FontSize="10" Foreground="{StaticResource TextSecondaryBrush}" HorizontalAlignment="Center"/>
                                     </StackPanel>
                                 </Grid>
 
-                                <!-- Category List Legend -->
-                                <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto">
-                                    <ItemsControl ItemsSource="{Binding CategoryBreakdownItems}">
-                                        <ItemsControl.ItemTemplate>
-                                            <DataTemplate>
-                                                <Grid Margin="0,3">
-                                                    <Grid.ColumnDefinitions>
-                                                        <ColumnDefinition Width="Auto"/>
-                                                        <ColumnDefinition Width="*"/>
-                                                        <ColumnDefinition Width="Auto"/>
-                                                        <ColumnDefinition Width="42"/>
-                                                    </Grid.ColumnDefinitions>
-
-                                                    <Ellipse Grid.Column="0" Width="9" Height="9" Fill="{Binding ColorBrush}" Margin="0,0,6,0" VerticalAlignment="Center"/>
-                                                    <TextBlock Grid.Column="1" Text="{Binding CategoryName}" FontSize="11" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
-                                                    <TextBlock Grid.Column="2" Text="{Binding TotalAmountFormatted}" FontSize="11" FontWeight="SemiBold" Margin="6,0" VerticalAlignment="Center"/>
-                                                    <TextBlock Grid.Column="3" Text="{Binding PercentageFormatted}" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
-                                                </Grid>
-                                            </DataTemplate>
-                                        </ItemsControl.ItemTemplate>
-                                    </ItemsControl>
-                                </ScrollViewer>
-                            </Grid>
-                        </StackPanel>
-                    </Border>
-
-                    <!-- Right Analytics: Monthly Expense Trend Column Chart -->
-                    <Border Grid.Column="2" Style="{StaticResource Card}" Padding="14,10">
-                        <StackPanel>
-                            <TextBlock Text="Monthly Expense Trend" Style="{StaticResource H3}" FontSize="13" Margin="0,0,0,8"/>
-
-                            <Grid Height="145">
-                                <ItemsControl ItemsSource="{Binding MonthlyTrendItems}">
-                                    <ItemsControl.ItemsPanel>
-                                        <ItemsPanelTemplate>
-                                            <UniformGrid Columns="12" VerticalAlignment="Bottom"/>
-                                        </ItemsPanelTemplate>
-                                    </ItemsControl.ItemsPanel>
-
+                                <!-- Category List Legend (No scrollbar - all categories displayed clearly) -->
+                                <ItemsControl Grid.Column="1" ItemsSource="{Binding CategoryBreakdownItems}" VerticalAlignment="Center">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
-                                            <Grid VerticalAlignment="Bottom" HorizontalAlignment="Center" ToolTip="{Binding TooltipText}">
-                                                <Grid.RowDefinitions>
-                                                    <RowDefinition Height="*"/>
-                                                    <RowDefinition Height="Auto"/>
-                                                </Grid.RowDefinitions>
+                                            <Grid Margin="0,2">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="38"/>
+                                                </Grid.ColumnDefinitions>
 
-                                                <!-- Vertical Column Bar -->
-                                                <Border Grid.Row="0" Width="15" Height="{Binding BarHeight}" CornerRadius="3,3,0,0" VerticalAlignment="Bottom">
-                                                    <Border.Style>
-                                                        <Style TargetType="Border">
-                                                            <Setter Property="Background" Value="#3B82F6"/>
-                                                            <Style.Triggers>
-                                                                <DataTrigger Binding="{Binding IsActiveMonth}" Value="True">
-                                                                    <Setter Property="Background" Value="{StaticResource PrimaryBrush}"/>
-                                                                </DataTrigger>
-                                                            </Style.Triggers>
-                                                        </Style>
-                                                    </Border.Style>
-                                                </Border>
-
-                                                <!-- Month Label -->
-                                                <TextBlock Grid.Row="1" Text="{Binding MonthLabel}" FontSize="9" Foreground="{StaticResource TextSecondaryBrush}" 
-                                                           HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                                                <Ellipse Grid.Column="0" Width="8" Height="8" Fill="{Binding ColorBrush}" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                                <TextBlock Grid.Column="1" Text="{Binding CategoryName}" FontSize="11" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                                <TextBlock Grid.Column="2" Text="{Binding TotalAmountFormatted}" FontSize="11" Margin="6,0" VerticalAlignment="Center"/>
+                                                <TextBlock Grid.Column="3" Text="{Binding PercentageFormatted}" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
                                             </Grid>
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>
                                 </ItemsControl>
                             </Grid>
-                        </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <!-- Right Analytics: Monthly Expense Trend Column Chart -->
+                    <Border Grid.Column="2" Style="{StaticResource Card}" Padding="14,10">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Grid.Row="0" Text="Monthly Expense Trend" Style="{StaticResource H3}" FontSize="13" Margin="0,0,0,6"/>
+
+                            <!-- Bars Area -->
+                            <ItemsControl Grid.Row="1" ItemsSource="{Binding MonthlyTrendItems}" VerticalAlignment="Bottom" Height="125">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <UniformGrid Columns="12" VerticalAlignment="Bottom"/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid VerticalAlignment="Bottom" HorizontalAlignment="Center" ToolTip="{Binding TooltipText}" Cursor="Hand">
+                                            <!-- Subtle Background Track Bar -->
+                                            <Border Width="16" Height="120" Background="#F1F5F9" CornerRadius="4,4,0,0" VerticalAlignment="Bottom"/>
+
+                                            <!-- Actual Data Value Bar -->
+                                            <Border Width="16" Height="{Binding BarHeight}" CornerRadius="4,4,0,0" VerticalAlignment="Bottom">
+                                                <Border.Style>
+                                                    <Style TargetType="Border">
+                                                        <Setter Property="Background" Value="#3B82F6"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsActiveMonth}" Value="True">
+                                                                <Setter Property="Background" Value="{StaticResource PrimaryBrush}"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Border.Style>
+                                            </Border>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <!-- Baseline Axis Divider -->
+                            <Border Grid.Row="2" Height="1" Background="{StaticResource BorderBrush}" Margin="0,2,0,4"/>
+
+                            <!-- Months List Labels (Clearly visible, centered under each column) -->
+                            <ItemsControl Grid.Row="3" ItemsSource="{Binding MonthlyTrendItems}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <UniformGrid Columns="12" HorizontalAlignment="Stretch"/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding MonthLabel}" FontSize="11" HorizontalAlignment="Center">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsActiveMonth}" Value="True">
+                                                            <Setter Property="Foreground" Value="{StaticResource PrimaryDarkBrush}"/>
+                                                            <Setter Property="FontWeight" Value="SemiBold"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </Grid>
                     </Border>
                 </Grid>
 
@@ -501,9 +538,11 @@
                         <!-- Form Buttons -->
                         <StackPanel Grid.Row="6">
                             <Button Content="{Binding FormSubmitButtonText}" Style="{StaticResource PrimaryButton}" Height="36"
+                                    Padding="0" VerticalContentAlignment="Center"
                                     Command="{Binding SaveExpenseCommand}"/>
 
                             <Button Content="Cancel Edit" Style="{StaticResource SecondaryButton}" Height="28" Margin="0,4,0,0"
+                                    Padding="0" VerticalContentAlignment="Center"
                                     Command="{Binding CancelEditCommand}"
                                     Visibility="{Binding IsEditing, Converter={StaticResource BoolToVisibilityConverter}}"/>
                         </StackPanel>
