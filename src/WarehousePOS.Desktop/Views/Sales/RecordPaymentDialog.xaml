@@ -45,7 +45,7 @@
             <StackPanel Margin="0,0,0,16">
                 <TextBlock Text="Payment Amount (Rs.) *" Style="{StaticResource LabelText}" Margin="0,0,0,4"/>
                 <TextBox x:Name="TxtPaymentAmount" Style="{StaticResource FormTextBox}" MinHeight="36" Margin="0,0,0,12"
-                         behaviors:IntegerOnlyBehavior.IsEnabled="True"/>
+                         behaviors:DecimalOnlyBehavior.IsEnabled="True"/>
 
                 <TextBlock Text="Payment Method *" Style="{StaticResource LabelText}" Margin="0,0,0,4"/>
                 <ComboBox x:Name="CmbPaymentMethod" Height="36" Margin="0,0,0,12"/>
