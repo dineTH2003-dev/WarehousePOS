@@ -69,7 +69,7 @@ public sealed class SaleRepository(AppDbContext db) : ISaleRepository
           .ThenInclude(i => i.Product);
 
     public async Task<Sale?> GetByIdAsync(int id, CancellationToken ct = default) =>
-        await WithIncludesTracking().FirstOrDefaultAsync(s => s.Id == id, ct);
+        await WithIncludesNoTracking().FirstOrDefaultAsync(s => s.Id == id, ct);
 
     public async Task<IReadOnlyList<Sale>> GetAllAsync(CancellationToken ct = default) =>
         await WithIncludesNoTracking().OrderByDescending(s => s.SaleDate).ToListAsync(ct);
@@ -128,15 +128,32 @@ public sealed class SaleRepository(AppDbContext db) : ISaleRepository
 
     public async Task UpdateAsync(Sale sale, CancellationToken ct = default)
     {
-        var entry = db.ChangeTracker.Entries<Sale>().FirstOrDefault(e => e.Entity.Id == sale.Id);
-        if (entry is null)
+        // Detach ALL currently-tracked Sale entities to avoid identity-tracking
+        // conflicts when the same DbContext scope processes multiple sales.
+        foreach (var e in db.ChangeTracker.Entries<Sale>().ToList())
+            e.State = EntityState.Detached;
+
+        // Also detach all tracked related entities to prevent duplicates.
+        foreach (var e in db.ChangeTracker.Entries<SaleItem>().ToList())
+            e.State = EntityState.Detached;
+        foreach (var e in db.ChangeTracker.Entries<SalePayment>().ToList())
+            e.State = EntityState.Detached;
+
+        // Mark the root sale as Modified (updates scalar columns).
+        db.Entry(sale).State = EntityState.Modified;
+
+        // Mark existing items as Unchanged (no structural changes to items during payment).
+        foreach (var item in sale.Items)
+            db.Entry(item).State = EntityState.Unchanged;
+
+        // For each payment: new ones (Id == 0) are Added; existing ones are Unchanged.
+        foreach (var payment in sale.Payments)
         {
-            db.Sales.Update(sale);
+            db.Entry(payment).State = payment.Id == 0
+                ? EntityState.Added
+                : EntityState.Unchanged;
         }
-        else if (!ReferenceEquals(entry.Entity, sale))
-        {
-            entry.CurrentValues.SetValues(sale);
-        }
+
         await db.SaveChangesAsync(ct);
     }
 
