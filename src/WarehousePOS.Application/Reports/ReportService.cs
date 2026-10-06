@@ -13,14 +13,15 @@ public sealed class ReportService(
     IPurchaseRepository purchaseRepo,
     ICustomerRepository customerRepo,
     IInventoryMovementRepository movementRepo,
-    ICategoryRepository categoryRepo) : IReportService
+    ICategoryRepository categoryRepo,
+    IUserRepository? userRepo = null) : IReportService
+
 {
     // ── 1. General Analytics ──────────────────────────────────────────────────
 
     public async Task<GeneralAnalyticsDto> GetGeneralAnalyticsAsync(DateTime from, DateTime to, CancellationToken ct = default)
     {
-        var start = from.Date;
-        var end   = to.Date.AddDays(1).AddTicks(-1);
+        var (start, end) = ToUtcRange(from, to);
 
         var sales = await saleRepo.GetByDateRangeAsync(start, end, ct);
         var activeSales = sales.Where(s => s.Status == SaleStatus.Completed).ToList();
@@ -32,10 +33,9 @@ public sealed class ReportService(
         decimal aov            = totalTransactions > 0 ? netRevenue / totalTransactions : 0m;
 
         // Daily Sales KPI (today's sales within date range context)
-        var todayStart = DateTime.Today;
-        var todayEnd   = todayStart.AddDays(1).AddTicks(-1);
+        var (todayStart, todayEnd) = ToUtcRange(DateTime.Today, DateTime.Today);
         var todaySales = activeSales.Where(s => s.SaleDate >= todayStart && s.SaleDate <= todayEnd).ToList();
-        if (todaySales.Count == 0 && (start <= DateTime.Today && end >= DateTime.Today))
+        if (todaySales.Count == 0 && (start <= todayStart && end >= todayEnd))
         {
             // Fetch directly if not in filtered list
             var todayDirect = await saleRepo.GetByDateRangeAsync(todayStart, todayEnd, ct);
@@ -167,8 +167,7 @@ public sealed class ReportService(
 
     public async Task<DailySalesReportDto> GetDailySalesReportAsync(DateTime from, DateTime to, CancellationToken ct = default)
     {
-        var start = from.Date;
-        var end   = to.Date.AddDays(1).AddTicks(-1);
+        var (start, end) = ToUtcRange(from, to);
 
         var sales = await saleRepo.GetByDateRangeAsync(start, end, ct);
         var activeSales = sales.Where(s => s.Status == SaleStatus.Completed).ToList();
@@ -187,7 +186,7 @@ public sealed class ReportService(
         decimal wholesale= activeSales.Where(s => s.SaleType == SaleType.Wholesale).Sum(s => s.TotalAmount);
 
         return new DailySalesReportDto(
-            start,
+            from.Date,
             count,
             revenue,
             discounts,
@@ -204,14 +203,13 @@ public sealed class ReportService(
 
     public async Task<IReadOnlyList<SalesTrendPointDto>> GetSalesTrendAsync(DateTime from, DateTime to, CancellationToken ct = default)
     {
-        var start = from.Date;
-        var end   = to.Date.AddDays(1).AddTicks(-1);
+        var (start, end) = ToUtcRange(from, to);
 
         var sales = await saleRepo.GetByDateRangeAsync(start, end, ct);
         var activeSales = sales.Where(s => s.Status == SaleStatus.Completed).ToList();
 
         var grouped = activeSales
-            .GroupBy(s => s.SaleDate.Date)
+            .GroupBy(s => s.SaleDate.ToLocalTime().Date)
             .Select(g => new SalesTrendPointDto(
                 g.Key,
                 g.Key.ToString("MMM dd", CultureInfo.InvariantCulture),
@@ -245,13 +243,12 @@ public sealed class ReportService(
 
     public async Task<IReadOnlyList<HourlySalesPointDto>> GetHourlySalesAsync(DateTime date, CancellationToken ct = default)
     {
-        var start = date.Date;
-        var end   = start.AddDays(1).AddTicks(-1);
+        var (start, end) = ToUtcRange(date, date);
 
         var sales = await saleRepo.GetByDateRangeAsync(start, end, ct);
         var activeSales = sales.Where(s => s.Status == SaleStatus.Completed).ToList();
 
-        var map = activeSales.GroupBy(s => s.SaleDate.Hour)
+        var map = activeSales.GroupBy(s => s.SaleDate.ToLocalTime().Hour)
             .ToDictionary(g => g.Key, g => (Revenue: g.Sum(s => s.TotalAmount), Count: g.Count()));
 
         var result = new List<HourlySalesPointDto>();
@@ -338,8 +335,7 @@ public sealed class ReportService(
 
     public async Task<IReadOnlyList<FastMovingItemDto>> GetFastMovingItemsAsync(DateTime from, DateTime to, int topCount = 10, CancellationToken ct = default)
     {
-        var start = from.Date;
-        var end   = to.Date.AddDays(1).AddTicks(-1);
+        var (start, end) = ToUtcRange(from, to);
 
         var sales = await saleRepo.GetByDateRangeAsync(start, end, ct);
         var activeSales = sales.Where(s => s.Status == SaleStatus.Completed).ToList();
@@ -385,8 +381,7 @@ public sealed class ReportService(
 
     public async Task<SalesSummaryDto> GetSalesSummaryAsync(DateTime from, DateTime to, CancellationToken ct = default)
     {
-        var start = from.Date;
-        var end   = to.Date.AddDays(1).AddTicks(-1);
+        var (start, end) = ToUtcRange(from, to);
 
         var sales = await saleRepo.GetByDateRangeAsync(start, end, ct);
         var activeSales = sales.Where(s => s.Status == SaleStatus.Completed).ToList();
@@ -440,8 +435,7 @@ public sealed class ReportService(
 
     public async Task<GrnReportDto> GetGrnReportAsync(DateTime from, DateTime to, int? supplierId = null, CancellationToken ct = default)
     {
-        var start = from.Date;
-        var end   = to.Date.AddDays(1).AddTicks(-1);
+        var (start, end) = ToUtcRange(from, to);
 
         var purchases = await purchaseRepo.GetAllAsync(ct);
         var filtered = purchases
@@ -495,8 +489,7 @@ public sealed class ReportService(
 
     public async Task<ClaimItemReportDto> GetClaimItemsReportAsync(DateTime from, DateTime to, CancellationToken ct = default)
     {
-        var start = from.Date;
-        var end   = to.Date.AddDays(1).AddTicks(-1);
+        var (start, end) = ToUtcRange(from, to);
 
         var movements = await movementRepo.GetAllAsync(start, end, ct);
         var claimMovements = movements.Where(m =>
@@ -628,8 +621,7 @@ public sealed class ReportService(
 
     public async Task<CustomerReportSummaryDto> GetCustomerReportSummaryAsync(DateTime from, DateTime to, CancellationToken ct = default)
     {
-        var start = from.Date;
-        var end   = to.Date.AddDays(1).AddTicks(-1);
+        var (start, end) = ToUtcRange(from, to);
 
         var customers = await customerRepo.GetAllAsync(ct);
         var sales     = await saleRepo.GetByDateRangeAsync(start, end, ct);
@@ -719,5 +711,572 @@ public sealed class ReportService(
             valuation.TotalRetailValuation,
             topSelling);
     }
+
+    // ── 9. Production & Product Profitability Report ──────────────────────────
+
+    public async Task<ProductProductionReportSummaryDto> GetProductProductionReportAsync(DateTime from, DateTime to, int? categoryId = null, CancellationToken ct = default)
+    {
+        var (start, end) = ToUtcRange(from, to);
+
+        var sales = await saleRepo.GetByDateRangeAsync(start, end, ct);
+        var activeSales = sales.Where(s => s.Status == SaleStatus.Completed).ToList();
+
+        var movements = await movementRepo.GetAllAsync(start, end, ct);
+        var claimMovements = movements.Where(m =>
+            m.Type is MovementType.Adjustment or MovementType.ReturnIn or MovementType.ReturnOut ||
+            (m.ReferenceType != null && m.ReferenceType.Contains("Claim", StringComparison.OrdinalIgnoreCase)))
+            .ToList();
+
+        var allProducts = (await productRepo.GetAllAsync(ct)).Where(p => p.IsActive).ToList();
+        if (categoryId.HasValue && categoryId.Value > 0)
+        {
+            allProducts = allProducts.Where(p => p.CategoryId == categoryId.Value).ToList();
+        }
+
+        var categories = (await categoryRepo.GetAllAsync(ct)).ToDictionary(c => c.Id, c => c.Name);
+
+        var salesByProduct = activeSales
+            .SelectMany(s => s.Items.Select(i => new { s.SaleType, Item = i }))
+            .GroupBy(x => x.Item.ProductId)
+            .ToDictionary(g => g.Key, g => g.ToList());
+
+        var claimsByProduct = claimMovements
+            .GroupBy(m => m.ProductId)
+            .ToDictionary(g => g.Key, g => g.ToList());
+
+        var items = new List<ProductProductionReportItemDto>();
+
+        foreach (var prod in allProducts)
+        {
+            int retailQty = 0;
+            decimal retailRev = 0m;
+            int wholesaleQty = 0;
+            decimal wholesaleRev = 0m;
+
+            if (salesByProduct.TryGetValue(prod.Id, out var prodSales))
+            {
+                foreach (var s in prodSales)
+                {
+                    if (s.SaleType == SaleType.Retail)
+                    {
+                        retailQty += s.Item.Quantity;
+                        retailRev += s.Item.LineTotal;
+                    }
+                    else
+                    {
+                        wholesaleQty += s.Item.Quantity;
+                        wholesaleRev += s.Item.LineTotal;
+                    }
+                }
+            }
+
+            int claimQty = 0;
+            decimal claimVal = 0m;
+            if (claimsByProduct.TryGetValue(prod.Id, out var prodClaims))
+            {
+                claimQty = prodClaims.Sum(m => m.Quantity);
+                claimVal = claimQty * prod.WholesalePrice;
+            }
+
+            int totalQty = retailQty + wholesaleQty;
+            decimal totalRev = retailRev + wholesaleRev;
+            decimal unitCost = prod.WholesalePrice;
+            decimal totalCogs = totalQty * unitCost;
+
+            decimal retailProfit = retailRev - (retailQty * unitCost);
+            decimal wholesaleProfit = wholesaleRev - (wholesaleQty * unitCost);
+            decimal totalProfit = totalRev - totalCogs;
+
+            decimal marginPct = totalRev > 0 ? Math.Round((totalProfit / totalRev) * 100m, 1) : 0m;
+
+            string catName = categories.TryGetValue(prod.CategoryId, out var cName) ? cName : "Uncategorized";
+
+            items.Add(new ProductProductionReportItemDto(
+                prod.Id,
+                prod.SKU,
+                prod.Name,
+                catName,
+                unitCost,
+                prod.WholesalePrice,
+                prod.RetailPrice,
+                retailQty,
+                retailRev,
+                retailProfit,
+                wholesaleQty,
+                wholesaleRev,
+                wholesaleProfit,
+                totalQty,
+                totalRev,
+                totalCogs,
+                totalProfit,
+                marginPct,
+                claimQty,
+                claimVal));
+        }
+
+        items = items.OrderByDescending(i => i.TotalQuantitySold).ThenBy(i => i.ProductName).ToList();
+
+        int totalProducts = items.Count;
+        int totalVolume = items.Sum(i => i.TotalQuantitySold);
+        decimal totalRetailRev = items.Sum(i => i.RetailRevenue);
+        decimal totalRetailProfit = items.Sum(i => i.RetailProfit);
+        decimal totalWholesaleRev = items.Sum(i => i.WholesaleRevenue);
+        decimal totalWholesaleProfit = items.Sum(i => i.WholesaleProfit);
+        decimal totalCombinedRev = items.Sum(i => i.TotalRevenue);
+        decimal totalCombinedProfit = items.Sum(i => i.TotalProfit);
+        decimal overallMargin = totalCombinedRev > 0 ? Math.Round((totalCombinedProfit / totalCombinedRev) * 100m, 1) : 0m;
+        int totalClaimQty = items.Sum(i => i.ClaimQuantity);
+        decimal totalClaimVal = items.Sum(i => i.ClaimValue);
+
+        return new ProductProductionReportSummaryDto(
+            totalProducts,
+            totalVolume,
+            totalRetailRev,
+            totalRetailProfit,
+            totalWholesaleRev,
+            totalWholesaleProfit,
+            totalCombinedRev,
+            totalCombinedProfit,
+            overallMargin,
+            totalClaimQty,
+            totalClaimVal,
+            items);
+    }
+
+    // ── 10. Executive Reporting Suite Implementation (7 System Tags) ──────────────
+
+    // [SYSTEM_TAG: OVERVIEW_DASHBOARD]
+    public async Task<OverviewDashboardReportDto> GetOverviewDashboardAsync(DateTime from, DateTime to, CancellationToken ct = default)
+    {
+        var start = from.Date;
+        var end = to.Date.AddDays(1).AddTicks(-1);
+
+        var sales = await saleRepo.GetByDateRangeAsync(start, end, ct);
+        var activeSales = sales.Where(s => s.Status == SaleStatus.Completed).ToList();
+
+        decimal grossRevenue = activeSales.Sum(s => s.TotalAmount);
+        decimal cogs = activeSales.SelectMany(s => s.Items).Sum(i => i.Quantity * i.UnitPrice); // Approximate cost from sale item
+        
+        var expenses = await expenseRepo.GetByDateRangeAsync(start, end, ct);
+        decimal fixedExpenses = expenses.Where(e => e.Category != null && e.Category.Name.Contains("Rent", StringComparison.OrdinalIgnoreCase)).Sum(e => e.Amount);
+        decimal variableExpenses = expenses.Sum(e => e.Amount) - fixedExpenses;
+
+        decimal netProfit = grossRevenue - cogs - (fixedExpenses + variableExpenses);
+        decimal aov = activeSales.Count > 0 ? Math.Round(grossRevenue / activeSales.Count, 2) : 0m;
+
+        // MoM Calculation context
+        var prevStart = start.AddMonths(-1);
+        var prevEnd = end.AddMonths(-1);
+        var prevSales = await saleRepo.GetByDateRangeAsync(prevStart, prevEnd, ct);
+        decimal prevRevenue = prevSales.Where(s => s.Status == SaleStatus.Completed).Sum(s => s.TotalAmount);
+        decimal momGrowth = prevRevenue > 0 ? Math.Round(((grossRevenue - prevRevenue) / prevRevenue) * 100m, 1) : 0m;
+        decimal grossMargin = grossRevenue > 0 ? Math.Round(((grossRevenue - cogs) / grossRevenue) * 100m, 1) : 0m;
+
+        return new OverviewDashboardReportDto(
+            grossRevenue,
+            cogs,
+            fixedExpenses,
+            variableExpenses,
+            netProfit,
+            aov,
+            momGrowth,
+            grossMargin);
+    }
+
+    // [SYSTEM_TAG: REVENUE_VELOCITY_REPORT]
+    public async Task<RevenueVelocityReportDto> GetRevenueVelocityReportAsync(DateTime from, DateTime to, CancellationToken ct = default)
+    {
+        var start = from.Date;
+        var end = to.Date.AddDays(1).AddTicks(-1);
+
+        var sales = await saleRepo.GetByDateRangeAsync(start, end, ct);
+        var activeSales = sales.Where(s => s.Status == SaleStatus.Completed).ToList();
+
+        decimal grossSales = activeSales.Sum(s => s.SubTotal);
+        decimal netSales = activeSales.Sum(s => s.TotalAmount);
+        decimal tax = 0m; // No direct TaxAmount property on Sale entity
+
+        var paymentSplits = activeSales
+            .GroupBy(s => s.PaymentMethod.ToString())
+            .Select(g => new PaymentSplitDto(g.Key, g.Sum(s => s.TotalAmount), g.Count()))
+            .ToList();
+
+        var velocitySpikes = await GetHourlySalesAsync(from.Date, ct);
+
+        return new RevenueVelocityReportDto(
+            grossSales,
+            netSales,
+            tax,
+            paymentSplits,
+            velocitySpikes);
+    }
+
+    // [SYSTEM_TAG: INVENTORY_VALUATION_LEAN]
+    public async Task<InventoryLeanReportDto> GetInventoryLeanReportAsync(CancellationToken ct = default)
+    {
+        var products = await productRepo.GetAllAsync(ct) ?? [];
+        var activeProducts = products.Where(p => p.IsActive).ToList();
+
+        decimal totalValuation = activeProducts.Sum(p => p.StockQuantity * p.WholesalePrice);
+        var lowStockItems = await GetLowStockReportAsync(ct) ?? [];
+        int lowStockCount = lowStockItems.Count;
+
+        DateTime cutoffIdle = DateTime.UtcNow.AddDays(-45);
+        int deadStockCount = activeProducts.Count(p => p.StockQuantity > 0 && (p.UpdatedAt == null ? p.CreatedAt : p.UpdatedAt.Value) < cutoffIdle);
+
+        var categories = await categoryRepo.GetAllAsync(ct) ?? [];
+        var categoryDict = categories.ToDictionary(c => c.Id, c => c.Name);
+
+
+        var supplierValuations = activeProducts
+            .GroupBy(p => p.CategoryId)
+            .Select(g => new SupplierValuationDto(
+                categoryDict.TryGetValue(g.Key, out var name) ? name : "General Category",
+                g.Sum(p => p.StockQuantity * p.WholesalePrice),
+                g.Count()))
+            .OrderByDescending(v => v.TotalValuation)
+            .ToList();
+
+        decimal turnoverRate = activeProducts.Count > 0 ? Math.Round((decimal)activeProducts.Count(p => p.StockQuantity > 0) / activeProducts.Count, 2) : 0m;
+
+        return new InventoryLeanReportDto(
+            totalValuation,
+            lowStockCount,
+            turnoverRate,
+            deadStockCount,
+            lowStockItems,
+            supplierValuations);
+    }
+
+    // [SYSTEM_TAG: OPERATIONAL_EXPENSE_LEDGER]
+    public async Task<ExpenseLedgerReportDto> GetExpenseLedgerReportAsync(DateTime from, DateTime to, CancellationToken ct = default)
+    {
+        var start = from.Date;
+        var end = to.Date.AddDays(1).AddTicks(-1);
+
+        var expenses = await expenseRepo.GetByDateRangeAsync(start, end, ct);
+        decimal fixedCosts = expenses.Where(e => e.Category != null && (e.Category.Name.Contains("Rent", StringComparison.OrdinalIgnoreCase) || e.Category.Name.Contains("Utility", StringComparison.OrdinalIgnoreCase))).Sum(e => e.Amount);
+        decimal variableCosts = expenses.Sum(e => e.Amount) - fixedCosts;
+
+        decimal fuelTotal = expenses.Where(e => e.Description.Contains("Fuel", StringComparison.OrdinalIgnoreCase)).Sum(e => e.Amount);
+        decimal vehicleMaint = expenses.Where(e => e.Description.Contains("Vehicle", StringComparison.OrdinalIgnoreCase) || e.Description.Contains("Maintenance", StringComparison.OrdinalIgnoreCase)).Sum(e => e.Amount);
+        decimal techTools = expenses.Where(e => e.Description.Contains("Tool", StringComparison.OrdinalIgnoreCase) || e.Description.Contains("Tech", StringComparison.OrdinalIgnoreCase)).Sum(e => e.Amount);
+
+        var categoryBreakdown = expenses
+            .GroupBy(e => e.Category?.Name ?? "General")
+            .Select(g => new ExpenseCategoryBreakdownDto(
+                g.Key,
+                g.Sum(e => e.Amount),
+                g.Key.Contains("Rent", StringComparison.OrdinalIgnoreCase) ? "Fixed" : "Variable"))
+            .ToList();
+
+        return new ExpenseLedgerReportDto(
+            fixedCosts,
+            variableCosts,
+            fuelTotal,
+            vehicleMaint,
+            techTools,
+            categoryBreakdown);
+    }
+
+    // [SYSTEM_TAG: FLEET_TECH_PAYROLL_ANALYTICS]
+    public async Task<FleetTechPayrollReportDto> GetFleetTechPayrollReportAsync(DateTime from, DateTime to, CancellationToken ct = default)
+    {
+        var users = userRepo != null ? await userRepo.GetAllAsync(ct) : new List<User>();
+        var payrollList = new List<PayrollConsolidationDto>();
+
+        var sales = await saleRepo.GetByDateRangeAsync(from, to, ct);
+        decimal totalCommissions = 0m;
+        decimal totalDriverPayouts = 0m;
+        decimal totalTechBonuses = 0m;
+        decimal totalAdminSalesSalary = 0m;
+
+        foreach (var u in users)
+        {
+            decimal comm = u.Role == UserRole.Worker ? sales.Sum(s => s.TotalAmount) * 0.02m : 0m;
+            decimal driverBonus = u.DeliveryTrips.Where(dt => dt.DispatchedAtUtc >= from && dt.DispatchedAtUtc <= to).Sum(dt => dt.BonusPayout);
+            decimal techBonus = u.ServiceTickets.Where(st => st.CreatedDateUtc >= from && st.CreatedDateUtc <= to).Sum(st => st.TechnicianBonus);
+
+            decimal totalEarned = u.BaseSalary + comm + driverBonus + techBonus;
+
+            totalAdminSalesSalary += u.BaseSalary;
+            totalCommissions += comm;
+            totalDriverPayouts += driverBonus;
+            totalTechBonuses += techBonus;
+
+            payrollList.Add(new PayrollConsolidationDto(
+                u.Id,
+                u.FullName,
+                u.Role.ToString(),
+                u.BaseSalary,
+                comm,
+                driverBonus,
+                techBonus,
+                totalEarned));
+        }
+
+        return new FleetTechPayrollReportDto(
+            totalAdminSalesSalary,
+            totalCommissions,
+            totalDriverPayouts,
+            totalTechBonuses,
+            payrollList);
+    }
+
+    // [SYSTEM_TAG: CUSTOMER_LIFETIME_VALUATION]
+    public async Task<CustomerValuationReportDto> GetCustomerValuationReportAsync(DateTime from, DateTime to, CancellationToken ct = default)
+    {
+        var customers = await customerRepo.GetAllAsync(ct);
+        var activeCustomers = customers.Where(c => c.IsActive).ToList();
+
+        var sales = await saleRepo.GetByDateRangeAsync(from, to, ct);
+        var customerSales = sales
+            .Where(s => s.CustomerId.HasValue && s.Status == SaleStatus.Completed)
+            .GroupBy(s => s.CustomerId!.Value)
+            .ToDictionary(g => g.Key, g => new { TotalSpend = g.Sum(s => s.TotalAmount), Count = g.Count() });
+
+        int newCustomers = activeCustomers.Count(c => c.CreatedAt >= from && c.CreatedAt <= to);
+        int returningCustomers = activeCustomers.Count - newCustomers;
+        decimal ratio = returningCustomers > 0 ? Math.Round((decimal)newCustomers / returningCustomers, 2) : newCustomers;
+
+        var vipClients = activeCustomers
+            .Select(c => new CustomerVipDto(
+                c.Id,
+                c.Name,
+                customerSales.TryGetValue(c.Id, out var cs) ? cs.TotalSpend : 0m,
+                customerSales.TryGetValue(c.Id, out var cs2) ? cs2.Count : 0))
+            .OrderByDescending(v => v.TotalSpend)
+            .Take(10)
+            .ToList();
+
+        var receivables = activeCustomers
+            .Where(c => c.OutstandingBalance > 0)
+            .Select(c => new AccountsReceivableAgingDto(
+                c.Id,
+                c.Name,
+                c.OutstandingBalance,
+                30,
+                75.0m))
+            .ToList();
+
+        return new CustomerValuationReportDto(
+            newCustomers,
+            returningCustomers,
+            ratio,
+            vipClients,
+            receivables);
+    }
+
+
+    // [SYSTEM_TAG: ITEM_PERFORMANCE_MATRIX]
+    public async Task<ItemPerformanceMatrixReportDto> GetItemPerformanceMatrixAsync(DateTime from, DateTime to, CancellationToken ct = default)
+    {
+        var products = await productRepo.GetAllAsync(ct);
+        var sales = await saleRepo.GetByDateRangeAsync(from, to, ct);
+        var completedSales = sales.Where(s => s.Status == SaleStatus.Completed).ToList();
+
+        var productSalesDict = completedSales
+            .SelectMany(s => s.Items)
+            .GroupBy(i => i.ProductId)
+            .ToDictionary(g => g.Key, g => g.Sum(i => i.Quantity));
+
+        var skuPoints = new List<SkuScatterPointDto>();
+        decimal avgVelocity = productSalesDict.Count > 0 ? (decimal)productSalesDict.Values.Average() : 0m;
+        decimal avgMargin = products.Count > 0 ? products.Average(p => p.RetailPrice > 0 ? ((p.RetailPrice - p.WholesalePrice) / p.RetailPrice) * 100m : 0m) : 0m;
+
+        foreach (var p in products.Where(p => p.IsActive))
+        {
+            decimal margin = p.RetailPrice - p.WholesalePrice;
+            decimal marginPct = p.RetailPrice > 0 ? Math.Round((margin / p.RetailPrice) * 100m, 1) : 0m;
+            int velocity = productSalesDict.TryGetValue(p.Id, out var vel) ? vel : 0;
+
+            string quadrant = (velocity >= avgVelocity, marginPct >= avgMargin) switch
+            {
+                (true, true) => "Stars",
+                (true, false) => "CashCows",
+                (false, true) => "QuestionMarks",
+                (false, false) => "DeadWeight"
+            };
+
+            skuPoints.Add(new SkuScatterPointDto(
+                p.Id,
+                p.SKU,
+                p.Name,
+                margin,
+                marginPct,
+                velocity,
+                0.5, // Defect rate default
+                quadrant));
+        }
+
+        // Calculate Affinity Pairs (items co-purchased in sales)
+        var affinityDict = new Dictionary<(int, int), int>();
+        foreach (var sale in completedSales)
+        {
+            var pIds = sale.Items.Select(i => i.ProductId).Distinct().OrderBy(id => id).ToList();
+            for (int i = 0; i < pIds.Count; i++)
+            {
+                for (int j = i + 1; j < pIds.Count; j++)
+                {
+                    var pair = (pIds[i], pIds[j]);
+                    affinityDict[pair] = affinityDict.TryGetValue(pair, out var count) ? count + 1 : 1;
+                }
+            }
+        }
+
+        var prodNameDict = products.ToDictionary(p => p.Id, p => p.Name);
+        var affinityPairs = affinityDict
+            .OrderByDescending(kvp => kvp.Value)
+            .Take(10)
+            .Select(kvp => new ProductAffinityPairDto(
+                prodNameDict.TryGetValue(kvp.Key.Item1, out var n1) ? n1 : $"Item {kvp.Key.Item1}",
+                prodNameDict.TryGetValue(kvp.Key.Item2, out var n2) ? n2 : $"Item {kvp.Key.Item2}",
+                kvp.Value,
+                completedSales.Count > 0 ? Math.Round((double)kvp.Value / completedSales.Count, 2) : 0.0))
+            .ToList();
+
+        return new ItemPerformanceMatrixReportDto(skuPoints, affinityPairs);
+    }
+
+    // ── EMPLOYEE PAYROLL & EXPENSE REPORT ──────────────────────────────────────
+
+    public async Task<EmployeeReportSummaryDto> GetEmployeeReportSummaryAsync(DateTime from, DateTime to, CancellationToken ct = default)
+    {
+        var start = from.Date;
+        var end   = to.Date.AddDays(1).AddTicks(-1);
+
+        var users = userRepo != null ? await userRepo.GetAllAsync(ct) : [];
+        var activeUsers = users.Where(u => u.IsActive).ToList();
+
+        var allExpenses = await expenseRepo.GetAllAsync(ct);
+        var categories  = await expenseRepo.GetCategoriesAsync(true, ct);
+        var wagesCategory = categories.FirstOrDefault(c => c.Name.Equals("Wages & Salaries", StringComparison.OrdinalIgnoreCase));
+        int wagesCategoryId = wagesCategory?.Id ?? 0;
+
+        var periodExpenses = allExpenses.Where(e => e.ExpenseDate >= start && e.ExpenseDate <= end).ToList();
+
+        var employeeDtos = new List<EmployeeReportDto>();
+        decimal grandTotalPaid = 0m;
+        decimal grandTotalAdvances = 0m;
+        decimal grandTotalBudget = 0m;
+
+        var allUsersMap = users.ToDictionary(u => u.Id, u => u.FullName);
+
+        foreach (var emp in activeUsers)
+        {
+            grandTotalBudget += emp.BaseSalary;
+
+            var empExpenses = periodExpenses.Where(e =>
+                (!string.IsNullOrWhiteSpace(e.ReferenceNo) && e.ReferenceNo.StartsWith($"EMP-{emp.Id}", StringComparison.OrdinalIgnoreCase))
+                || (e.CategoryId == wagesCategoryId && e.Description.Contains(emp.FullName, StringComparison.OrdinalIgnoreCase))
+                || (e.CategoryId == wagesCategoryId && e.Description.Contains($"EMP-{emp.Id}", StringComparison.OrdinalIgnoreCase))
+            ).OrderByDescending(e => e.ExpenseDate).ToList();
+
+            var paymentHistory = new List<EmployeePaymentRecordDto>();
+            decimal totalSalaryPaid = 0m;
+            decimal totalAdvancesPaid = 0m;
+            DateTime? lastPaidAt = null;
+
+            foreach (var exp in empExpenses)
+            {
+                bool isAdvance = exp.Description.Contains("Advance", StringComparison.OrdinalIgnoreCase) ||
+                                 (!string.IsNullOrWhiteSpace(exp.ReferenceNo) && exp.ReferenceNo.Contains("ADVANCE", StringComparison.OrdinalIgnoreCase));
+
+                string paymentType = isAdvance ? "Advance Payment" : "Total Sum";
+                if (isAdvance)
+                    totalAdvancesPaid += exp.Amount;
+                else
+                    totalSalaryPaid += exp.Amount;
+
+                if (lastPaidAt == null || exp.ExpenseDate > lastPaidAt)
+                    lastPaidAt = exp.ExpenseDate;
+
+                string recordedByName = allUsersMap.TryGetValue(exp.RecordedByUserId, out var name) ? name : "Admin";
+
+                paymentHistory.Add(new EmployeePaymentRecordDto(
+                    exp.Id,
+                    exp.ExpenseDate,
+                    exp.Amount,
+                    paymentType,
+                    exp.Description,
+                    exp.ReferenceNo,
+                    recordedByName));
+            }
+
+            grandTotalPaid += totalSalaryPaid;
+            grandTotalAdvances += totalAdvancesPaid;
+
+            decimal totalEarnings = emp.BaseSalary;
+            decimal netBalanceDue = Math.Max(0m, totalEarnings - (totalSalaryPaid + totalAdvancesPaid));
+
+            employeeDtos.Add(new EmployeeReportDto(
+                emp.Id,
+                emp.FullName,
+                emp.Username,
+                emp.Role.ToString(),
+                emp.BaseSalary,
+                totalEarnings,
+                totalSalaryPaid,
+                totalAdvancesPaid,
+                netBalanceDue,
+                lastPaidAt,
+                paymentHistory));
+        }
+
+        return new EmployeeReportSummaryDto(
+            activeUsers.Count,
+            grandTotalBudget,
+            grandTotalPaid,
+            grandTotalAdvances,
+            employeeDtos);
+    }
+
+    public async Task RecordEmployeePaymentAsync(CreateEmployeePaymentRequest request, int recordedByUserId, CancellationToken ct = default)
+    {
+        if (request.Amount <= 0)
+            throw new ArgumentException("Payment amount must be greater than zero.", nameof(request.Amount));
+
+        var categories = await expenseRepo.GetCategoriesAsync(true, ct);
+        var wagesCat = categories.FirstOrDefault(c => c.Name.Equals("Wages & Salaries", StringComparison.OrdinalIgnoreCase));
+        if (wagesCat == null)
+        {
+            wagesCat = ExpenseCategory.Create("Wages & Salaries", "Staff payroll, salary payouts, and advances");
+            await expenseRepo.AddCategoryAsync(wagesCat, ct);
+        }
+
+        string userTag = request.EmployeeId > 0 ? $"EMP-{request.EmployeeId}" : "EMP-0";
+        string pType = string.IsNullOrWhiteSpace(request.PaymentType) ? "Total Sum" : request.PaymentType.Trim();
+        string cleanPType = pType.Equals("Advance Payment", StringComparison.OrdinalIgnoreCase) ? "ADVANCE" : "TOTAL_SUM";
+
+        string referenceNo = $"{userTag}:{cleanPType}";
+        string notes = !string.IsNullOrWhiteSpace(request.Description) ? request.Description.Trim() : $"{pType} Salary Payment";
+        string description = $"[{pType}] {notes}";
+
+        DateTime paymentTime = request.PaymentDate ?? DateTime.UtcNow;
+        int catId = wagesCat.Id > 0 ? wagesCat.Id : 1;
+
+        var expense = Expense.Create(
+            catId,
+            request.Amount,
+            description,
+            recordedByUserId,
+            paymentTime,
+            referenceNo);
+
+        await expenseRepo.AddAsync(expense, ct);
+    }
+
+    private static (DateTime StartUtc, DateTime EndUtc) ToUtcRange(DateTime from, DateTime to)
+    {
+        var startLocal = from.Kind == DateTimeKind.Utc ? from.ToLocalTime().Date : from.Date;
+        var endLocal = to.Kind == DateTimeKind.Utc ? to.ToLocalTime().Date : to.Date;
+
+        var startUtc = DateTime.SpecifyKind(startLocal, DateTimeKind.Local).ToUniversalTime();
+        var endUtc = DateTime.SpecifyKind(endLocal.AddDays(1).AddTicks(-1), DateTimeKind.Local).ToUniversalTime();
+        return (startUtc, endUtc);
+    }
 }
+
+
+
 

@@ -44,18 +44,24 @@ public sealed class SupplierListViewModel : ViewModelBase
     }
 
     public event Action<SupplierDto?>? EditRequested;
+    public event Action<SupplierDto>? RecordEntitlementRequested;
+    public event Action? ImportRequested;
 
-    public RelayCommand AddCommand     { get; }
-    public RelayCommand<SupplierDto> EditCommand          { get; }
-    public RelayCommand<SupplierDto> ToggleActiveCommand  { get; }
+    public RelayCommand AddCommand { get; }
+    public RelayCommand ImportCommand { get; }
+    public RelayCommand<SupplierDto> EditCommand { get; }
+    public RelayCommand<SupplierDto> ToggleActiveCommand { get; }
+    public RelayCommand<SupplierDto> RecordEntitlementCommand { get; }
     public RelayCommand RefreshCommand { get; }
 
     public SupplierListViewModel(ISupplierService supplierService)
     {
         _supplierService = supplierService;
-        AddCommand    = new RelayCommand(() => EditRequested?.Invoke(null));
-        EditCommand   = new RelayCommand<SupplierDto>(dto => EditRequested?.Invoke(dto));
+        AddCommand = new RelayCommand(() => EditRequested?.Invoke(null));
+        ImportCommand = new RelayCommand(() => ImportRequested?.Invoke());
+        EditCommand = new RelayCommand<SupplierDto>(dto => EditRequested?.Invoke(dto));
         ToggleActiveCommand = new RelayCommand<SupplierDto>(async dto => await ToggleAsync(dto));
+        RecordEntitlementCommand = new RelayCommand<SupplierDto>(dto => { if (dto is not null) RecordEntitlementRequested?.Invoke(dto); });
         RefreshCommand = new RelayCommand(async () => await LoadAsync());
     }
 

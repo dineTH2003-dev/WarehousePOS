@@ -1,0 +1,92 @@
+<Window x:Class="WarehousePOS.Desktop.Views.Reports.ProcessEmployeePaymentDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:behaviors="clr-namespace:WarehousePOS.Desktop.Behaviors"
+        Title="Record Employee Payment / Expense"
+        Icon="/Resources/Images/app-icon.png"
+        SizeToContent="Height" Width="520"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        Background="{StaticResource BackgroundBrush}">
+
+    <Border Style="{StaticResource Card}" Margin="20" Padding="20">
+        <StackPanel behaviors:ArrowNavigationBehavior.IsEnabled="True">
+            <!-- Header -->
+            <StackPanel Margin="0,0,0,16">
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="💵 " FontSize="18" VerticalAlignment="Center"/>
+                    <TextBlock Text="Record Employee Payment / Expense" Style="{StaticResource H3}"/>
+                </StackPanel>
+                <TextBlock Text="Log employee salary payouts, total sums, or advance payments. This updates staff expenses automatically."
+                           Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" Margin="0,4,0,0" TextWrapping="Wrap"/>
+            </StackPanel>
+
+            <Separator Margin="0,0,0,16"/>
+
+            <!-- Form Body -->
+            <StackPanel Margin="0,0,0,16">
+                <!-- Employee Selection -->
+                <TextBlock Text="Select Employee *" Style="{StaticResource LabelText}" Margin="0,0,0,4"/>
+                <ComboBox x:Name="CmbEmployees" DisplayMemberPath="DisplayName" Height="38" Margin="0,0,0,14" Style="{StaticResource FormComboBox}" SelectionChanged="CmbEmployees_SelectionChanged"/>
+
+                <!-- Employee Base Salary Preview Card -->
+                <Border x:Name="PnlEmployeeDetails" Background="{StaticResource SurfaceAltBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,0,0,14" Visibility="Collapsed">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0">
+                            <TextBlock x:Name="TxtEmpName" FontWeight="Bold" FontSize="13" Foreground="{StaticResource PrimaryDarkBrush}"/>
+                            <TextBlock x:Name="TxtEmpRole" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,2,0,0"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" HorizontalAlignment="Right">
+                            <TextBlock Text="Base Salary" FontSize="10" Foreground="{StaticResource TextSecondaryBrush}" HorizontalAlignment="Right"/>
+                            <TextBlock x:Name="TxtEmpBaseSalary" FontWeight="Bold" FontSize="14" Foreground="{StaticResource SuccessBrush}" HorizontalAlignment="Right"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- Payment Type Selection (Total Sum vs Advance Payment) -->
+                <TextBlock Text="Payment Type *" Style="{StaticResource LabelText}" Margin="0,0,0,4"/>
+                <ComboBox x:Name="CmbPaymentType" Height="38" Margin="0,0,0,14" Style="{StaticResource FormComboBox}">
+                    <ComboBoxItem Content="Total Sum (Full Salary Payout)" IsSelected="True"/>
+                    <ComboBoxItem Content="Advance Payment (Salary Advance)"/>
+                </ComboBox>
+
+                <!-- Amount (Rs.) -->
+                <TextBlock Text="Payment Amount (Rs.) *" Style="{StaticResource LabelText}" Margin="0,0,0,4"/>
+                <TextBox x:Name="TxtAmount" Style="{StaticResource FormTextBox}" MinHeight="38" Margin="0,0,0,14" Text="0.00"/>
+
+                <!-- Payment Date & Time -->
+                <Grid Margin="0,0,0,14">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="12"/>
+                        <ColumnDefinition Width="110"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="Payment Date *" Style="{StaticResource LabelText}" Margin="0,0,0,4"/>
+                        <DatePicker x:Name="DpPaymentDate" Height="38"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Text="Time (HH:mm) *" Style="{StaticResource LabelText}" Margin="0,0,0,4"/>
+                        <TextBox x:Name="TxtPaymentTime" Style="{StaticResource FormTextBox}" MinHeight="38" Text="12:00"/>
+                    </StackPanel>
+                </Grid>
+
+                <!-- Description / Notes -->
+                <TextBlock Text="Description / Reference Notes" Style="{StaticResource LabelText}" Margin="0,0,0,4"/>
+                <TextBox x:Name="TxtNotes" Style="{StaticResource FormTextBox}" MinHeight="50" TextWrapping="Wrap" AcceptsReturn="True"/>
+            </StackPanel>
+
+            <!-- Buttons -->
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
+                <Button Content="Cancel" Style="{StaticResource SecondaryButton}" Margin="0,0,10,0" Height="38" Padding="18,0" Click="BtnCancel_Click"/>
+                <Button Content="💾 Process Payment &amp; Log Expense" Style="{StaticResource PrimaryButton}" Height="38" Padding="20,0" Click="BtnSubmit_Click"/>
+            </StackPanel>
+        </StackPanel>
+    </Border>
+</Window>

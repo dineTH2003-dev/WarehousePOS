@@ -6,8 +6,4 @@ public sealed record NotificationSettingsDto(
     string BrevoSenderName,
     string OwnerEmail,
     bool IsEmailLowStockAlertEnabled,
-    bool IsEmailMonthlyReportEnabled,
-    bool IsWhatsAppEnabled,
-    string OwnerPhone,
-    string WhatsAppGatewayUrl,
-    string WhatsAppApiKey);
+    bool IsEmailMonthlyReportEnabled);

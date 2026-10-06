@@ -28,6 +28,9 @@ public sealed class CustomerTests
     [InlineData("07123456789")]
     [InlineData("07123abc45")]
     [InlineData("07123-45678")]
+    [InlineData("1234567890")]
+    [InlineData("071234567")]
+    [InlineData("071")]
     public void Create_InvalidPhone_ShouldThrow(string phone)
     {
         var action = () => Customer.Create("Test", phone: phone);
@@ -253,5 +256,53 @@ public sealed class SaleTests
         var item = sale.Items.First();
         var action = () => item.RecordClaim(3);
         action.Should().Throw<BusinessRuleViolationException>();
+    }
+
+    [Fact]
+    public void SaleItem_RecordClaim_WhenAlreadyReturned_EnforcesQuantityLimit()
+    {
+        var sale = Sale.Create(SaleType.Retail, createdByUserId: 1);
+        var product = CreateTestProduct(1, "Item", retail: 100, wholesale: 90);
+        sale.AddItem(product, quantity: 2, unitPrice: 100);
+
+        var item = sale.Items.First();
+        item.RecordReturn(1); // 1 returned
+
+        item.UnclaimedQuantity.Should().Be(1);
+        item.ReturnableQuantity.Should().Be(1);
+
+        // Attempting to claim 2 units when 1 is already returned must throw
+        var action = () => item.RecordClaim(2);
+        action.Should().Throw<BusinessRuleViolationException>().WithMessage("*eligible*");
+
+        // Claiming the 1 remaining eligible unit succeeds
+        item.RecordClaim(1);
+        item.ClaimedQuantity.Should().Be(1);
+        item.UnclaimedQuantity.Should().Be(0);
+        item.ReturnableQuantity.Should().Be(0);
+    }
+
+    [Fact]
+    public void SaleItem_RecordReturn_WhenAlreadyClaimed_EnforcesQuantityLimit()
+    {
+        var sale = Sale.Create(SaleType.Retail, createdByUserId: 1);
+        var product = CreateTestProduct(1, "Item", retail: 100, wholesale: 90);
+        sale.AddItem(product, quantity: 3, unitPrice: 100);
+
+        var item = sale.Items.First();
+        item.RecordClaim(2); // 2 claimed
+
+        item.UnclaimedQuantity.Should().Be(1);
+        item.ReturnableQuantity.Should().Be(1);
+
+        // Attempting to return 2 units when 2 are already claimed must throw
+        var action = () => item.RecordReturn(2);
+        action.Should().Throw<BusinessRuleViolationException>().WithMessage("*remain on this line*");
+
+        // Returning the 1 remaining unit succeeds
+        item.RecordReturn(1);
+        item.ReturnedQuantity.Should().Be(1);
+        item.UnclaimedQuantity.Should().Be(0);
+        item.ReturnableQuantity.Should().Be(0);
     }
 }

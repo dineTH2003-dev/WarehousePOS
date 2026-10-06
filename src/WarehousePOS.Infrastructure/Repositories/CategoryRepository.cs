@@ -31,7 +31,15 @@ public sealed class CategoryRepository(AppDbContext db) : ICategoryRepository
 
     public async Task UpdateAsync(Category category, CancellationToken ct = default)
     {
-        db.Categories.Update(category);
+        var entry = db.ChangeTracker.Entries<Category>().FirstOrDefault(e => e.Entity.Id == category.Id);
+        if (entry is null)
+        {
+            db.Entry(category).State = EntityState.Modified;
+        }
+        else if (!ReferenceEquals(entry.Entity, category))
+        {
+            entry.CurrentValues.SetValues(category);
+        }
         await db.SaveChangesAsync(ct);
     }
 }

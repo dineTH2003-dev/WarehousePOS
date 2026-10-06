@@ -51,6 +51,12 @@ public sealed class ExpenseRepository(AppDbContext db) : IExpenseRepository
                 .OrderByDescending(e => e.ExpenseDate)
                 .ToListAsync(ct);
 
+    public async Task<IReadOnlyList<Expense>> GetBySaleIdAsync(int saleId, CancellationToken ct = default) =>
+        await db.Expenses.Include(e => e.Category)
+                .Where(e => e.SaleId == saleId)
+                .OrderByDescending(e => e.ExpenseDate)
+                .ToListAsync(ct);
+
     public async Task AddAsync(Expense expense, CancellationToken ct = default)
     {
         await db.Expenses.AddAsync(expense, ct);

@@ -30,7 +30,9 @@ public sealed record PurchaseDto(
     string PaymentMethod = "Cash",
     decimal PaidAmount = 0,
     decimal RemainingBalance = 0,
-    string? PaymentDetails = null);
+    string? PaymentDetails = null,
+    decimal SubTotal = 0,
+    decimal DiscountAmount = 0);
 
 public sealed record CreatePurchaseRequest(
     int SupplierId,
@@ -39,7 +41,8 @@ public sealed record CreatePurchaseRequest(
     IReadOnlyList<CreatePurchaseItemRequest> Items,
     string PaymentMethod = "Cash",
     decimal PaidAmount = 0,
-    string? PaymentDetails = null);
+    string? PaymentDetails = null,
+    decimal DiscountAmount = 0);
 
 public sealed record CreatePurchaseItemRequest(
     int ProductId,

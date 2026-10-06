@@ -10,7 +10,10 @@
         MinHeight="600"
         MinWidth="1024"
         WindowStartupLocation="CenterScreen"
-        Background="{StaticResource BackgroundBrush}">
+        Background="{StaticResource BackgroundBrush}"
+        FontFamily="{StaticResource AppFontFamily}"
+        TextOptions.TextRenderingMode="ClearType"
+        TextOptions.TextFormattingMode="Display">
 
     <Window.Resources>
         <!-- Sidebar nav button style -->
@@ -21,7 +24,7 @@
             <Setter Property="Padding"           Value="16,11"/>
             <Setter Property="HorizontalContentAlignment" Value="Left"/>
             <Setter Property="FontSize"          Value="14"/>
-            <Setter Property="FontFamily"        Value="Segoe UI"/>
+            <Setter Property="FontFamily"        Value="{StaticResource AppFontFamily}"/>
             <Setter Property="FontWeight"        Value="SemiBold"/>
             <Setter Property="Cursor"            Value="Hand"/>
             <Setter Property="FocusVisualStyle"  Value="{x:Null}"/>
@@ -152,6 +155,10 @@
                             Content="🖥️  Point of Sale"
                             Style="{StaticResource NavButton}"
                             Click="BtnPos_Click"/>
+                    <Button x:Name="BtnBillHistory"
+                            Content="🧾  Bill History"
+                            Style="{StaticResource NavButton}"
+                            Click="BtnBillHistory_Click"/>
                     <Button x:Name="BtnProducts"
                             Content="📦  Products"
                             Style="{StaticResource NavButton}"

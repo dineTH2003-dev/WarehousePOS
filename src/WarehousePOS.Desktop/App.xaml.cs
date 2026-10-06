@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
+using System.Globalization;
 using System.IO;
 using System.Windows;
 using System.Windows.Threading;
@@ -42,6 +43,14 @@ public partial class App : System.Windows.Application
         DispatcherUnhandledException += OnDispatcherUnhandledException;
         // Catch unhandled exceptions on background threads
         AppDomain.CurrentDomain.UnhandledException += OnDomainUnhandledException;
+        // Catch unobserved task exceptions on asynchronous background tasks
+        TaskScheduler.UnobservedTaskException += OnUnobservedTaskException;
+
+        // ── Regional Culture Normalization ───────────────────────
+        var culture = (CultureInfo)CultureInfo.InvariantCulture.Clone();
+        culture.NumberFormat.CurrencySymbol = "Rs. ";
+        CultureInfo.DefaultThreadCurrentCulture = culture;
+        CultureInfo.DefaultThreadCurrentUICulture = culture;
 
         try
         {
@@ -80,6 +89,7 @@ public partial class App : System.Windows.Application
                     // "cannot resolve Scoped service from root provider" errors.
                     services.AddScoped<LoginViewModel>();
                     services.AddScoped<PosViewModel>();
+                    services.AddScoped<BillHistoryViewModel>();
                     services.AddScoped<ProductListViewModel>();
                     services.AddScoped<ProductFormViewModel>();
                     services.AddScoped<PurchasingViewModel>();
@@ -96,6 +106,7 @@ public partial class App : System.Windows.Application
 
                     // ── Views (Pages) ─────────────────────────────
                     services.AddScoped<PosView>();
+                    services.AddScoped<BillHistoryView>();
                     services.AddScoped<ProductListView>();
                     services.AddScoped<PurchasingView>();
                     services.AddScoped<CategoryManagementView>();
@@ -117,6 +128,7 @@ public partial class App : System.Windows.Application
 
             // ── Register navigation routes ────────────────────────
             NavigationService.Register<PosViewModel,                        Views.Sales.PosView>();
+            NavigationService.Register<BillHistoryViewModel,                Views.Sales.BillHistoryView>();
             NavigationService.Register<ProductListViewModel,                Views.Products.ProductListView>();
             NavigationService.Register<PurchasingViewModel,                 Views.Purchasing.PurchasingView>();
             NavigationService.Register<CategoryManagementViewModel,         Views.Products.CategoryManagementView>();
@@ -213,10 +225,28 @@ public partial class App : System.Windows.Application
 
     protected override async void OnExit(ExitEventArgs e)
     {
+        DispatcherUnhandledException -= OnDispatcherUnhandledException;
+        AppDomain.CurrentDomain.UnhandledException -= OnDomainUnhandledException;
+        TaskScheduler.UnobservedTaskException -= OnUnobservedTaskException;
+
         try
         {
             if (_host is not null)
             {
+                // Checkpoint and truncate WAL so the main DB file is fully up-to-date
+                using (var scope = _host.Services.CreateScope())
+                {
+                    try
+                    {
+                        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                        await db.Database.ExecuteSqlRawAsync("PRAGMA wal_checkpoint(TRUNCATE);");
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Warning(ex, "Failed to run PRAGMA wal_checkpoint on shutdown");
+                    }
+                }
+
                 var backupService = _host.Services.GetService<WarehousePOS.Application.Common.IBackupService>();
                 var cloudService = _host.Services.GetService<WarehousePOS.Application.Common.ICloudBackupService>();
                 if (backupService is not null)
@@ -310,5 +340,30 @@ public partial class App : System.Windows.Application
             Log.CloseAndFlush();
         }
         catch { }
+    }
+
+    private static void OnUnobservedTaskException(object? sender, UnobservedTaskExceptionEventArgs e)
+    {
+        try
+        {
+            Log.Error(e.Exception, "Unobserved background task exception: {Message}", e.Exception.Message);
+        }
+        catch
+        {
+            try
+            {
+                var crashLogPath = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
+                    "WarehousePOS", "Logs", "startup-crash.log");
+                File.AppendAllText(crashLogPath,
+                    $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] UNOBSERVED TASK EXCEPTION:{Environment.NewLine}" +
+                    $"{e.Exception}{Environment.NewLine}{Environment.NewLine}");
+            }
+            catch { }
+        }
+        finally
+        {
+            e.SetObserved();
+        }
     }
 }

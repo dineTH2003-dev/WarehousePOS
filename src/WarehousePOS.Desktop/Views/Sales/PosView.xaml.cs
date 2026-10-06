@@ -34,6 +34,18 @@ public partial class PosView : Page
         }
     }
 
+    private async void TxtProductSearch_PreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter)
+        {
+            e.Handled = true;
+            if (_vm != null)
+            {
+                await _vm.QuickAddFirstMatchOrBarcodeAsync();
+            }
+        }
+    }
+
     private void TxtCustomerSearch_PreviewKeyDown(object sender, KeyEventArgs e)
     {
         if (_vm == null || !_vm.IsCustomerDropDownOpen || LstCustomerResults == null)
@@ -74,6 +86,14 @@ public partial class PosView : Page
                 CommitCustomerSelection(customer);
                 e.Handled = true;
             }
+            else if (LstCustomerResults.Items.Count > 0)
+            {
+                if (LstCustomerResults.Items[0] is WarehousePOS.Application.Sales.CustomerDto firstCustomer)
+                {
+                    CommitCustomerSelection(firstCustomer);
+                    e.Handled = true;
+                }
+            }
         }
         else if (e.Key == Key.Escape)
         {
@@ -84,7 +104,17 @@ public partial class PosView : Page
 
     private void LstCustomerResults_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
     {
-        if (LstCustomerResults?.SelectedItem is WarehousePOS.Application.Sales.CustomerDto customer)
+        var dep = e.OriginalSource as System.Windows.DependencyObject;
+        while (dep != null && dep is not ListBoxItem)
+        {
+            dep = System.Windows.Media.VisualTreeHelper.GetParent(dep);
+        }
+
+        if (dep is ListBoxItem item && item.DataContext is WarehousePOS.Application.Sales.CustomerDto clickedCustomer)
+        {
+            CommitCustomerSelection(clickedCustomer);
+        }
+        else if (LstCustomerResults?.SelectedItem is WarehousePOS.Application.Sales.CustomerDto customer)
         {
             CommitCustomerSelection(customer);
         }

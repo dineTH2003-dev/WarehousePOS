@@ -69,7 +69,7 @@ public sealed class Product : AggregateRoot
         {
             Name = name.Trim(),
             SKU = sku.Trim().ToUpperInvariant(),
-            Barcode = barcode?.Trim(),
+            Barcode = string.IsNullOrWhiteSpace(barcode) ? null : barcode.Trim(),
             Description = description?.Trim(),
             RetailPrice = retailPrice,
             WholesalePrice = wholesalePrice,
@@ -163,7 +163,7 @@ public sealed class Product : AggregateRoot
 
         Name = name.Trim();
         SKU = sku.Trim().ToUpperInvariant();
-        Barcode = barcode?.Trim();
+        Barcode = string.IsNullOrWhiteSpace(barcode) ? null : barcode.Trim();
         Description = description?.Trim();
         CategoryId = categoryId;
         ReorderLevel = reorderLevel;

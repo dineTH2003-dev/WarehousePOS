@@ -31,6 +31,7 @@ public sealed class UserManagementService(
             passwordHasher.Hash(request.Password),
             request.FullName,
             request.Role);
+        user.UpdateSalaryDetails(request.BaseSalary, request.SalaryComponents, request.PaymentDueDate, request.PaymentFrequency);
         await userRepository.AddAsync(user, ct);
         return Map(user);
     }
@@ -48,6 +49,7 @@ public sealed class UserManagementService(
             throw new InvalidOperationException("At least one active Admin account must remain.");
 
         user.UpdateProfile(request.FullName, request.Role);
+        user.UpdateSalaryDetails(request.BaseSalary, request.SalaryComponents, request.PaymentDueDate, request.PaymentFrequency);
         if (!string.IsNullOrWhiteSpace(request.NewPassword))
             user.ChangePasswordHash(passwordHasher.Hash(request.NewPassword));
 
@@ -93,5 +95,5 @@ public sealed class UserManagementService(
         (await userRepository.GetAllAsync(ct)).Count(u => u.IsActive && u.Role == UserRole.Admin);
 
     private static UserDto Map(User user) =>
-        new(user.Id, user.Username, user.FullName, user.Role, user.IsActive, user.LastLoginAt);
+        new(user.Id, user.Username, user.FullName, user.Role, user.IsActive, user.LastLoginAt, user.BaseSalary, user.SalaryComponents, user.PaymentDueDate, user.PaymentFrequency);
 }

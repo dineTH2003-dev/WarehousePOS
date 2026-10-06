@@ -18,7 +18,7 @@ public sealed class BackupService(
 
     private readonly string _backupDirectory = backupDirectory ?? DefaultBackupDirectory;
 
-    public Task<string> CreateBackupAsync(CancellationToken ct = default)
+    public async Task<string> CreateBackupAsync(CancellationToken ct = default)
     {
         if (!File.Exists(dbFilePath))
             throw new FileNotFoundException($"Database file not found at: {dbFilePath}");
@@ -31,8 +31,36 @@ public sealed class BackupService(
 
         try
         {
-            // 1. Create a clean staging copy of the database
-            File.Copy(dbFilePath, tempDbPath, overwrite: true);
+            // 1. Create a clean staging copy of the database.
+            // Prefer SQLite VACUUM INTO for an atomic, consistent hot snapshot that incorporates WAL pages
+            // without locking writers or failing due to Windows file sharing locks.
+            bool vacuumSucceeded = false;
+            try
+            {
+                var connStr = new Microsoft.Data.Sqlite.SqliteConnectionStringBuilder
+                {
+                    DataSource = dbFilePath,
+                    Mode = Microsoft.Data.Sqlite.SqliteOpenMode.ReadOnly,
+                    DefaultTimeout = 10
+                }.ToString();
+
+                using var conn = new Microsoft.Data.Sqlite.SqliteConnection(connStr);
+                await conn.OpenAsync(ct);
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = "VACUUM INTO $dest";
+                cmd.Parameters.AddWithValue("$dest", tempDbPath);
+                await cmd.ExecuteNonQueryAsync(ct);
+                vacuumSucceeded = true;
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "VACUUM INTO failed; falling back to direct file copy");
+            }
+
+            if (!vacuumSucceeded)
+            {
+                File.Copy(dbFilePath, tempDbPath, overwrite: true);
+            }
 
             // 2. Compress into temporary zip
             using (var zipArchive = ZipFile.Open(tempZipPath, ZipArchiveMode.Create))
@@ -44,7 +72,7 @@ public sealed class BackupService(
             File.Move(tempZipPath, destinationZipPath, overwrite: true);
 
             logger.LogInformation("Database backup updated successfully at {Path}", destinationZipPath);
-            return Task.FromResult(destinationZipPath);
+            return destinationZipPath;
         }
         finally
         {

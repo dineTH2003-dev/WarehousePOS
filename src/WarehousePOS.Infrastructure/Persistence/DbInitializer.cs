@@ -36,6 +36,12 @@ public static class DbInitializer
             }
         }
 
+        // Configure SQLite PRAGMAs for high concurrency, WAL durability, and immediate busy retries
+        await db.Database.ExecuteSqlRawAsync("PRAGMA journal_mode = WAL;");
+        await db.Database.ExecuteSqlRawAsync("PRAGMA synchronous = NORMAL;");
+        await db.Database.ExecuteSqlRawAsync("PRAGMA busy_timeout = 5000;");
+        await db.Database.ExecuteSqlRawAsync("PRAGMA foreign_keys = ON;");
+
         // Seed Admin user if no users exist
         if (!await db.Users.AnyAsync())
         {
@@ -49,12 +55,12 @@ public static class DbInitializer
         {
             var settings = new[]
             {
-                StoreSetting.Create("STORE_NAME", "WarehousePOS Main Store", "Name of the business"),
-                StoreSetting.Create("STORE_ADDRESS", "123 Main Street, Colombo, Sri Lanka", "Store physical address"),
-                StoreSetting.Create("STORE_PHONE", "+94 11 234 5678", "Contact phone number"),
-                StoreSetting.Create("STORE_TAX_NO", "VAT-12345678-0000", "Tax Registration Number"),
-                StoreSetting.Create("RECEIPT_HEADER", "Welcome to WarehousePOS", "Text shown at top of thermal/matrix receipt"),
-                StoreSetting.Create("RECEIPT_FOOTER", "Thank you for your business! Please come again.", "Text shown at bottom of receipt")
+                StoreSetting.Create("STORE_NAME", "HAPPY PRODUCTS", "Name of the business"),
+                StoreSetting.Create("STORE_ADDRESS", "Bandaragama Rd, Waskaduwa", "Store physical address"),
+                StoreSetting.Create("STORE_PHONE", "Tel: 0711435343", "Contact phone number"),
+                StoreSetting.Create("STORE_TAX_NO", "Damro, Abans, Singer, Soft Logic, Arpico Authorised Dealer | Rg. No. B.B. 10500", "Dealer & Registration info"),
+                StoreSetting.Create("RECEIPT_HEADER", "Damro, Abans, Singer, Soft Logic, Arpico Authorised Dealer", "Text shown at top of receipt"),
+                StoreSetting.Create("RECEIPT_FOOTER", "During the warranty period, all goods must be delivered to the manufacturing facility for repairs. The company warranty or corporate bill must be presented. Items cannot be returned after sale; items should be fully inspected and accepted upon receipt.", "Text shown at bottom of receipt")
             };
             await db.StoreSettings.AddRangeAsync(settings);
         }
@@ -89,6 +95,23 @@ public static class DbInitializer
     {
         try
         {
+            await db.Database.ExecuteSqlRawAsync(@"
+                CREATE TABLE IF NOT EXISTS SupplierProductEntitlements (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    SupplierId INTEGER NOT NULL,
+                    ProductId INTEGER NOT NULL,
+                    Nature TEXT NOT NULL,
+                    Quantity INTEGER NULL,
+                    Value TEXT NULL,
+                    EventDate TEXT NOT NULL,
+                    NextEntitlementDate TEXT NULL,
+                    SpecialNotes TEXT NULL,
+                    CreatedAt TEXT NOT NULL,
+                    UpdatedAt TEXT NULL,
+                    FOREIGN KEY (SupplierId) REFERENCES Suppliers(Id) ON DELETE RESTRICT,
+                    FOREIGN KEY (ProductId) REFERENCES Products(Id) ON DELETE RESTRICT
+                );");
+
             var supplierColumns = await db.Database
                 .SqlQueryRaw<string>("SELECT name FROM pragma_table_info('Suppliers')")
                 .ToListAsync();
@@ -155,9 +178,16 @@ public static class DbInitializer
                 .SqlQueryRaw<string>("SELECT name FROM pragma_table_info('Sales')")
                 .ToListAsync();
 
-            if (saleColumns.Any() && !saleColumns.Contains("PaymentMethod", StringComparer.OrdinalIgnoreCase))
+            if (saleColumns.Any())
             {
-                await db.Database.ExecuteSqlRawAsync("ALTER TABLE Sales ADD COLUMN PaymentMethod TEXT NOT NULL DEFAULT 'Cash';");
+                if (!saleColumns.Contains("PaymentMethod", StringComparer.OrdinalIgnoreCase))
+                {
+                    await db.Database.ExecuteSqlRawAsync("ALTER TABLE Sales ADD COLUMN PaymentMethod TEXT NOT NULL DEFAULT 'Cash';");
+                }
+                if (!saleColumns.Contains("LabourCost", StringComparer.OrdinalIgnoreCase))
+                {
+                    await db.Database.ExecuteSqlRawAsync("ALTER TABLE Sales ADD COLUMN LabourCost TEXT NOT NULL DEFAULT '0';");
+                }
             }
 
             var customerColumns = await db.Database
@@ -211,6 +241,147 @@ public static class DbInitializer
                     await db.Database.ExecuteSqlRawAsync("ALTER TABLE Products ADD COLUMN PendingNewWholesalePrice TEXT NULL;");
                 }
             }
+
+            // --- Purchasing enhancements ---
+            if (purchaseColumns.Any() && !purchaseColumns.Contains("DiscountAmount", StringComparer.OrdinalIgnoreCase))
+            {
+                await db.Database.ExecuteSqlRawAsync("ALTER TABLE Purchases ADD COLUMN DiscountAmount TEXT NOT NULL DEFAULT '0';");
+            }
+
+            // --- Sales enhancements: Delivery fee, custom customer, and address ---
+            if (saleColumns.Any())
+            {
+                if (!saleColumns.Contains("DeliveryFee", StringComparer.OrdinalIgnoreCase))
+                {
+                    await db.Database.ExecuteSqlRawAsync("ALTER TABLE Sales ADD COLUMN DeliveryFee TEXT NOT NULL DEFAULT '0';");
+                }
+                if (!saleColumns.Contains("CustomerName", StringComparer.OrdinalIgnoreCase))
+                {
+                    await db.Database.ExecuteSqlRawAsync("ALTER TABLE Sales ADD COLUMN CustomerName TEXT NULL;");
+                }
+                if (!saleColumns.Contains("CustomerPhone", StringComparer.OrdinalIgnoreCase))
+                {
+                    await db.Database.ExecuteSqlRawAsync("ALTER TABLE Sales ADD COLUMN CustomerPhone TEXT NULL;");
+                }
+                if (!saleColumns.Contains("DeliveryAddress", StringComparer.OrdinalIgnoreCase))
+                {
+                    await db.Database.ExecuteSqlRawAsync("ALTER TABLE Sales ADD COLUMN DeliveryAddress TEXT NULL;");
+                }
+            }
+
+            // --- SaleItems: Returned Quantity ---
+            if (saleItemColumns.Any() && !saleItemColumns.Contains("ReturnedQuantity", StringComparer.OrdinalIgnoreCase))
+            {
+                await db.Database.ExecuteSqlRawAsync("ALTER TABLE SaleItems ADD COLUMN ReturnedQuantity INTEGER NOT NULL DEFAULT 0;");
+            }
+
+            // --- Expenses: Linked SaleId ---
+            var expenseColumns = await db.Database
+                .SqlQueryRaw<string>("SELECT name FROM pragma_table_info('Expenses')")
+                .ToListAsync();
+
+            if (expenseColumns.Any() && !expenseColumns.Contains("SaleId", StringComparer.OrdinalIgnoreCase))
+            {
+                await db.Database.ExecuteSqlRawAsync("ALTER TABLE Expenses ADD COLUMN SaleId INTEGER NULL;");
+            }
+
+            // --- SalePayments table for advance and installment payments ---
+            await db.Database.ExecuteSqlRawAsync(@"
+                CREATE TABLE IF NOT EXISTS SalePayments (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    SaleId INTEGER NOT NULL,
+                    Amount TEXT NOT NULL,
+                    PaymentMethod INTEGER NOT NULL,
+                    PaymentDate TEXT NOT NULL,
+                    CashierUserId INTEGER NOT NULL,
+                    Notes TEXT NULL,
+                    FOREIGN KEY (SaleId) REFERENCES Sales (Id) ON DELETE CASCADE
+                );
+                CREATE INDEX IF NOT EXISTS IX_SalePayments_SaleId ON SalePayments (SaleId);
+                CREATE INDEX IF NOT EXISTS IX_SalePayments_PaymentDate ON SalePayments (PaymentDate);
+            ");
+
+            // --- Users table enhancements (BaseSalary & CommissionRate) ---
+            var userColumns = await db.Database
+                .SqlQueryRaw<string>("SELECT name FROM pragma_table_info('Users')")
+                .ToListAsync();
+
+            if (userColumns.Any())
+            {
+                if (!userColumns.Contains("BaseSalary", StringComparer.OrdinalIgnoreCase))
+                {
+                    await db.Database.ExecuteSqlRawAsync("ALTER TABLE Users ADD COLUMN BaseSalary TEXT NOT NULL DEFAULT '0';");
+                }
+                if (!userColumns.Contains("CommissionRate", StringComparer.OrdinalIgnoreCase))
+                {
+                    await db.Database.ExecuteSqlRawAsync("ALTER TABLE Users ADD COLUMN CommissionRate TEXT NOT NULL DEFAULT '0';");
+                }
+                if (!userColumns.Contains("SalaryComponents", StringComparer.OrdinalIgnoreCase))
+                {
+                    await db.Database.ExecuteSqlRawAsync("ALTER TABLE Users ADD COLUMN SalaryComponents TEXT NULL;");
+                }
+                if (!userColumns.Contains("PaymentDueDate", StringComparer.OrdinalIgnoreCase))
+                {
+                    await db.Database.ExecuteSqlRawAsync("ALTER TABLE Users ADD COLUMN PaymentDueDate TEXT NULL;");
+                }
+                if (!userColumns.Contains("PaymentFrequency", StringComparer.OrdinalIgnoreCase))
+                {
+                    await db.Database.ExecuteSqlRawAsync("ALTER TABLE Users ADD COLUMN PaymentFrequency TEXT NULL DEFAULT 'Monthly';");
+                }
+            }
+
+            // --- Executive Reporting Domain Tables ---
+            await db.Database.ExecuteSqlRawAsync(@"
+                CREATE TABLE IF NOT EXISTS DeliveryTrips (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    TripCode TEXT NOT NULL,
+                    DriverUserId INTEGER NOT NULL,
+                    DispatchedAtUtc TEXT NOT NULL,
+                    DeliveredAtUtc TEXT NULL,
+                    Status INTEGER NOT NULL,
+                    OdometerStartKm REAL NOT NULL,
+                    OdometerEndKm REAL NOT NULL,
+                    MileagePayout TEXT NOT NULL DEFAULT '0',
+                    BonusPayout TEXT NOT NULL DEFAULT '0',
+                    IsActive INTEGER NOT NULL DEFAULT 1,
+                    CreatedAt TEXT NOT NULL,
+                    UpdatedAt TEXT NULL,
+                    FOREIGN KEY (DriverUserId) REFERENCES Users (Id) ON DELETE RESTRICT
+                );
+
+                CREATE TABLE IF NOT EXISTS FuelLogs (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    DriverUserId INTEGER NOT NULL,
+                    FuelDateUtc TEXT NOT NULL,
+                    Liters TEXT NOT NULL DEFAULT '0',
+                    TotalCost TEXT NOT NULL DEFAULT '0',
+                    ReceiptNumber TEXT NOT NULL,
+                    IsActive INTEGER NOT NULL DEFAULT 1,
+                    CreatedAt TEXT NOT NULL,
+                    UpdatedAt TEXT NULL,
+                    FOREIGN KEY (DriverUserId) REFERENCES Users (Id) ON DELETE RESTRICT
+                );
+
+                CREATE TABLE IF NOT EXISTS ServiceTickets (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    TicketCode TEXT NOT NULL,
+                    TechnicianUserId INTEGER NOT NULL,
+                    ProductId INTEGER NOT NULL,
+                    DefectDescription TEXT NOT NULL,
+                    Status INTEGER NOT NULL,
+                    CreatedDateUtc TEXT NOT NULL,
+                    ResolvedDateUtc TEXT NULL,
+                    TurnaroundHours REAL NOT NULL DEFAULT 0,
+                    RepairLaborFee TEXT NOT NULL DEFAULT '0',
+                    SparePartsCost TEXT NOT NULL DEFAULT '0',
+                    TechnicianBonus TEXT NOT NULL DEFAULT '0',
+                    IsActive INTEGER NOT NULL DEFAULT 1,
+                    CreatedAt TEXT NOT NULL,
+                    UpdatedAt TEXT NULL,
+                    FOREIGN KEY (TechnicianUserId) REFERENCES Users (Id) ON DELETE RESTRICT,
+                    FOREIGN KEY (ProductId) REFERENCES Products (Id) ON DELETE RESTRICT
+                );
+            ");
         }
         catch (Exception ex)
         {
@@ -218,4 +389,5 @@ public static class DbInitializer
         }
     }
 }
+
 

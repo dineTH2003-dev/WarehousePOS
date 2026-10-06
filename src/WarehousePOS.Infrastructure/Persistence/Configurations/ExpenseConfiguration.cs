@@ -41,6 +41,8 @@ public sealed class ExpenseConfiguration : IEntityTypeConfiguration<Expense>
                .HasForeignKey(e => e.CategoryId)
                .OnDelete(DeleteBehavior.Restrict);
 
+        builder.Property(e => e.SaleId).IsRequired(false);
+        builder.HasIndex(e => e.SaleId);
         builder.HasIndex(e => e.ExpenseDate);
     }
 }

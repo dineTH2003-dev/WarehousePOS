@@ -24,12 +24,21 @@
                 <TextBlock Text="Manage supplier contacts, supply lines, and outstanding balances"
                            Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" Margin="0,2,0,0"/>
             </StackPanel>
-            <Button Grid.Column="1" Content="+ Add Supplier"
-                    Style="{StaticResource PrimaryButton}"
-                    Command="{Binding AddCommand}"
-                    Width="150"
-                    Height="38"
-                    Padding="0"/>
+            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                <Button Content="📥 Import CSV"
+                        Style="{StaticResource SecondaryButton}"
+                        Command="{Binding ImportCommand}"
+                        Margin="0,0,10,0"
+                        Height="38"
+                        Padding="14,0"
+                        ToolTip="Bulk import suppliers and supply products from CSV spreadsheet"/>
+                <Button Content="+ Add Supplier"
+                        Style="{StaticResource PrimaryButton}"
+                        Command="{Binding AddCommand}"
+                        Width="150"
+                        Height="38"
+                        Padding="0"/>
+            </StackPanel>
         </Grid>
 
         <!-- Filters -->
@@ -81,10 +90,16 @@
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
-                    <DataGridTemplateColumn Header="Actions" Width="195">
+                    <DataGridTemplateColumn Header="Actions" Width="280">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <StackPanel Orientation="Horizontal">
+                                    <Button Content="🎁 Benefits"
+                                            Style="{StaticResource TableSecondaryButton}"
+                                            Width="85" Margin="0,0,8,0"
+                                            Command="{Binding DataContext.RecordEntitlementCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                            CommandParameter="{Binding}"
+                                            ToolTip="Record discount, free item, or entitlement for this supplier"/>
                                     <Button Content="Edit"
                                             Style="{StaticResource TableSecondaryButton}"
                                             Width="60" Margin="0,0,8,0"

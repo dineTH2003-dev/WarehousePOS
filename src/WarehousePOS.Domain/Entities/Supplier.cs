@@ -58,6 +58,27 @@ public sealed class Supplier : AggregateRoot
         SetUpdatedAt();
     }
 
+    /// <summary>
+    /// Merges new product names or SKUs into the supplier's ProvidedProducts list without duplicates.
+    /// </summary>
+    public void AddProvidedProducts(IEnumerable<string> productNames)
+    {
+        var existing = string.IsNullOrWhiteSpace(ProvidedProducts)
+            ? new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            : new HashSet<string>(ProvidedProducts.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries), StringComparer.OrdinalIgnoreCase);
+
+        foreach (var p in productNames)
+        {
+            if (!string.IsNullOrWhiteSpace(p))
+            {
+                existing.Add(p.Trim());
+            }
+        }
+
+        ProvidedProducts = string.Join(", ", existing);
+        SetUpdatedAt();
+    }
+
     /// <summary>Add to the outstanding balance (e.g. after a purchase).</summary>
     public void AddToBalance(decimal amount)
     {

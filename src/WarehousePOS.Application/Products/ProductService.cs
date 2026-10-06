@@ -69,6 +69,13 @@ public sealed class ProductService(
         if (await repo.ExistsByNameAsync(request.Name, ct: ct))
             throw new BusinessRuleViolationException("UniqueName", $"Product '{request.Name}' already exists.");
 
+        if (!string.IsNullOrWhiteSpace(request.Barcode))
+        {
+            var existingBarcodeProduct = await repo.GetByBarcodeAsync(request.Barcode.Trim(), ct);
+            if (existingBarcodeProduct is not null)
+                throw new BusinessRuleViolationException("UniqueBarcode", $"Barcode '{request.Barcode.Trim()}' is already assigned to product '{existingBarcodeProduct.Name}'.");
+        }
+
         var category = await categoryRepo.GetByIdAsync(request.CategoryId, ct)
             ?? throw new EntityNotFoundException(nameof(Category), request.CategoryId);
 
@@ -97,6 +104,13 @@ public sealed class ProductService(
 
         if (await repo.ExistsByNameAsync(request.Name, request.Id, ct))
             throw new BusinessRuleViolationException("UniqueName", $"Product '{request.Name}' already exists.");
+
+        if (!string.IsNullOrWhiteSpace(request.Barcode))
+        {
+            var existingBarcodeProduct = await repo.GetByBarcodeAsync(request.Barcode.Trim(), ct);
+            if (existingBarcodeProduct is not null && existingBarcodeProduct.Id != request.Id)
+                throw new BusinessRuleViolationException("UniqueBarcode", $"Barcode '{request.Barcode.Trim()}' is already assigned to product '{existingBarcodeProduct.Name}'.");
+        }
 
         var category = await categoryRepo.GetByIdAsync(request.CategoryId, ct)
             ?? throw new EntityNotFoundException(nameof(Category), request.CategoryId);

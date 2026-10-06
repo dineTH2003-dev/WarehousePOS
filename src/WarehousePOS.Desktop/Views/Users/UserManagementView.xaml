@@ -35,14 +35,16 @@
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
                     <Grid Margin="0,0,0,16">
-                        <TextBlock Text="Users" Style="{StaticResource H3}"/>
+                        <TextBlock Text="Users / Employees" Style="{StaticResource H3}"/>
                         <Button Content="Refresh" Style="{StaticResource SecondaryButton}" Height="32" Padding="14,4" Command="{Binding RefreshCommand}" HorizontalAlignment="Right"/>
                     </Grid>
                     <DataGrid Grid.Row="1" ItemsSource="{Binding Users}" SelectedItem="{Binding SelectedUser}" AutoGenerateColumns="False" IsReadOnly="True" RowStyle="{StaticResource InactiveDataGridRow}">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="Username" Binding="{Binding Username}" Width="130"/>
+                            <DataGridTextColumn Header="Username" Binding="{Binding Username}" Width="120"/>
                             <DataGridTextColumn Header="Full Name" Binding="{Binding FullName}" Width="*"/>
-                            <DataGridTextColumn Header="Role" Binding="{Binding Role}" Width="100"/>
+                            <DataGridTextColumn Header="Role" Binding="{Binding Role}" Width="90"/>
+                            <DataGridTextColumn Header="Base Salary" Binding="{Binding BaseSalary, StringFormat=Rs. {0:N2}}" Width="110"/>
+                            <DataGridTextColumn Header="Due Date" Binding="{Binding PaymentDueDate, TargetNullValue='—'}" Width="95"/>
                             <DataGridTemplateColumn Header="Status" Width="90">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
@@ -53,7 +55,7 @@
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
-                            <DataGridTemplateColumn Header="Action" Width="130">
+                            <DataGridTemplateColumn Header="Action" Width="110">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <Button Content="{Binding IsActive, Converter={StaticResource BoolToToggleTextConverter}}"
@@ -71,42 +73,56 @@
 
             <!-- Right Column: Add/Edit User Form Card -->
             <Border Grid.Column="2" Style="{StaticResource Card}" VerticalAlignment="Top">
-                <StackPanel>
-                    <TextBlock Text="{Binding FormTitle}" Style="{StaticResource H3}" Margin="0,0,0,16"/>
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" MaxHeight="680">
+                    <StackPanel Margin="0,0,4,0">
+                        <TextBlock Text="{Binding FormTitle}" Style="{StaticResource H3}" Margin="0,0,0,14"/>
 
-                    <Border Background="#FEF2F2" BorderBrush="{StaticResource DangerBrush}" BorderThickness="1"
-                            CornerRadius="6" Padding="10,8" Margin="0,0,0,12"
-                            Visibility="{Binding HasError, Converter={StaticResource BoolToVisibilityConverter}}">
-                        <TextBlock Text="{Binding ErrorMessage}" Foreground="{StaticResource DangerBrush}" TextWrapping="Wrap"/>
-                    </Border>
-                    <Border Background="#F0FDF4" BorderBrush="{StaticResource SuccessBrush}" BorderThickness="1"
-                            CornerRadius="6" Padding="10,8" Margin="0,0,0,12"
-                            Visibility="{Binding HasSuccess, Converter={StaticResource BoolToVisibilityConverter}}">
-                        <TextBlock Text="{Binding SuccessMessage}" Foreground="{StaticResource SuccessBrush}" TextWrapping="Wrap"/>
-                    </Border>
+                        <Border Background="#FEF2F2" BorderBrush="{StaticResource DangerBrush}" BorderThickness="1"
+                                CornerRadius="6" Padding="10,8" Margin="0,0,0,12"
+                                Visibility="{Binding HasError, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <TextBlock Text="{Binding ErrorMessage}" Foreground="{StaticResource DangerBrush}" TextWrapping="Wrap"/>
+                        </Border>
+                        <Border Background="#F0FDF4" BorderBrush="{StaticResource SuccessBrush}" BorderThickness="1"
+                                CornerRadius="6" Padding="10,8" Margin="0,0,0,12"
+                                Visibility="{Binding HasSuccess, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <TextBlock Text="{Binding SuccessMessage}" Foreground="{StaticResource SuccessBrush}" TextWrapping="Wrap"/>
+                        </Border>
 
-                    <TextBlock Text="Username *" Style="{StaticResource FormLabel}"/>
-                    <TextBox Text="{Binding Username}" IsReadOnly="{Binding IsEditing}" Style="{StaticResource FormTextBox}" Margin="0,0,0,12"/>
+                        <TextBlock Text="Username *" Style="{StaticResource FormLabel}"/>
+                        <TextBox Text="{Binding Username}" IsReadOnly="{Binding IsEditing}" Style="{StaticResource FormTextBox}" Margin="0,0,0,10"/>
 
-                    <TextBlock Text="Full Name *" Style="{StaticResource FormLabel}"/>
-                    <TextBox Text="{Binding FullName, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource FormTextBox}" Margin="0,0,0,12"/>
+                        <TextBlock Text="Full Name *" Style="{StaticResource FormLabel}"/>
+                        <TextBox Text="{Binding FullName, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource FormTextBox}" Margin="0,0,0,10"/>
 
-                    <TextBlock Text="Password" Style="{StaticResource FormLabel}"/>
-                    <Border x:Name="PasswordContainer"
-                            Height="38"
-                            Background="White"
-                            BorderBrush="{StaticResource BorderBrush}"
-                            BorderThickness="1"
-                            CornerRadius="6"
-                            Margin="0,0,0,12">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
+                        <TextBlock Text="Password" Style="{StaticResource FormLabel}"/>
+                        <Border x:Name="PasswordContainer"
+                                Height="38"
+                                Background="White"
+                                BorderBrush="{StaticResource BorderBrush}"
+                                BorderThickness="1"
+                                CornerRadius="6"
+                                Margin="0,0,0,10">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
 
-                            <!-- Masked Password -->
-                            <PasswordBox x:Name="PasswordBox"
+                                <!-- Masked Password -->
+                                <PasswordBox x:Name="PasswordBox"
+                                             Grid.Column="0"
+                                             FontSize="14"
+                                             Foreground="{StaticResource TextPrimaryBrush}"
+                                             Background="Transparent"
+                                             BorderThickness="0"
+                                             Padding="10,0"
+                                             VerticalContentAlignment="Center"
+                                             PasswordChanged="PasswordBox_PasswordChanged"
+                                             GotFocus="PasswordControl_GotFocus"
+                                             LostFocus="PasswordControl_LostFocus" />
+
+                                <!-- Plain Text Password (when eye icon toggled) -->
+                                <TextBox x:Name="PasswordTextBox"
                                          Grid.Column="0"
                                          FontSize="14"
                                          Foreground="{StaticResource TextPrimaryBrush}"
@@ -114,51 +130,59 @@
                                          BorderThickness="0"
                                          Padding="10,0"
                                          VerticalContentAlignment="Center"
-                                         PasswordChanged="PasswordBox_PasswordChanged"
+                                         Visibility="Collapsed"
+                                         TextChanged="PasswordTextBox_TextChanged"
                                          GotFocus="PasswordControl_GotFocus"
                                          LostFocus="PasswordControl_LostFocus" />
 
-                            <!-- Plain Text Password (when eye icon toggled) -->
-                            <TextBox x:Name="PasswordTextBox"
-                                     Grid.Column="0"
-                                     FontSize="14"
-                                     Foreground="{StaticResource TextPrimaryBrush}"
-                                     Background="Transparent"
-                                     BorderThickness="0"
-                                     Padding="10,0"
-                                     VerticalContentAlignment="Center"
-                                     Visibility="Collapsed"
-                                     TextChanged="PasswordTextBox_TextChanged"
-                                     GotFocus="PasswordControl_GotFocus"
-                                     LostFocus="PasswordControl_LostFocus" />
+                                <!-- Eye Icon Toggle Button -->
+                                <Button x:Name="TogglePasswordButton"
+                                        Grid.Column="1"
+                                        Style="{StaticResource PasswordEyeToggleButtonStyle}"
+                                        Width="34"
+                                        Height="34"
+                                        Margin="0,0,2,0"
+                                        ToolTip="Show password"
+                                        Click="TogglePasswordButton_Click">
+                                    <Path x:Name="EyeIconPath"
+                                          Data="{StaticResource EyeOpenIcon}"
+                                          Fill="{StaticResource TextSecondaryBrush}"
+                                          Width="16"
+                                          Height="16"
+                                          Stretch="Uniform" />
+                                </Button>
+                            </Grid>
+                        </Border>
 
-                            <!-- Eye Icon Toggle Button -->
-                            <Button x:Name="TogglePasswordButton"
-                                    Grid.Column="1"
-                                    Style="{StaticResource PasswordEyeToggleButtonStyle}"
-                                    Width="34"
-                                    Height="34"
-                                    Margin="0,0,2,0"
-                                    ToolTip="Show password"
-                                    Click="TogglePasswordButton_Click">
-                                <Path x:Name="EyeIconPath"
-                                      Data="{StaticResource EyeOpenIcon}"
-                                      Fill="{StaticResource TextSecondaryBrush}"
-                                      Width="16"
-                                      Height="16"
-                                      Stretch="Uniform" />
-                            </Button>
-                        </Grid>
-                    </Border>
+                        <TextBlock Text="Role *" Style="{StaticResource FormLabel}"/>
+                        <ComboBox ItemsSource="{Binding Roles}" SelectedItem="{Binding Role}" Margin="0,0,0,14"/>
 
-                    <TextBlock Text="Role *" Style="{StaticResource FormLabel}"/>
-                    <ComboBox ItemsSource="{Binding Roles}" SelectedItem="{Binding Role}" Margin="0,0,0,20"/>
+                        <Separator Margin="0,4,0,12"/>
 
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                        <Button Content="Clear" Style="{StaticResource SecondaryButton}" Width="80" Height="36" Command="{Binding ClearCommand}" Margin="0,0,8,0"/>
-                        <Button Content="{Binding SaveButtonText}" Style="{StaticResource PrimaryButton}" MinWidth="110" Height="36" Command="{Binding SaveCommand}" Padding="16,0"/>
+                        <!-- 💰 Employee Salary & Payroll Section -->
+                        <TextBlock Text="💰 Basic Salary &amp; Payroll Parameters" Style="{StaticResource FormLabel}" FontWeight="Bold" Foreground="{StaticResource PrimaryDarkBrush}" Margin="0,0,0,10"/>
+
+                        <TextBlock Text="Basic Salary (Rs.)" Style="{StaticResource FormLabel}"/>
+                        <TextBox Text="{Binding BaseSalary, StringFormat={}{0:F2}, UpdateSourceTrigger=LostFocus}" Style="{StaticResource FormTextBox}" Margin="0,0,0,10"/>
+
+                        <TextBlock Text="Salary Components" Style="{StaticResource FormLabel}"/>
+                        <TextBox Text="{Binding SalaryComponents, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource FormTextBox}" Margin="0,0,0,10" Tag="e.g. Basic + Allowance + Bonus"/>
+
+                        <TextBlock Text="Payment Due Date" Style="{StaticResource FormLabel}"/>
+                        <DatePicker SelectedDate="{Binding PaymentDueDate, Mode=TwoWay}"
+                                    DisplayDateStart="{Binding MinDueDate, Mode=OneWay}"
+                                    Height="38" Margin="0,0,0,10" VerticalContentAlignment="Center"
+                                    ToolTip="Select payment due date (today or future date)"/>
+
+                        <TextBlock Text="Payment Frequency" Style="{StaticResource FormLabel}"/>
+                        <ComboBox ItemsSource="{Binding PaymentFrequencies}" SelectedItem="{Binding PaymentFrequency}" Margin="0,0,0,16" ToolTip="Select payment payout frequency (e.g., Monthly, Weekly, Daily)"/>
+
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,4,0,0">
+                            <Button Content="Clear" Style="{StaticResource SecondaryButton}" Width="80" Height="36" Command="{Binding ClearCommand}" Margin="0,0,8,0"/>
+                            <Button Content="{Binding SaveButtonText}" Style="{StaticResource PrimaryButton}" MinWidth="110" Height="36" Command="{Binding SaveCommand}" Padding="16,0"/>
+                        </StackPanel>
                     </StackPanel>
-                </StackPanel>
+                </ScrollViewer>
             </Border>
         </Grid>
     </Grid>

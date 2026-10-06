@@ -11,7 +11,6 @@ public sealed class NotificationOrchestrator : INotificationOrchestrator
     private readonly IProductRepository _productRepo;
     private readonly IReportService _reportService;
     private readonly BrevoEmailService _emailService;
-    private readonly WhatsAppNotificationService _whatsappService;
     private readonly ILogger<NotificationOrchestrator> _logger;
 
     public NotificationOrchestrator(
@@ -19,30 +18,23 @@ public sealed class NotificationOrchestrator : INotificationOrchestrator
         IProductRepository productRepo,
         IReportService reportService,
         BrevoEmailService emailService,
-        WhatsAppNotificationService whatsappService,
         ILogger<NotificationOrchestrator> logger)
     {
         _settingRepo = settingRepo;
         _productRepo = productRepo;
         _reportService = reportService;
         _emailService = emailService;
-        _whatsappService = whatsappService;
         _logger = logger;
     }
 
     public async Task<NotificationSettingsDto> GetSettingsAsync(CancellationToken ct = default)
     {
-        var apiKey        = await _settingRepo.GetValueAsync("NOTIF_BREVO_API_KEY", ct) ?? string.Empty;
-        var senderEmail   = await _settingRepo.GetValueAsync("NOTIF_BREVO_SENDER_EMAIL", ct) ?? string.Empty;
-        var senderName    = await _settingRepo.GetValueAsync("NOTIF_BREVO_SENDER_NAME", ct) ?? "WarehousePOS";
-        var ownerEmail    = await _settingRepo.GetValueAsync("NOTIF_OWNER_EMAIL", ct) ?? string.Empty;
-        var emailStock    = await _settingRepo.GetValueAsync("NOTIF_EMAIL_LOW_STOCK_ENABLED", ct) ?? "true";
-        var emailMonthly  = await _settingRepo.GetValueAsync("NOTIF_EMAIL_MONTHLY_REPORT_ENABLED", ct) ?? "true";
-
-        var whatsAppOn    = await _settingRepo.GetValueAsync("NOTIF_WHATSAPP_ENABLED", ct) ?? "false";
-        var ownerPhone    = await _settingRepo.GetValueAsync("NOTIF_WHATSAPP_PHONE", ct) ?? string.Empty;
-        var waUrl         = await _settingRepo.GetValueAsync("NOTIF_WHATSAPP_GATEWAY_URL", ct) ?? string.Empty;
-        var waKey         = await _settingRepo.GetValueAsync("NOTIF_WHATSAPP_API_KEY", ct) ?? string.Empty;
+        var apiKey       = await _settingRepo.GetValueAsync("NOTIF_BREVO_API_KEY", ct) ?? string.Empty;
+        var senderEmail  = await _settingRepo.GetValueAsync("NOTIF_BREVO_SENDER_EMAIL", ct) ?? string.Empty;
+        var senderName   = await _settingRepo.GetValueAsync("NOTIF_BREVO_SENDER_NAME", ct) ?? "WarehousePOS";
+        var ownerEmail   = await _settingRepo.GetValueAsync("NOTIF_OWNER_EMAIL", ct) ?? string.Empty;
+        var emailStock   = await _settingRepo.GetValueAsync("NOTIF_EMAIL_LOW_STOCK_ENABLED", ct) ?? "true";
+        var emailMonthly = await _settingRepo.GetValueAsync("NOTIF_EMAIL_MONTHLY_REPORT_ENABLED", ct) ?? "true";
 
         return new NotificationSettingsDto(
             apiKey,
@@ -50,11 +42,7 @@ public sealed class NotificationOrchestrator : INotificationOrchestrator
             senderName,
             ownerEmail,
             emailStock.Equals("true", StringComparison.OrdinalIgnoreCase),
-            emailMonthly.Equals("true", StringComparison.OrdinalIgnoreCase),
-            whatsAppOn.Equals("true", StringComparison.OrdinalIgnoreCase),
-            ownerPhone,
-            waUrl,
-            waKey);
+            emailMonthly.Equals("true", StringComparison.OrdinalIgnoreCase));
     }
 
     public async Task SaveSettingsAsync(NotificationSettingsDto s, CancellationToken ct = default)
@@ -66,19 +54,13 @@ public sealed class NotificationOrchestrator : INotificationOrchestrator
         await _settingRepo.SetValueAsync("NOTIF_EMAIL_LOW_STOCK_ENABLED", s.IsEmailLowStockAlertEnabled ? "true" : "false", "Send low stock email alerts", ct);
         await _settingRepo.SetValueAsync("NOTIF_EMAIL_MONTHLY_REPORT_ENABLED", s.IsEmailMonthlyReportEnabled ? "true" : "false", "Send monthly summary report email", ct);
 
-        await _settingRepo.SetValueAsync("NOTIF_WHATSAPP_ENABLED", s.IsWhatsAppEnabled ? "true" : "false", "Enable WhatsApp notification gateway", ct);
-        await _settingRepo.SetValueAsync("NOTIF_WHATSAPP_PHONE", s.OwnerPhone, "Owner phone number for WhatsApp alerts", ct);
-        await _settingRepo.SetValueAsync("NOTIF_WHATSAPP_GATEWAY_URL", s.WhatsAppGatewayUrl, "HTTP endpoint for WhatsApp API gateway", ct);
-        await _settingRepo.SetValueAsync("NOTIF_WHATSAPP_API_KEY", s.WhatsAppApiKey, "API Token/Key for WhatsApp API gateway", ct);
-
-        _logger.LogInformation("Saved notification settings for owner: {OwnerEmail}, phone: {OwnerPhone}", s.OwnerEmail, s.OwnerPhone);
+        _logger.LogInformation("Saved notification settings for owner: {OwnerEmail}", s.OwnerEmail);
     }
 
     private async Task EnsureConfiguredAsync(CancellationToken ct)
     {
         var s = await GetSettingsAsync(ct);
         _emailService.Configure(s.BrevoApiKey, s.BrevoSenderEmail, s.BrevoSenderName);
-        _whatsappService.Configure(s.WhatsAppGatewayUrl, s.WhatsAppApiKey);
     }
 
     public async Task<(bool Success, string Message)> SendTestEmailAsync(string? recipientEmail = null, CancellationToken ct = default)
@@ -93,27 +75,12 @@ public sealed class NotificationOrchestrator : INotificationOrchestrator
         return await _emailService.SendTestEmailAsync(to, ct);
     }
 
-    public async Task<(bool Success, string Message)> SendTestWhatsAppAsync(string? recipientPhone = null, CancellationToken ct = default)
-    {
-        await EnsureConfiguredAsync(ct);
-        var s = await GetSettingsAsync(ct);
-        var phone = string.IsNullOrWhiteSpace(recipientPhone) ? s.OwnerPhone : recipientPhone;
-
-        if (string.IsNullOrWhiteSpace(phone))
-            return (false, "Please specify an owner phone number in Settings > Notifications.");
-
-        return await _whatsappService.SendTextMessageAsync(
-            phone,
-            "🚀 *WarehousePOS Test Alert*\n\nYour WhatsApp notification gateway is successfully connected and ready to send inventory alerts!",
-            ct);
-    }
-
     public async Task<(bool Success, string Message)> CheckAndSendLowStockAlertsAsync(bool force = false, CancellationToken ct = default)
     {
         await EnsureConfiguredAsync(ct);
         var s = await GetSettingsAsync(ct);
 
-        if (!s.IsEmailLowStockAlertEnabled && !s.IsWhatsAppEnabled && !force)
+        if (!s.IsEmailLowStockAlertEnabled && !force)
             return (true, "Low stock notifications are disabled in settings.");
 
         var lowStockProducts = await _productRepo.GetLowStockAsync(ct);
@@ -151,14 +118,6 @@ public sealed class NotificationOrchestrator : INotificationOrchestrator
             else errors.Add($"Email: {msg}");
         }
 
-        // Dispatch WhatsApp
-        if ((s.IsWhatsAppEnabled || force) && !string.IsNullOrWhiteSpace(s.OwnerPhone))
-        {
-            var (ok, msg) = await _whatsappService.SendLowStockAlertAsync(items, s.OwnerPhone, ct);
-            if (ok) anySent = true;
-            else errors.Add($"WhatsApp: {msg}");
-        }
-
         if (anySent)
         {
             await _settingRepo.SetValueAsync("NOTIF_LAST_LOW_STOCK_SENT_DATE", todayStr, "Date of last low stock alert", ct);
@@ -179,7 +138,7 @@ public sealed class NotificationOrchestrator : INotificationOrchestrator
         await EnsureConfiguredAsync(ct);
         var s = await GetSettingsAsync(ct);
 
-        if (!s.IsEmailMonthlyReportEnabled && !s.IsWhatsAppEnabled && !force)
+        if (!s.IsEmailMonthlyReportEnabled && !force)
             return (true, "Monthly reports are disabled in settings.");
 
         // Target month: previous month (e.g. if today is Sep 1, report on August)
@@ -210,13 +169,6 @@ public sealed class NotificationOrchestrator : INotificationOrchestrator
             var (ok, msg) = await _emailService.SendMonthlyReportAsync(report, s.OwnerEmail, ct);
             if (ok) anySent = true;
             else errors.Add($"Email: {msg}");
-        }
-
-        if ((s.IsWhatsAppEnabled || force) && !string.IsNullOrWhiteSpace(s.OwnerPhone))
-        {
-            var (ok, msg) = await _whatsappService.SendMonthlySummaryAsync(report, s.OwnerPhone, ct);
-            if (ok) anySent = true;
-            else errors.Add($"WhatsApp: {msg}");
         }
 
         if (anySent)

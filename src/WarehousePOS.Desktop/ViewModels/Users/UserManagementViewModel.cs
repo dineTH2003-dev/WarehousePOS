@@ -17,13 +17,18 @@ public sealed class UserManagementViewModel : ViewModelBase
     private string _fullName = string.Empty;
     private string _newPassword = string.Empty;
     private UserRole _role = UserRole.Worker;
+    private decimal _baseSalary;
+    private string _salaryComponents = string.Empty;
+    private DateTime? _paymentDueDate;
+    private string _paymentFrequency = "Monthly";
     private string _errorMessage = string.Empty;
     private string _successMessage = string.Empty;
     private bool _isEditing;
     private bool _isBusy;
 
     public ObservableCollection<UserDto> Users => _users;
-    public IReadOnlyList<UserRole> Roles { get; } = [UserRole.Admin, UserRole.Worker];
+    public IReadOnlyList<UserRole> Roles { get; } = [UserRole.Admin, UserRole.Cashier, UserRole.Worker];
+    public IReadOnlyList<string> PaymentFrequencies { get; } = ["Monthly", "Weekly", "Daily", "Bi-Weekly"];
 
     public UserDto? SelectedUser
     {
@@ -39,14 +44,21 @@ public sealed class UserManagementViewModel : ViewModelBase
     public string FullName { get => _fullName; set => SetField(ref _fullName, value); }
     public string NewPassword { get => _newPassword; set => SetField(ref _newPassword, value); }
     public UserRole Role { get => _role; set => SetField(ref _role, value); }
+    public decimal BaseSalary { get => _baseSalary; set => SetField(ref _baseSalary, value); }
+    public string SalaryComponents { get => _salaryComponents; set => SetField(ref _salaryComponents, value); }
+    public DateTime? PaymentDueDate { get => _paymentDueDate; set => SetField(ref _paymentDueDate, value); }
+    public DateTime MinDueDate { get; } = DateTime.Today;
+    public DateTime MaxDueDate { get; } = DateTime.Today;
+    public string PaymentFrequency { get => _paymentFrequency; set => SetField(ref _paymentFrequency, value); }
+
     public bool IsEditing { get => _isEditing; private set => SetField(ref _isEditing, value); }
     public bool IsBusy { get => _isBusy; private set => SetField(ref _isBusy, value); }
     public string ErrorMessage { get => _errorMessage; private set { if (SetField(ref _errorMessage, value)) OnPropertyChanged(nameof(HasError)); } }
     public string SuccessMessage { get => _successMessage; private set { if (SetField(ref _successMessage, value)) OnPropertyChanged(nameof(HasSuccess)); } }
     public bool HasError => !string.IsNullOrEmpty(ErrorMessage);
     public bool HasSuccess => !string.IsNullOrEmpty(SuccessMessage);
-    public string FormTitle => IsEditing ? "Edit User" : "Add User";
-    public string SaveButtonText => IsEditing ? "Save Changes" : "Add User";
+    public string FormTitle => IsEditing ? "Edit Employee" : "Add Employee";
+    public string SaveButtonText => IsEditing ? "Save Changes" : "Add Employee";
 
     public RelayCommand SaveCommand { get; }
     public RelayCommand ClearCommand { get; }
@@ -93,6 +105,14 @@ public sealed class UserManagementViewModel : ViewModelBase
         Username = user.Username;
         FullName = user.FullName;
         Role = user.Role;
+        BaseSalary = user.BaseSalary;
+        SalaryComponents = user.SalaryComponents ?? string.Empty;
+        PaymentFrequency = string.IsNullOrWhiteSpace(user.PaymentFrequency) ? "Monthly" : user.PaymentFrequency;
+        if (!string.IsNullOrWhiteSpace(user.PaymentDueDate) && DateTime.TryParse(user.PaymentDueDate, out var parsedDate))
+            PaymentDueDate = parsedDate.Date;
+        else
+            PaymentDueDate = null;
+
         NewPassword = string.Empty;
         ErrorMessage = string.Empty;
         SuccessMessage = string.Empty;
@@ -123,21 +143,23 @@ public sealed class UserManagementViewModel : ViewModelBase
             return;
         }
 
+        var dueDateString = PaymentDueDate?.ToString("yyyy-MM-dd");
+
         try
         {
             if (IsEditing && SelectedUser is not null)
             {
                 await _userService.UpdateAsync(
                     _session.CurrentUser.UserId,
-                    new UpdateUserRequest(SelectedUser.Id, FullName, Role, NewPassword));
-                SuccessMessage = $"User '{SelectedUser.Username}' updated successfully.";
+                    new UpdateUserRequest(SelectedUser.Id, FullName, Role, NewPassword, BaseSalary, SalaryComponents, dueDateString, PaymentFrequency));
+                SuccessMessage = $"Employee '{SelectedUser.Username}' updated successfully.";
             }
             else
             {
                 await _userService.CreateAsync(
                     _session.CurrentUser.UserId,
-                    new CreateUserRequest(Username, FullName, NewPassword, Role));
-                SuccessMessage = $"User '{Username}' added successfully.";
+                    new CreateUserRequest(Username, FullName, NewPassword, Role, BaseSalary, SalaryComponents, dueDateString, PaymentFrequency));
+                SuccessMessage = $"Employee '{Username}' added successfully.";
             }
 
             ClearForm();
@@ -191,6 +213,10 @@ public sealed class UserManagementViewModel : ViewModelBase
         FullName = string.Empty;
         NewPassword = string.Empty;
         Role = UserRole.Worker;
+        BaseSalary = 0m;
+        SalaryComponents = string.Empty;
+        PaymentDueDate = null;
+        PaymentFrequency = "Monthly";
         OnPropertyChanged(nameof(FormTitle));
         OnPropertyChanged(nameof(SaveButtonText));
     }

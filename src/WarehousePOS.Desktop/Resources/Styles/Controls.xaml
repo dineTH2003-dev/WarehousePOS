@@ -8,6 +8,7 @@
          ============================================================ -->
     <conv:BoolToVisibilityConverter        x:Key="BoolToVisibilityConverter" />
     <conv:InverseBoolToVisibilityConverter x:Key="InverseBoolToVisibilityConverter" />
+    <conv:InverseBoolToVisibilityConverter x:Key="InvertBoolToVisibilityConverter" />
     <conv:InvertBoolConverter              x:Key="InvertBoolConverter" />
     <conv:NullToVisibilityConverter  x:Key="NullToVisibilityConverter" />
     <conv:DecimalToCurrencyConverter x:Key="DecimalToCurrencyConverter" />
@@ -345,6 +346,7 @@
          SEARCH TEXTBOX STYLE (Icon & placeholder disappear on focus/typing)
          ============================================================ -->
     <Style x:Key="SearchTextBox" TargetType="TextBox">
+        <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}" />
         <Setter Property="FontSize" Value="13" />
         <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
         <Setter Property="Padding" Value="12,0,10,0" />
@@ -404,6 +406,7 @@
 
                             <!-- Placeholder / Search Methods Hint Text (Visible ONLY when unfocused AND text is empty) -->
                             <TextBlock x:Name="PlaceholderText"
+                                       FontFamily="{StaticResource AppFontFamily}"
                                        Text="{TemplateBinding Tag}"
                                        Foreground="{StaticResource TextMutedBrush}"
                                        Margin="36,0,10,0"
@@ -540,10 +543,12 @@
 
     <!-- Global ComboBox Style -->
     <Style TargetType="ComboBox">
+        <Setter Property="Validation.ErrorTemplate" Value="{x:Null}" />
         <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
         <Setter Property="Background" Value="White" />
         <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
         <Setter Property="BorderThickness" Value="1" />
+
         <Setter Property="FontSize" Value="13" />
         <Setter Property="MinHeight" Value="38" />
         <Setter Property="Padding" Value="12,6,32,6" />
@@ -986,6 +991,17 @@
                 <Setter Property="Foreground" Value="#4B5563" />
             </DataTrigger>
         </Style.Triggers>
+    </Style>
+
+    <!-- ============================================================
+         MODERN CHECKBOX STYLE
+         ============================================================ -->
+    <Style x:Key="ModernCheckBox" TargetType="CheckBox">
+        <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Padding" Value="6,0,0,0" />
     </Style>
 
     <!-- ============================================================

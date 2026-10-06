@@ -26,8 +26,10 @@ public sealed class Purchase : AggregateRoot
 
     public IReadOnlyList<PurchaseItem> Items => _items;
 
-    public decimal TotalAmount => _items.Sum(i => i.TotalCost);
-    public decimal RemainingBalance => Math.Max(0, TotalAmount - PaidAmount);
+    public decimal DiscountAmount      { get; private set; }
+    public decimal SubTotal            => _items.Sum(i => i.TotalCost);
+    public decimal TotalAmount         => Math.Max(0, SubTotal - DiscountAmount);
+    public decimal RemainingBalance    => Math.Max(0, TotalAmount - PaidAmount);
 
     public static Purchase Create(
         int supplierId,
@@ -35,7 +37,8 @@ public sealed class Purchase : AggregateRoot
         string? notes = null,
         string paymentMethod = "Cash",
         decimal paidAmount = 0,
-        string? paymentDetails = null)
+        string? paymentDetails = null,
+        decimal discountAmount = 0)
     {
         if (supplierId <= 0) throw new ArgumentOutOfRangeException(nameof(supplierId));
         return new Purchase
@@ -46,8 +49,21 @@ public sealed class Purchase : AggregateRoot
             PaymentMethod   = string.IsNullOrWhiteSpace(paymentMethod) ? "Cash" : paymentMethod.Trim(),
             PaidAmount      = paidAmount < 0 ? 0 : paidAmount,
             PaymentDetails  = paymentDetails?.Trim(),
+            DiscountAmount  = discountAmount < 0 ? 0 : discountAmount,
             PurchaseDate    = DateTime.UtcNow
         };
+    }
+
+    public void ApplyDiscount(decimal discountAmount)
+    {
+        if (Status != PurchaseStatus.Draft)
+            throw new BusinessRuleViolationException("PurchaseNotDraft", "Discount can only be applied to Draft purchases.");
+        if (discountAmount < 0)
+            throw new ArgumentOutOfRangeException(nameof(discountAmount), "Discount cannot be negative.");
+        if (discountAmount > SubTotal)
+            throw new BusinessRuleViolationException("ExcessiveDiscount", "Discount cannot exceed purchase sub-total.");
+        DiscountAmount = discountAmount;
+        SetUpdatedAt();
     }
 
     public void AddItem(int productId, int quantity, decimal unitCost, int freeQuantity = 0, decimal retailPrice = 0, decimal wholesalePrice = 0, int claimedQuantityReceived = 0)

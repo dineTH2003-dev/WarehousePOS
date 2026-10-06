@@ -70,7 +70,7 @@
                              GroupName="SettingsTabs"
                              IsChecked="{Binding IsBackupTabActive, Mode=TwoWay}"
                              Style="{StaticResource SettingsTabRadioStyle}"/>
-                <RadioButton Content="🔔  Notifications (Email &amp; WhatsApp)"
+                <RadioButton Content="🔔  Notifications (Email)"
                              GroupName="SettingsTabs"
                              IsChecked="{Binding IsNotificationTabActive, Mode=TwoWay}"
                              Style="{StaticResource SettingsTabRadioStyle}"/>
@@ -230,7 +230,7 @@
 
                             <!-- Real-time Progress Bar & Status -->
                             <StackPanel Margin="0,16,0,0" Visibility="{Binding BackupStatusText, Converter={StaticResource NullToVisibilityConverter}}">
-                                <ProgressBar Height="8" Minimum="0" Maximum="100" Value="{Binding BackupProgress}"
+                                <ProgressBar Height="8" Minimum="0" Maximum="100" Value="{Binding BackupProgress, Mode=OneWay}"
                                              Foreground="{StaticResource PrimaryBrush}" Background="#E5E7EB" Margin="0,0,0,6"/>
                                 <TextBlock Text="{Binding BackupStatusText}" Style="{StaticResource CaptionText}"
                                            Foreground="{StaticResource TextPrimaryBrush}" FontWeight="Medium"/>
@@ -282,7 +282,7 @@
                 </StackPanel>
             </ScrollViewer>
 
-            <!-- ── Tab 3: Notifications (Email & WhatsApp) ────────── -->
+            <!-- ── Tab 3: Notifications (Email) ───────────────────── -->
             <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
                           Visibility="{Binding IsNotificationTabActive, Converter={StaticResource BoolToVisibilityConverter}}">
                 <StackPanel MaxWidth="920" HorizontalAlignment="Left">
@@ -295,7 +295,7 @@
                         </Grid.ColumnDefinitions>
                         <StackPanel Grid.Column="0">
                             <TextBlock Text="Automated Alerts &amp; Owner Notifications" Style="{StaticResource H3}"/>
-                            <TextBlock Text="Receive instant low-stock alerts and end-of-month financial reports via Brevo Email and WhatsApp"
+                            <TextBlock Text="Receive instant low-stock alerts and end-of-month financial reports via Brevo Email"
                                        Style="{StaticResource CaptionText}" Margin="0,2,0,0"/>
                         </StackPanel>
                         <Button Grid.Column="1" Content="💾 Save Notification Settings" Style="{StaticResource PrimaryButton}"
@@ -386,61 +386,6 @@
                                         Command="{Binding SendMonthlyReportNowCommand}" Padding="12,6" FontSize="12" Margin="0,0,10,0"/>
                                 <Button Content="🔍 Check &amp; Dispatch Stock Alerts Now" Style="{StaticResource SecondaryButton}"
                                         Command="{Binding CheckLowStockAlertsNowCommand}" Padding="12,6" FontSize="12"/>
-                            </StackPanel>
-                        </StackPanel>
-                    </Border>
-
-                    <!-- 2. WhatsApp Gateway Configuration Card -->
-                    <Border Style="{StaticResource Card}" Margin="0,0,0,16">
-                        <StackPanel>
-                            <Grid Margin="0,0,0,12">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0" Text="📱" FontSize="26" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                    <TextBlock Text="WhatsApp Messaging Gateway" FontWeight="Bold" FontSize="14"/>
-                                    <TextBlock Text="Instant mobile messages via Google Cloud Run (Evolution API / Baileys) or UltraMsg / Green-API"
-                                               Style="{StaticResource CaptionText}" Margin="0,2,0,0"/>
-                                </StackPanel>
-                                <Button Grid.Column="2" Content="📱 Send Test WhatsApp" Style="{StaticResource SecondaryButton}"
-                                        Command="{Binding SendTestWhatsAppCommand}" Padding="12,6" FontSize="12"/>
-                            </Grid>
-
-                            <Separator Margin="0,4,0,16"/>
-
-                            <CheckBox Content="Enable WhatsApp Notifications"
-                                      IsChecked="{Binding IsWhatsAppEnabled}" FontWeight="SemiBold" Margin="0,0,0,14" FontSize="13"/>
-
-                            <Grid Margin="0,0,0,12">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="16"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
-
-                                <StackPanel Grid.Column="0">
-                                    <TextBlock Text="Owner Mobile Number (with country code)" Style="{StaticResource FormLabel}"/>
-                                    <TextBox Text="{Binding OwnerPhone, UpdateSourceTrigger=PropertyChanged}"
-                                             Style="{StaticResource FormTextBox}" FontSize="12"/>
-                                    <TextBlock Text="e.g. +94711435343 (digits with country code)" Style="{StaticResource CaptionText}" Margin="0,2,0,0"/>
-                                </StackPanel>
-
-                                <StackPanel Grid.Column="2">
-                                    <TextBlock Text="Gateway Endpoint URL" Style="{StaticResource FormLabel}"/>
-                                    <TextBox Text="{Binding WhatsAppGatewayUrl, UpdateSourceTrigger=PropertyChanged}"
-                                             Style="{StaticResource FormTextBox}" FontSize="12"/>
-                                    <TextBlock Text="e.g. https://api.ultramsg.com/instance.../messages/chat or Cloud Run URL" Style="{StaticResource CaptionText}" Margin="0,2,0,0"/>
-                                </StackPanel>
-                            </Grid>
-
-                            <StackPanel Margin="0,0,0,12">
-                                <TextBlock Text="Gateway API Key / Token" Style="{StaticResource FormLabel}"/>
-                                <TextBox Text="{Binding WhatsAppApiKey, UpdateSourceTrigger=PropertyChanged}"
-                                         Style="{StaticResource FormTextBox}" FontSize="12"/>
-                                <TextBlock Text="Bearer token or API key for authenticating to your WhatsApp gateway" Style="{StaticResource CaptionText}" Margin="0,2,0,0"/>
                             </StackPanel>
                         </StackPanel>
                     </Border>

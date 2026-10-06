@@ -19,9 +19,12 @@ public static class ApplicationServiceRegistration
         // Products & Categories
         services.AddScoped<ICategoryService, CategoryService>();
         services.AddScoped<IProductService, ProductService>();
+        services.AddScoped<IProductImportService, ProductImportService>();
 
         // Suppliers
         services.AddScoped<ISupplierService, SupplierService>();
+        services.AddScoped<ISupplierEntitlementService, SupplierEntitlementService>();
+        services.AddScoped<ISupplierImportService, SupplierImportService>();
 
         // Purchasing & Inventory
         services.AddScoped<IPurchaseService, PurchaseService>();

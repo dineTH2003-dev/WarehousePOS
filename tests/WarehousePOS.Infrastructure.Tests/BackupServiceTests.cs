@@ -92,4 +92,41 @@ public sealed class BackupServiceTests : IDisposable
         // Cleanup created backup
         try { File.Delete(secondBackupPath); } catch { }
     }
+
+    [Fact]
+    public async Task CreateBackupAsync_WithRealSqliteDb_ShouldUseVacuumIntoAndCreateValidBackup()
+    {
+        // Arrange
+        var realDbPath = Path.Combine(_tempDir, "real_test.db");
+        using (var conn = new Microsoft.Data.Sqlite.SqliteConnection($"Data Source={realDbPath}"))
+        {
+            conn.Open();
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = "CREATE TABLE Products (Id INTEGER PRIMARY KEY, Name TEXT); INSERT INTO Products (Name) VALUES ('Widget A');";
+            cmd.ExecuteNonQuery();
+        }
+
+        var service = new BackupService(realDbPath, NullLogger<BackupService>.Instance, _tempDir);
+
+        // Act
+        var backupPath = await service.CreateBackupAsync();
+
+        // Assert
+        File.Exists(backupPath).Should().BeTrue();
+        using (var archive = ZipFile.OpenRead(backupPath))
+        {
+            var entry = archive.GetEntry("WarehousePOS.db");
+            entry.Should().NotBeNull();
+
+            var extractedDbPath = Path.Combine(_tempDir, "extracted.db");
+            entry!.ExtractToFile(extractedDbPath);
+
+            using var verifyConn = new Microsoft.Data.Sqlite.SqliteConnection($"Data Source={extractedDbPath}");
+            verifyConn.Open();
+            using var cmd = verifyConn.CreateCommand();
+            cmd.CommandText = "SELECT Name FROM Products WHERE Id = 1;";
+            var name = cmd.ExecuteScalar() as string;
+            name.Should().Be("Widget A");
+        }
+    }
 }

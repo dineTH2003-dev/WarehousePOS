@@ -179,6 +179,11 @@ public partial class MainWindow : Window
                 SetActiveNav(BtnPos);
                 await posView.InitAsync();
             }
+            else if (page is Views.Sales.BillHistoryView billHistoryView)
+            {
+                SetActiveNav(BtnBillHistory);
+                await billHistoryView.InitAsync();
+            }
             else if (page is Views.Products.ProductListView productView)
             {
                 SetActiveNav(BtnProducts);
@@ -263,6 +268,9 @@ public partial class MainWindow : Window
 
     private void BtnPos_Click(object sender, RoutedEventArgs e)
         => NavigateTo<PosViewModel>();
+
+    private void BtnBillHistory_Click(object sender, RoutedEventArgs e)
+        => NavigateTo<BillHistoryViewModel>();
 
     private void BtnProducts_Click(object sender, RoutedEventArgs e)
         => NavigateTo<ProductListViewModel>();

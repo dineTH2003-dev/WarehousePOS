@@ -189,12 +189,31 @@ public sealed class SupplierFormViewModel : ViewModelBase
 
     public void AddNewlyCreatedProduct(ProductDto product)
     {
-        if (!AvailableProducts.Any(p => p.Id == product.Id))
+        if (product is null) return;
+
+        var existingInAvailable = AvailableProducts.FirstOrDefault(p => p.Id == product.Id || (product.Id > 0 && p.Id == product.Id));
+        if (existingInAvailable is null)
+        {
             AvailableProducts.Add(product);
+        }
+        else
+        {
+            var idx = AvailableProducts.IndexOf(existingInAvailable);
+            AvailableProducts[idx] = product;
+        }
 
-        if (!ProvidedProducts.Any(p => p.Id == product.Id))
+        var existingInProvided = ProvidedProducts.FirstOrDefault(p => p.Id == product.Id || (product.Id > 0 && p.Id == product.Id));
+        if (existingInProvided is null)
+        {
             ProvidedProducts.Add(product);
+        }
+        else
+        {
+            var idx = ProvidedProducts.IndexOf(existingInProvided);
+            ProvidedProducts[idx] = product;
+        }
 
+        SelectedProductIdToAdd = product.Id;
         RefreshValidation();
     }
 

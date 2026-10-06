@@ -8,16 +8,28 @@ public sealed record UserDto(
     string FullName,
     UserRole Role,
     bool IsActive,
-    DateTime? LastLoginAt);
+    DateTime? LastLoginAt,
+    decimal BaseSalary = 0m,
+    string? SalaryComponents = null,
+    string? PaymentDueDate = null,
+    string? PaymentFrequency = "Monthly");
 
 public sealed record CreateUserRequest(
     string Username,
     string FullName,
     string Password,
-    UserRole Role);
+    UserRole Role,
+    decimal BaseSalary = 0m,
+    string? SalaryComponents = null,
+    string? PaymentDueDate = null,
+    string? PaymentFrequency = "Monthly");
 
 public sealed record UpdateUserRequest(
     int UserId,
     string FullName,
     UserRole Role,
-    string? NewPassword = null);
+    string? NewPassword = null,
+    decimal BaseSalary = 0m,
+    string? SalaryComponents = null,
+    string? PaymentDueDate = null,
+    string? PaymentFrequency = "Monthly");

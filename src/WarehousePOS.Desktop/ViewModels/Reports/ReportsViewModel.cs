@@ -2,9 +2,13 @@ using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Media;
 using WarehousePOS.Application.Printing;
+using WarehousePOS.Application.Products;
 using WarehousePOS.Application.Reports;
+using WarehousePOS.Application.Sales;
 using WarehousePOS.Application.Suppliers;
 using WarehousePOS.Desktop.Services;
+using WarehousePOS.Desktop.Views.Reports;
+using WarehousePOS.Desktop.Views.Sales;
 
 namespace WarehousePOS.Desktop.ViewModels.Reports;
 
@@ -13,6 +17,9 @@ public sealed class ReportsViewModel : ViewModelBase
     private readonly IReportService _reportService;
     private readonly ISupplierService _supplierService;
     private readonly SessionContext _session;
+    private readonly ISaleService? _saleService;
+    private readonly IProductService? _productService;
+    private readonly ICustomerService? _customerService;
     private readonly IReceiptPrinter? _printer;
 
     private bool _isPrinting;
@@ -50,12 +57,19 @@ public sealed class ReportsViewModel : ViewModelBase
     private string _customerSearchText = string.Empty;
     private string _selectedCustomerTypeFilter = "All"; // All, Retail, Wholesale
 
+    private string _productionSearchText = string.Empty;
+    private string _selectedProductionCategoryFilter = "All";
+
+    private string _employeeSearchText = string.Empty;
+
     // Detail Panel Selection State
     private LowStockItemDto? _selectedLowStockItem;
     private GrnRecordDto? _selectedGrnRecord;
     private ClaimRecordDto? _selectedClaimRecord;
     private SupplierBalanceReportDto? _selectedSupplierBalance;
     private CustomerReportDto? _selectedCustomerReport;
+    private ProductProductionReportItemDto? _selectedProductionItem;
+    private EmployeeReportDto? _selectedEmployeeReport;
 
     // Report DTO Data Properties
     private GeneralAnalyticsDto? _generalAnalytics;
@@ -66,6 +80,8 @@ public sealed class ReportsViewModel : ViewModelBase
     private ClaimItemReportDto? _claimReport;
     private SupplierBalanceSummaryDto? _supplierBalanceSummary;
     private CustomerReportSummaryDto? _customerSummary;
+    private ProductProductionReportSummaryDto? _productionReportSummary;
+    private EmployeeReportSummaryDto? _employeeSummary;
 
     // Raw Collections
     private readonly ObservableCollection<SalesTrendPointDto> _salesTrend = [];
@@ -79,6 +95,10 @@ public sealed class ReportsViewModel : ViewModelBase
     private readonly ObservableCollection<CustomerReportDto> _customerReports = [];
     private readonly ObservableCollection<SupplierDto> _suppliersList = [];
     private readonly ObservableCollection<string> _businessInsights = [];
+    private readonly ObservableCollection<ProductProductionReportItemDto> _productionItems = [];
+    private readonly ObservableCollection<ProductProductionReportItemDto> _filteredProductionItems = [];
+    private readonly ObservableCollection<string> _productionCategoryList = [];
+    private readonly ObservableCollection<EmployeeReportDto> _employeeReports = [];
 
     // Filtered Collections for Views
     private readonly ObservableCollection<LowStockItemDto> _filteredLowStockItems = [];
@@ -86,6 +106,7 @@ public sealed class ReportsViewModel : ViewModelBase
     private readonly ObservableCollection<ClaimRecordDto> _filteredClaimRecords = [];
     private readonly ObservableCollection<SupplierBalanceReportDto> _filteredSupplierBalances = [];
     private readonly ObservableCollection<CustomerReportDto> _filteredCustomerReports = [];
+    private readonly ObservableCollection<EmployeeReportDto> _filteredEmployeeReports = [];
 
     public int SelectedTabIndex
     {
@@ -294,6 +315,26 @@ public sealed class ReportsViewModel : ViewModelBase
         }
     }
 
+    public string ProductionSearchText
+    {
+        get => _productionSearchText;
+        set
+        {
+            if (SetField(ref _productionSearchText, value))
+                ApplyProductionFilters();
+        }
+    }
+
+    public string SelectedProductionCategoryFilter
+    {
+        get => _selectedProductionCategoryFilter;
+        set
+        {
+            if (SetField(ref _selectedProductionCategoryFilter, value))
+                ApplyProductionFilters();
+        }
+    }
+
     // Detail Panel Selection Properties
     public LowStockItemDto? SelectedLowStockItem
     {
@@ -323,6 +364,12 @@ public sealed class ReportsViewModel : ViewModelBase
     {
         get => _selectedCustomerReport;
         set => SetField(ref _selectedCustomerReport, value);
+    }
+
+    public ProductProductionReportItemDto? SelectedProductionItem
+    {
+        get => _selectedProductionItem;
+        set => SetField(ref _selectedProductionItem, value);
     }
 
     // Reports Bindings
@@ -397,6 +444,12 @@ public sealed class ReportsViewModel : ViewModelBase
         private set => SetField(ref _customerSummary, value);
     }
 
+    public ProductProductionReportSummaryDto? ProductionReportSummary
+    {
+        get => _productionReportSummary;
+        private set => SetField(ref _productionReportSummary, value);
+    }
+
     // Collections
     public ObservableCollection<SalesTrendPointDto> SalesTrend => _salesTrend;
     public ObservableCollection<HourlySalesPointDto> HourlySales => _hourlySales;
@@ -418,6 +471,9 @@ public sealed class ReportsViewModel : ViewModelBase
     public ObservableCollection<ClaimRecordDto> FilteredClaimRecords => _filteredClaimRecords;
     public ObservableCollection<SupplierBalanceReportDto> FilteredSupplierBalances => _filteredSupplierBalances;
     public ObservableCollection<CustomerReportDto> FilteredCustomerReports => _filteredCustomerReports;
+    public ObservableCollection<ProductProductionReportItemDto> ProductionItems => _productionItems;
+    public ObservableCollection<ProductProductionReportItemDto> FilteredProductionItems => _filteredProductionItems;
+    public ObservableCollection<string> ProductionCategoryList => _productionCategoryList;
     public ObservableCollection<ProductClaimSliceDto> ProductClaimDistribution => _productClaimDistribution;
 
     // Chart Maximum Scales
@@ -438,11 +494,16 @@ public sealed class ReportsViewModel : ViewModelBase
     public RelayCommand<ClaimRecordDto> SelectClaimCommand { get; }
     public RelayCommand ClearSupplierSelectionCommand { get; }
     public RelayCommand ClearCustomerSelectionCommand { get; }
+    public RelayCommand ClearProductionSelectionCommand { get; }
+    public RelayCommand<object> ProcessCustomerClaimCommand { get; }
 
     public ReportsViewModel(
         IReportService reportService,
         ISupplierService supplierService,
         SessionContext session,
+        ISaleService? saleService = null,
+        IProductService? productService = null,
+        ICustomerService? customerService = null,
         IReceiptPrinter? printer = null)
     {
         if (!session.IsAdmin)
@@ -451,6 +512,9 @@ public sealed class ReportsViewModel : ViewModelBase
         _reportService = reportService;
         _supplierService = supplierService;
         _session = session;
+        _saleService = saleService;
+        _productService = productService;
+        _customerService = customerService;
         _printer = printer;
 
         ApplyFilterCommand = new RelayCommand(async () => await LoadAllReportsAsync(), () => IsValidDateRange);
@@ -468,6 +532,10 @@ public sealed class ReportsViewModel : ViewModelBase
         SelectClaimCommand = new RelayCommand<ClaimRecordDto>(claim => SelectedClaimRecord = claim);
         ClearSupplierSelectionCommand = new RelayCommand(() => SelectedSupplierBalance = null);
         ClearCustomerSelectionCommand = new RelayCommand(() => SelectedCustomerReport = null);
+        ClearProductionSelectionCommand = new RelayCommand(() => SelectedProductionItem = null);
+        ClearEmployeeSelectionCommand = new RelayCommand(() => SelectedEmployeeReport = null);
+        ProcessCustomerClaimCommand = new RelayCommand<object>(async param => await ExecuteProcessCustomerClaimAsync(param as CustomerReportDto));
+        ProcessEmployeePaymentCommand = new RelayCommand<object>(async param => await ExecuteProcessEmployeePaymentAsync(param as EmployeeReportDto));
         PrintCurrentReportCommand = new RelayCommand(async () => await PrintCurrentReportAsync(), () => !IsPrinting && _printer is not null);
 
         _ = InitialiseAsync();
@@ -663,6 +731,33 @@ public sealed class ReportsViewModel : ViewModelBase
                     }
                     ApplyCustomerFilters();
                     OnPropertyChanged(nameof(MaxCustomerSpend));
+                    break;
+
+                case 7: // Production & Product Profitability
+                    ProductionReportSummary = await _reportService.GetProductProductionReportAsync(FromDate, ToDate, null, ct);
+                    _productionItems.Clear();
+                    _productionCategoryList.Clear();
+                    _productionCategoryList.Add("All");
+                    if (ProductionReportSummary != null)
+                    {
+                        foreach (var item in ProductionReportSummary.Items)
+                        {
+                            _productionItems.Add(item);
+                            if (!_productionCategoryList.Contains(item.CategoryName))
+                                _productionCategoryList.Add(item.CategoryName);
+                        }
+                    }
+                    ApplyProductionFilters();
+                    break;
+
+                case 8: // Employee Report
+                    EmployeeSummary = await _reportService.GetEmployeeReportSummaryAsync(FromDate, ToDate, ct);
+                    _employeeReports.Clear();
+                    if (EmployeeSummary != null)
+                    {
+                        foreach (var emp in EmployeeSummary.Employees) _employeeReports.Add(emp);
+                    }
+                    ApplyEmployeeFilters();
                     break;
             }
         }
@@ -892,6 +987,28 @@ public sealed class ReportsViewModel : ViewModelBase
             _filteredCustomerReports.Add(item);
     }
 
+    private void ApplyProductionFilters()
+    {
+        _filteredProductionItems.Clear();
+        var query = _productionItems.AsEnumerable();
+
+        if (SelectedProductionCategoryFilter != "All" && !string.IsNullOrWhiteSpace(SelectedProductionCategoryFilter))
+        {
+            query = query.Where(x => x.CategoryName.Equals(SelectedProductionCategoryFilter, StringComparison.OrdinalIgnoreCase));
+        }
+
+        if (!string.IsNullOrWhiteSpace(ProductionSearchText))
+        {
+            var search = ProductionSearchText.Trim();
+            query = query.Where(x =>
+                x.ProductName.Contains(search, StringComparison.OrdinalIgnoreCase) ||
+                x.SKU.Contains(search, StringComparison.OrdinalIgnoreCase));
+        }
+
+        foreach (var item in query)
+            _filteredProductionItems.Add(item);
+    }
+
     private void GenerateBusinessInsights()
     {
         _businessInsights.Clear();
@@ -945,6 +1062,136 @@ public sealed class ReportsViewModel : ViewModelBase
     {
         if (!_session.IsAdmin)
             throw new UnauthorizedAccessException("Only an Admin can access Reports.");
+    }
+
+    private async Task ExecuteProcessCustomerClaimAsync(CustomerReportDto? preselectedCustomer = null)
+    {
+        EnsureAdmin();
+
+        try
+        {
+            var products = _productService != null ? await _productService.GetAllAsync() : [];
+            var customers = _customerService != null ? await _customerService.GetActiveAsync() : [];
+
+            CustomerDto? targetCustomer = null;
+            if (preselectedCustomer != null && customers.Count > 0)
+            {
+                targetCustomer = customers.FirstOrDefault(c => c.Id == preselectedCustomer.CustomerId);
+            }
+
+            var activeWindow = System.Windows.Application.Current?.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive)
+                               ?? System.Windows.Application.Current?.MainWindow;
+
+            var dialog = new ProcessCustomerClaimDialog(products, customers, targetCustomer);
+            if (activeWindow != null)
+            {
+                dialog.Owner = activeWindow;
+            }
+
+            if (dialog.ShowDialog() == true && dialog.Request != null && _saleService != null)
+            {
+                IsBusy = true;
+                await _saleService.ProcessCustomerClaimAsync(dialog.Request);
+
+                PrintStatusMessage = $"✅ Customer claim for Rs. {dialog.Request.ClaimAmount:N2} processed successfully!";
+                await LoadAllReportsAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Unable to process customer claim: {ex.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    public string EmployeeSearchText
+    {
+        get => _employeeSearchText;
+        set
+        {
+            if (SetField(ref _employeeSearchText, value))
+                ApplyEmployeeFilters();
+        }
+    }
+
+    public EmployeeReportDto? SelectedEmployeeReport
+    {
+        get => _selectedEmployeeReport;
+        set => SetField(ref _selectedEmployeeReport, value);
+    }
+
+    public EmployeeReportSummaryDto? EmployeeSummary
+    {
+        get => _employeeSummary;
+        private set => SetField(ref _employeeSummary, value);
+    }
+
+    public ObservableCollection<EmployeeReportDto> FilteredEmployees => _filteredEmployeeReports;
+
+    public RelayCommand ClearEmployeeSelectionCommand { get; }
+    public RelayCommand<object> ProcessEmployeePaymentCommand { get; }
+
+    private void ApplyEmployeeFilters()
+    {
+        _filteredEmployeeReports.Clear();
+        IEnumerable<EmployeeReportDto> query = _employeeReports;
+        if (!string.IsNullOrWhiteSpace(EmployeeSearchText))
+        {
+            var term = EmployeeSearchText.Trim();
+            query = query.Where(e => e.FullName.Contains(term, StringComparison.OrdinalIgnoreCase)
+                                  || e.Username.Contains(term, StringComparison.OrdinalIgnoreCase)
+                                  || e.Role.Contains(term, StringComparison.OrdinalIgnoreCase));
+        }
+        foreach (var emp in query) _filteredEmployeeReports.Add(emp);
+    }
+
+    private async Task ExecuteProcessEmployeePaymentAsync(EmployeeReportDto? preselectedEmployee = null)
+    {
+        EnsureAdmin();
+
+        try
+        {
+            if (_employeeReports.Count == 0 && _reportService != null)
+            {
+                EmployeeSummary = await _reportService.GetEmployeeReportSummaryAsync(FromDate, ToDate);
+                _employeeReports.Clear();
+                if (EmployeeSummary != null)
+                {
+                    foreach (var emp in EmployeeSummary.Employees) _employeeReports.Add(emp);
+                }
+            }
+
+            var activeWindow = System.Windows.Application.Current?.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive)
+                               ?? System.Windows.Application.Current?.MainWindow;
+
+            var dialog = new ProcessEmployeePaymentDialog(_employeeReports, preselectedEmployee);
+            if (activeWindow != null)
+            {
+                dialog.Owner = activeWindow;
+            }
+
+            if (dialog.ShowDialog() == true && dialog.Request != null && _reportService != null)
+            {
+                IsBusy = true;
+                var currentUserId = _session.CurrentUser?.UserId ?? 1;
+                await _reportService.RecordEmployeePaymentAsync(dialog.Request, currentUserId);
+
+                string empName = _employeeReports.FirstOrDefault(e => e.EmployeeId == dialog.Request.EmployeeId)?.FullName ?? "Employee";
+                PrintStatusMessage = $"✅ {dialog.Request.PaymentType} of Rs. {dialog.Request.Amount:N2} logged for {empName}!";
+                await LoadAllReportsAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Unable to process employee payment: {ex.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
     }
 
     public async Task PrintCurrentReportAsync()
@@ -1036,7 +1283,7 @@ public sealed class ReportsViewModel : ViewModelBase
                 }
                 return ("Goods Received Notes (GRN) Report", sb.ToString());
 
-            case 6: // Supplier Balances
+            case 5: // Supplier Balances
                 if (_supplierBalanceSummary is not null)
                 {
                     sb.AppendLine($"Total Outstanding Payable: Rs. {_supplierBalanceSummary.TotalSupplierPayables:N2}");
@@ -1054,7 +1301,7 @@ public sealed class ReportsViewModel : ViewModelBase
                 }
                 break;
 
-            case 7: // Customer Credit Balances
+            case 6: // Customer Credit Balances
                 if (_customerSummary is not null)
                 {
                     sb.AppendLine($"Total Outstanding Credit : Rs. {_customerSummary.OutstandingCustomerBalance:N2}");
@@ -1069,6 +1316,29 @@ public sealed class ReportsViewModel : ViewModelBase
                         sb.AppendLine(string.Format("{0,-30} {1,-16} {2,16:N2} {3,14:N2}", cName, c.Phone ?? "-", c.TotalSpent, c.OutstandingBalance));
                     }
                     return ("Customer Balances Report", sb.ToString());
+                }
+                break;
+
+            case 7: // Production & Product Profitability Report
+                if (_productionReportSummary is not null)
+                {
+                    sb.AppendLine($"Reporting Period         : {FromDate:yyyy-MM-dd} to {ToDate:yyyy-MM-dd}");
+                    sb.AppendLine($"Total Volume Sold        : {_productionReportSummary.TotalVolumeSold} units");
+                    sb.AppendLine($"Total Gross Revenue      : Rs. {_productionReportSummary.TotalCombinedRevenue:N2}");
+                    sb.AppendLine($"Retail Profit            : Rs. {_productionReportSummary.TotalRetailProfit:N2}");
+                    sb.AppendLine($"Wholesale Profit         : Rs. {_productionReportSummary.TotalWholesaleProfit:N2}");
+                    sb.AppendLine($"Total Overall Profit     : Rs. {_productionReportSummary.TotalCombinedProfit:N2}");
+                    sb.AppendLine($"Overall Margin           : {_productionReportSummary.OverallMarginPercentage:N2}%");
+                    sb.AppendLine($"Total Claims Quantity    : {_productionReportSummary.TotalClaimQuantity} units (Rs. {_productionReportSummary.TotalClaimValue:N2})");
+                    sb.AppendLine("--------------------------------------------------------------------------------");
+                    sb.AppendLine(string.Format("{0,-10} {1,-24} {2,8} {3,12} {4,12} {5,8}", "SKU", "Product Name", "Tot Vol", "Ret Profit", "Whs Profit", "Claims"));
+                    sb.AppendLine("--------------------------------------------------------------------------------");
+                    foreach (var p in _filteredProductionItems.Take(30))
+                    {
+                        string pName = p.ProductName.Length > 24 ? p.ProductName[..24] : p.ProductName;
+                        sb.AppendLine(string.Format("{0,-10} {1,-24} {2,8} {3,12:N2} {4,12:N2} {5,8}", p.SKU, pName, p.TotalQuantitySold, p.RetailProfit, p.WholesaleProfit, p.ClaimQuantity));
+                    }
+                    return ("Production & Product Profitability Report", sb.ToString());
                 }
                 break;
         }

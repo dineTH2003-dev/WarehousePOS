@@ -11,6 +11,10 @@ public sealed class PurchaseConfiguration : IEntityTypeConfiguration<Purchase>
         builder.HasKey(p => p.Id);
         builder.Property(p => p.Status).HasConversion<int>();
         builder.Property(p => p.Notes).HasMaxLength(1000);
+        builder.Property(p => p.DiscountAmount).HasColumnType("decimal(18,2)").HasDefaultValue(0m);
+        builder.Property(p => p.PaidAmount).HasColumnType("decimal(18,2)");
+        builder.Property(p => p.PaymentMethod).HasMaxLength(50);
+        builder.Property(p => p.PaymentDetails).HasMaxLength(250);
         builder.HasOne(p => p.Supplier).WithMany().HasForeignKey(p => p.SupplierId).OnDelete(DeleteBehavior.Restrict);
         builder.HasMany(p => p.Items).WithOne().HasForeignKey(i => i.PurchaseId).OnDelete(DeleteBehavior.Cascade);
     }

@@ -44,36 +44,6 @@ public sealed class NotificationServiceTests
     }
 
     [Fact]
-    public async Task WhatsAppNotificationService_WithoutGatewayUrl_ShouldReturnError()
-    {
-        // Arrange
-        using var httpClient = new HttpClient();
-        var service = new WhatsAppNotificationService(httpClient, NullLogger<WhatsAppNotificationService>.Instance);
-
-        // Act
-        var result = await service.SendTextMessageAsync("+94711435343", "Hello World");
-
-        // Assert
-        result.Success.Should().BeFalse();
-        result.Message.Should().Contain("WhatsApp Gateway URL is not configured");
-    }
-
-    [Fact]
-    public async Task WhatsAppNotificationService_EmptyItems_ShouldReturnSuccess()
-    {
-        // Arrange
-        using var httpClient = new HttpClient();
-        var service = new WhatsAppNotificationService(httpClient, NullLogger<WhatsAppNotificationService>.Instance);
-
-        // Act
-        var result = await service.SendLowStockAlertAsync([], "+94711435343");
-
-        // Assert
-        result.Success.Should().BeTrue();
-        result.Message.Should().Contain("No low stock items");
-    }
-
-    [Fact]
     public async Task NotificationOrchestrator_SaveAndGetSettings_ShouldPersistSettings()
     {
         // Arrange
@@ -89,14 +59,12 @@ public sealed class NotificationServiceTests
         var reportServiceMock = new Mock<IReportService>();
         using var httpClient = new HttpClient();
         var emailService = new BrevoEmailService(httpClient, NullLogger<BrevoEmailService>.Instance);
-        var waService = new WhatsAppNotificationService(httpClient, NullLogger<WhatsAppNotificationService>.Instance);
 
         var orchestrator = new NotificationOrchestrator(
             settingRepoMock.Object,
             productRepoMock.Object,
             reportServiceMock.Object,
             emailService,
-            waService,
             NullLogger<NotificationOrchestrator>.Instance);
 
         var input = new NotificationSettingsDto(
@@ -105,11 +73,7 @@ public sealed class NotificationServiceTests
             BrevoSenderName: "My Store Alerts",
             OwnerEmail: "owner@mystore.com",
             IsEmailLowStockAlertEnabled: true,
-            IsEmailMonthlyReportEnabled: true,
-            IsWhatsAppEnabled: true,
-            OwnerPhone: "+94711435343",
-            WhatsAppGatewayUrl: "https://api.ultramsg.com/instance123/messages/chat",
-            WhatsAppApiKey: "token-abc-xyz");
+            IsEmailMonthlyReportEnabled: true);
 
         // Act
         await orchestrator.SaveSettingsAsync(input);
@@ -122,10 +86,6 @@ public sealed class NotificationServiceTests
         loaded.OwnerEmail.Should().Be("owner@mystore.com");
         loaded.IsEmailLowStockAlertEnabled.Should().BeTrue();
         loaded.IsEmailMonthlyReportEnabled.Should().BeTrue();
-        loaded.IsWhatsAppEnabled.Should().BeTrue();
-        loaded.OwnerPhone.Should().Be("+94711435343");
-        loaded.WhatsAppGatewayUrl.Should().Be("https://api.ultramsg.com/instance123/messages/chat");
-        loaded.WhatsAppApiKey.Should().Be("token-abc-xyz");
     }
 
     [Fact]
@@ -140,14 +100,12 @@ public sealed class NotificationServiceTests
         var reportServiceMock = new Mock<IReportService>();
         using var httpClient = new HttpClient();
         var emailService = new BrevoEmailService(httpClient, NullLogger<BrevoEmailService>.Instance);
-        var waService = new WhatsAppNotificationService(httpClient, NullLogger<WhatsAppNotificationService>.Instance);
 
         var orchestrator = new NotificationOrchestrator(
             settingRepoMock.Object,
             productRepoMock.Object,
             reportServiceMock.Object,
             emailService,
-            waService,
             NullLogger<NotificationOrchestrator>.Instance);
 
         // Act

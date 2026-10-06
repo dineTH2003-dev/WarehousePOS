@@ -7,7 +7,10 @@ public enum UserRole
     Admin = 1,
 
     /// <summary>POS and inventory operations only.</summary>
-    Worker = 2
+    Worker = 2,
+
+    /// <summary>Cashier role for register and checkout access.</summary>
+    Cashier = 3
 }
 
 /// <summary>Type of a sale transaction.</summary>
@@ -64,5 +67,42 @@ public enum SaleStatus
 {
     Completed = 1,
     Cancelled = 2,
-    Returned = 3
+    Returned = 3,
+    AdvancePaid = 4,
+    PartiallyReturned = 5
 }
+
+/// <summary>Status of a delivery trip.</summary>
+public enum DeliveryStatus
+{
+    Pending = 1,
+    Dispatched = 2,
+    Delivered = 3,
+    Failed = 4
+}
+
+/// <summary>Status of a technical service ticket.</summary>
+public enum TicketStatus
+{
+    Open = 1,
+    InProgress = 2,
+    Resolved = 3,
+    Rejected = 4
+}
+
+/// <summary>Classification of expense fixed vs variable.</summary>
+public enum ExpenseType
+{
+    Fixed = 1,
+    Variable = 2
+}
+
+/// <summary>Operational role of employee/user for payroll consolidation.</summary>
+public enum EmployeeRole
+{
+    Admin = 1,
+    Salesman = 2,
+    Driver = 3,
+    Technician = 4
+}
+

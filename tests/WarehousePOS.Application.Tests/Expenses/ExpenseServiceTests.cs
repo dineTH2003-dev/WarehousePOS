@@ -134,4 +134,19 @@ public sealed class ExpenseServiceTests
         summary.HighestCategoryAmount.Should().Be(5000m);
         summary.HighestCategoryPercentage.Should().Be(71.4);
     }
+
+    [Fact]
+    public async Task GetBySaleIdAsync_CallsRepositoryGetBySaleIdAsync()
+    {
+        var expense = Expense.Create(1, 500m, "Delivery expense", 1, DateTime.UtcNow, "REF-DEL", saleId: 42);
+        _repoMock.Setup(r => r.GetBySaleIdAsync(42, default))
+                 .ReturnsAsync(new List<Expense> { expense });
+
+        var results = await _sut.GetBySaleIdAsync(42);
+
+        results.Should().HaveCount(1);
+        results[0].SaleId.Should().Be(42);
+        results[0].Amount.Should().Be(500m);
+        _repoMock.Verify(r => r.GetBySaleIdAsync(42, default), Times.Once);
+    }
 }

@@ -23,10 +23,16 @@ public sealed class AppDbContext : DbContext
     public DbSet<Customer>          Customers          { get; set; }
     public DbSet<Sale>              Sales              { get; set; }
     public DbSet<SaleItem>          SaleItems          { get; set; }
+    public DbSet<SalePayment>       SalePayments       { get; set; }
     public DbSet<AuditLog>          AuditLogs          { get; set; }
     public DbSet<StoreSetting>      StoreSettings      { get; set; }
     public DbSet<ExpenseCategory>   ExpenseCategories  { get; set; }
     public DbSet<Expense>           Expenses           { get; set; }
+    public DbSet<SupplierProductEntitlement> SupplierProductEntitlements { get; set; }
+    public DbSet<DeliveryTrip>      DeliveryTrips      { get; set; }
+    public DbSet<FuelLog>           FuelLogs           { get; set; }
+    public DbSet<ServiceTicket>     ServiceTickets     { get; set; }
+
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
