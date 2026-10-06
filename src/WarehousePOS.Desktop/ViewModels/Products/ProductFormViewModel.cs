@@ -29,6 +29,8 @@ public sealed class ProductFormViewModel : ViewModelBase
     private bool   _isDuplicate;
     private CancellationTokenSource? _validationCts;
 
+    public ProductDto? LastCreatedProduct { get; private set; }
+
     public ObservableCollection<CategoryDto> Categories { get; } = [];
 
     public string Name
@@ -320,10 +322,11 @@ public sealed class ProductFormViewModel : ViewModelBase
                     string.IsNullOrWhiteSpace(Description) ? null : Description.Trim(),
                     retail, wholesale, CategoryId, ReorderLevel, stockQuantity,
                     wYears, wMonths, wDays));
+                LastCreatedProduct = null;
             }
             else
             {
-                await _productService.CreateAsync(new CreateProductRequest(
+                LastCreatedProduct = await _productService.CreateAsync(new CreateProductRequest(
                     Name.Trim(), _sku.Trim(),
                     string.IsNullOrWhiteSpace(Barcode) ? null : Barcode.Trim(),
                     string.IsNullOrWhiteSpace(Description) ? null : Description.Trim(),
