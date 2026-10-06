@@ -994,6 +994,17 @@
     </Style>
 
     <!-- ============================================================
+         MODERN CHECKBOX STYLE
+         ============================================================ -->
+    <Style x:Key="ModernCheckBox" TargetType="CheckBox">
+        <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Padding" Value="6,0,0,0" />
+    </Style>
+
+    <!-- ============================================================
          MODERN SWITCH CHECKBOX STYLE
          ============================================================ -->
     <Style x:Key="ModernSwitch" TargetType="CheckBox">
