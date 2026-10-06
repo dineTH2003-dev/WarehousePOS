@@ -18,6 +18,20 @@ public partial class CustomerPurchasedItemsView : Page
         DataContext = vm;
         vm.BackRequested += () => _nav.NavigateTo<CustomerListViewModel>();
         vm.ClaimRequested += OnClaimRequested;
+
+        Loaded += async (s, e) =>
+        {
+            if (CustomerPurchasedItemsViewModel.PendingCustomer is not null)
+            {
+                var customer = CustomerPurchasedItemsViewModel.PendingCustomer;
+                CustomerPurchasedItemsViewModel.PendingCustomer = null;
+                await _vm.LoadAsync(customer);
+            }
+            else if (_vm.Customer is not null)
+            {
+                await _vm.LoadAsync(_vm.Customer);
+            }
+        };
     }
 
     public async Task InitAsync()

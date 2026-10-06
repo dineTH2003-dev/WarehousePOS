@@ -42,27 +42,57 @@ public static class DbInitializer
         await db.Database.ExecuteSqlRawAsync("PRAGMA busy_timeout = 5000;");
         await db.Database.ExecuteSqlRawAsync("PRAGMA foreign_keys = ON;");
 
-        // Seed Admin user if no users exist
-        if (!await db.Users.AnyAsync())
+        // Seed or update HappyProducts Admin user
+        var happyProductsAdmin = await db.Users.FirstOrDefaultAsync(u => u.Username == "happyproducts");
+        if (happyProductsAdmin is null)
         {
-            var adminPasswordHash = BCrypt.Net.BCrypt.HashPassword("Admin@123");
-            var adminUser = User.Create("admin", adminPasswordHash, "System Administrator", UserRole.Admin);
+            var adminPasswordHash = BCrypt.Net.BCrypt.HashPassword("Indika@123");
+            var adminUser = User.Create("HappyProducts", adminPasswordHash, "Happy Products Admin", UserRole.Admin);
             await db.Users.AddAsync(adminUser);
         }
-
-        // Seed Store Settings if none exist
-        if (!await db.StoreSettings.AnyAsync())
+        else
         {
-            var settings = new[]
+            var adminPasswordHash = BCrypt.Net.BCrypt.HashPassword("Indika@123");
+            happyProductsAdmin.ChangePasswordHash(adminPasswordHash);
+            happyProductsAdmin.Activate();
+        }
+
+        // Disable legacy 'admin' user so it cannot be used to log in
+        var legacyAdmin = await db.Users.FirstOrDefaultAsync(u => u.Username == "admin");
+        if (legacyAdmin is not null)
+        {
+            legacyAdmin.Deactivate();
+        }
+
+        // Ensure Store Settings are populated / updated with Happy Products info
+        var defaultStoreSettings = new (string Key, string Value, string Description)[]
+        {
+            ("STORE_NAME", "HAPPY PRODUCTS", "Name of the business"),
+            ("STORE_ADDRESS", "Bandaragama Rd, Waskaduwa", "Store physical address"),
+            ("STORE_PHONE", "Tel: 0711435343", "Contact phone number"),
+            ("STORE_TAX_NO", "Damro, Abans, Singer, Soft Logic, Arpico Authorised Dealer", "Dealer & Registration info"),
+            ("STORE_TAX_REG", "Damro, Abans, Singer, Soft Logic, Arpico Authorised Dealer", "Dealer & Registration info"),
+            ("RECEIPT_HEADER", "Damro, Abans, Singer, Soft Logic, Arpico Authorised Dealer", "Text shown at top of receipt"),
+            ("STORE_FOOTER", "During the warranty period, all goods must be delivered to the manufacturing facility for repairs. The company warranty or corporate bill must be presented. Items cannot be returned after sale; items should be fully inspected and accepted upon receipt.", "Text shown at bottom of receipt"),
+            ("RECEIPT_FOOTER", "During the warranty period, all goods must be delivered to the manufacturing facility for repairs. The company warranty or corporate bill must be presented. Items cannot be returned after sale; items should be fully inspected and accepted upon receipt.", "Text shown at bottom of receipt")
+        };
+
+        foreach (var (k, v, desc) in defaultStoreSettings)
+        {
+            var setting = await db.StoreSettings.FirstOrDefaultAsync(s => s.Key == k);
+            if (setting is null)
             {
-                StoreSetting.Create("STORE_NAME", "HAPPY PRODUCTS", "Name of the business"),
-                StoreSetting.Create("STORE_ADDRESS", "Bandaragama Rd, Waskaduwa", "Store physical address"),
-                StoreSetting.Create("STORE_PHONE", "Tel: 0711435343", "Contact phone number"),
-                StoreSetting.Create("STORE_TAX_NO", "Damro, Abans, Singer, Soft Logic, Arpico Authorised Dealer | Rg. No. B.B. 10500", "Dealer & Registration info"),
-                StoreSetting.Create("RECEIPT_HEADER", "Damro, Abans, Singer, Soft Logic, Arpico Authorised Dealer", "Text shown at top of receipt"),
-                StoreSetting.Create("RECEIPT_FOOTER", "During the warranty period, all goods must be delivered to the manufacturing facility for repairs. The company warranty or corporate bill must be presented. Items cannot be returned after sale; items should be fully inspected and accepted upon receipt.", "Text shown at bottom of receipt")
-            };
-            await db.StoreSettings.AddRangeAsync(settings);
+                await db.StoreSettings.AddAsync(StoreSetting.Create(k, v, desc));
+            }
+            else if (setting.Value.Contains("WAREHOUSEPOS", StringComparison.OrdinalIgnoreCase) ||
+                     setting.Value.Contains("123 Main Street", StringComparison.OrdinalIgnoreCase) ||
+                     setting.Value.Contains("+94 11 234 5678", StringComparison.OrdinalIgnoreCase) ||
+                     setting.Value.Contains("VAT-12345678-0000", StringComparison.OrdinalIgnoreCase) ||
+                     setting.Value.Contains("Please come again", StringComparison.OrdinalIgnoreCase) ||
+                     string.IsNullOrWhiteSpace(setting.Value))
+            {
+                setting.UpdateValue(v);
+            }
         }
 
         // Seed Default Category if none exist

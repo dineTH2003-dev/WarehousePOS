@@ -31,9 +31,7 @@ public sealed class EpsonLq310Printer(
             var headerSettings = await settingService.GetHeaderFooterSettingsAsync(ct);
             var printerSettings = await settingService.GetPrinterSettingsAsync(ct);
 
-            string printerName = string.IsNullOrWhiteSpace(printerSettings.PrinterName)
-                ? "EPSON LQ-310 ESC/P2"
-                : printerSettings.PrinterName;
+            string printerName = ResolvePrinterName(printerSettings.PrinterName);
 
             string receiptText = FormatReceiptText(
                 sale,
@@ -87,9 +85,7 @@ public sealed class EpsonLq310Printer(
             var headerSettings = await settingService.GetHeaderFooterSettingsAsync(ct);
             var printerSettings = await settingService.GetPrinterSettingsAsync(ct);
 
-            string printerName = string.IsNullOrWhiteSpace(printerSettings.PrinterName)
-                ? "EPSON LQ-310 ESC/P2"
-                : printerSettings.PrinterName;
+            string printerName = ResolvePrinterName(printerSettings.PrinterName);
 
             string text = FormatPurchaseOrderText(purchase, headerSettings.StoreName);
 
@@ -121,9 +117,7 @@ public sealed class EpsonLq310Printer(
             var headerSettings = await settingService.GetHeaderFooterSettingsAsync(ct);
             var printerSettings = await settingService.GetPrinterSettingsAsync(ct);
 
-            string printerName = string.IsNullOrWhiteSpace(printerSettings.PrinterName)
-                ? "EPSON LQ-310 ESC/P2"
-                : printerSettings.PrinterName;
+            string printerName = ResolvePrinterName(printerSettings.PrinterName);
 
             var sb = new StringBuilder();
             sb.AppendLine("================================================================================");
@@ -225,6 +219,26 @@ public sealed class EpsonLq310Printer(
         return list;
     }
 
+    private string ResolvePrinterName(string? configuredName)
+    {
+        var installed = GetInstalledPrinters();
+        if (!string.IsNullOrWhiteSpace(configuredName))
+        {
+            var exact = installed.FirstOrDefault(p => string.Equals(p, configuredName, StringComparison.OrdinalIgnoreCase));
+            if (exact != null) return exact;
+
+            var partial = installed.FirstOrDefault(p => p.Contains(configuredName, StringComparison.OrdinalIgnoreCase));
+            if (partial != null) return partial;
+        }
+
+        var epson = installed.FirstOrDefault(p => p.Contains("LQ-310", StringComparison.OrdinalIgnoreCase)
+                                               || p.Contains("LQ310", StringComparison.OrdinalIgnoreCase)
+                                               || p.Contains("Epson", StringComparison.OrdinalIgnoreCase));
+        if (epson != null) return epson;
+
+        return configuredName ?? installed.FirstOrDefault() ?? "EPSON LQ-310 ESC/P2";
+    }
+
     private bool PrintViaGdi(string printerName, string text, string docName)
     {
         try
@@ -319,14 +333,14 @@ public sealed class EpsonLq310Printer(
         string payStr = sale.PaymentMethod.ToString();
 
         sb.AppendLine("+" + new string('-', 38) + "+" + new string('-', 39) + "+");
-        sb.AppendLine($"| Customer: {TruncateOrPad(custName, 26),-26} | Tel No: {TruncateOrPad(custPhone, 31),-31} |");
-        sb.AppendLine($"| Address : {TruncateOrPad(custAddr, 26),-26} | Date  : {TruncateOrPad(dateStr, 31),-31} |");
-        sb.AppendLine($"| Invoice : {TruncateOrPad(invoiceNo, 26),-26} | Pay   : {TruncateOrPad(payStr, 31),-31} |");
+        sb.AppendLine($"| Customer: {TruncateOrPad(custName, 26),-26} | Tel No: {TruncateOrPad(custPhone, 29),-29} |");
+        sb.AppendLine($"| Address : {TruncateOrPad(custAddr, 26),-26} | Date  : {TruncateOrPad(dateStr, 29),-29} |");
+        sb.AppendLine($"| Invoice : {TruncateOrPad(invoiceNo, 26),-26} | Pay   : {TruncateOrPad(payStr, 29),-29} |");
         sb.AppendLine("+" + new string('-', 38) + "+" + new string('-', 39) + "+");
 
         // 3. Items Table Headers
         sb.AppendLine("+" + new string('-', 44) + "+" + new string('-', 6) + "+" + new string('-', 12) + "+" + new string('-', 13) + "+");
-        sb.AppendLine("| Description                                 |  Qty. | Unit Price |   Total (Rs) |");
+        sb.AppendLine("| Description                                |  Qty.| Unit Price |   Total (Rs)|");
         sb.AppendLine("+" + new string('-', 44) + "+" + new string('-', 6) + "+" + new string('-', 12) + "+" + new string('-', 13) + "+");
 
         int idx = 1;
@@ -360,7 +374,7 @@ public sealed class EpsonLq310Printer(
             if (!string.IsNullOrWhiteSpace(warrantyStr))
             {
                 sb.AppendLine(string.Format(
-                    "|   * Warranty: {0,-31}|{1,6}|{2,12}|{3,13}|",
+                    "|   * Warranty: {0,-29}|{1,6}|{2,12}|{3,13}|",
                     warrantyStr, "", "", ""));
             }
         }
@@ -374,8 +388,16 @@ public sealed class EpsonLq310Printer(
             sb.AppendLine(string.Format("| {0,48} : {1,25:N2} |", "Discount (Rs)", -sale.DiscountAmount));
         }
 
-        sb.AppendLine(string.Format("| {0,48} : {1,25:N2} |", "Advance Payment (Rs)", sale.AmountPaid));
-        sb.AppendLine(string.Format("| {0,48} : {1,25:N2} |", "Delivery Charge (Rs)", sale.DeliveryFee));
+        if (sale.DeliveryFee > 0)
+        {
+            sb.AppendLine(string.Format("| {0,48} : {1,25:N2} |", "Delivery Charge (Rs)", sale.DeliveryFee));
+        }
+
+        if (sale.LabourCost > 0)
+        {
+            sb.AppendLine(string.Format("| {0,48} : {1,25:N2} |", "Labour Cost (Rs)", sale.LabourCost));
+        }
+
         sb.AppendLine(string.Format("| {0,48} : {1,25:N2} |", "TOTAL AMOUNT (Rs)", sale.TotalAmount));
         sb.AppendLine(string.Format("| {0,48} : {1,25:N2} |", "Amount Paid / Tendered (Rs)", sale.AmountPaid));
 
@@ -396,7 +418,7 @@ public sealed class EpsonLq310Printer(
             sb.AppendLine(string.Format("| {0,48} : {1,25:N2} |", "OUTSTANDING CREDIT (Rs)", creditDue));
         }
 
-        sb.AppendLine("+" + new string('-', 76) + "+");
+        sb.AppendLine("+" + new string('-', 78) + "+");
         sb.AppendLine();
 
         // 5. Terms and Conditions Footer
@@ -410,8 +432,7 @@ public sealed class EpsonLq310Printer(
         }
 
         sb.AppendLine(new string('=', width));
-        sb.AppendLine(Center("Thank you for your business!", width));
-        sb.AppendLine(Center("Software by WarehousePOS", width));
+        sb.AppendLine(Center("Thank you & Come again..!", width));
         sb.AppendLine(new string('=', width));
 
         return sb.ToString();

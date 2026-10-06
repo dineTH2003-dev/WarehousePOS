@@ -87,6 +87,8 @@ public sealed class SupplierFormViewModel : ViewModelBase
         !string.IsNullOrWhiteSpace(_address) ||
         ProvidedProducts.Count > 0;
 
+    private List<ProductDto> _allMasterProducts = [];
+
     public void ClearDraft()
     {
         _editingId = null;
@@ -98,6 +100,7 @@ public sealed class SupplierFormViewModel : ViewModelBase
         ErrorMessage = string.Empty;
         SelectedProductIdToAdd = null;
         ProvidedProducts.Clear();
+        RefreshAvailableProducts();
         OnPropertyChanged(nameof(Name));
         OnPropertyChanged(nameof(ContactPerson));
         OnPropertyChanged(nameof(Phone));
@@ -109,6 +112,9 @@ public sealed class SupplierFormViewModel : ViewModelBase
 
     public async Task LoadAsync(SupplierDto? dto = null)
     {
+        var allProducts = await _productService.GetAllAsync();
+        _allMasterProducts = allProducts.ToList();
+
         if (dto is not null)
         {
             _editingId     = dto.Id;
@@ -121,13 +127,6 @@ public sealed class SupplierFormViewModel : ViewModelBase
             SelectedProductIdToAdd = null;
 
             ProvidedProducts.Clear();
-            AvailableProducts.Clear();
-
-            var allProducts = await _productService.GetAllAsync();
-            foreach (var p in allProducts)
-            {
-                AvailableProducts.Add(p);
-            }
 
             if (!string.IsNullOrWhiteSpace(dto.ProvidedProducts))
             {
@@ -151,24 +150,13 @@ public sealed class SupplierFormViewModel : ViewModelBase
         else if (_editingId is null && HasDraft())
         {
             // Preserve user-entered draft fields when returning from creating/viewing products!
-            AvailableProducts.Clear();
-            var allProducts = await _productService.GetAllAsync();
-            foreach (var p in allProducts)
-            {
-                AvailableProducts.Add(p);
-            }
         }
         else
         {
             ClearDraft();
-            AvailableProducts.Clear();
-            var allProducts = await _productService.GetAllAsync();
-            foreach (var p in allProducts)
-            {
-                AvailableProducts.Add(p);
-            }
         }
 
+        RefreshAvailableProducts();
         OnPropertyChanged(nameof(Title));
         RefreshValidation();
     }
@@ -177,13 +165,16 @@ public sealed class SupplierFormViewModel : ViewModelBase
     {
         if (!SelectedProductIdToAdd.HasValue || SelectedProductIdToAdd.Value <= 0) return;
 
-        var product = AvailableProducts.FirstOrDefault(p => p.Id == SelectedProductIdToAdd.Value);
+        var product = _allMasterProducts.FirstOrDefault(p => p.Id == SelectedProductIdToAdd.Value)
+                      ?? AvailableProducts.FirstOrDefault(p => p.Id == SelectedProductIdToAdd.Value);
+
         if (product is not null && !ProvidedProducts.Any(p => p.Id == product.Id))
         {
             ProvidedProducts.Add(product);
         }
 
         SelectedProductIdToAdd = null;
+        RefreshAvailableProducts();
         RefreshValidation();
     }
 
@@ -191,15 +182,15 @@ public sealed class SupplierFormViewModel : ViewModelBase
     {
         if (product is null) return;
 
-        var existingInAvailable = AvailableProducts.FirstOrDefault(p => p.Id == product.Id || (product.Id > 0 && p.Id == product.Id));
-        if (existingInAvailable is null)
+        var existingMaster = _allMasterProducts.FirstOrDefault(p => p.Id == product.Id || (product.Id > 0 && p.Id == product.Id));
+        if (existingMaster is null)
         {
-            AvailableProducts.Add(product);
+            _allMasterProducts.Add(product);
         }
         else
         {
-            var idx = AvailableProducts.IndexOf(existingInAvailable);
-            AvailableProducts[idx] = product;
+            var idx = _allMasterProducts.IndexOf(existingMaster);
+            _allMasterProducts[idx] = product;
         }
 
         var existingInProvided = ProvidedProducts.FirstOrDefault(p => p.Id == product.Id || (product.Id > 0 && p.Id == product.Id));
@@ -213,7 +204,8 @@ public sealed class SupplierFormViewModel : ViewModelBase
             ProvidedProducts[idx] = product;
         }
 
-        SelectedProductIdToAdd = product.Id;
+        SelectedProductIdToAdd = null;
+        RefreshAvailableProducts();
         RefreshValidation();
     }
 
@@ -221,7 +213,32 @@ public sealed class SupplierFormViewModel : ViewModelBase
     {
         if (product is null) return;
         ProvidedProducts.Remove(product);
+        RefreshAvailableProducts();
         RefreshValidation();
+    }
+
+    private void RefreshAvailableProducts()
+    {
+        var currentlySelectedId = SelectedProductIdToAdd;
+        AvailableProducts.Clear();
+
+        foreach (var p in _allMasterProducts)
+        {
+            bool isAlreadyProvided = ProvidedProducts.Any(pp =>
+                (p.Id > 0 && pp.Id == p.Id) ||
+                string.Equals(pp.Name, p.Name, StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(pp.SKU, p.SKU, StringComparison.OrdinalIgnoreCase));
+
+            if (!isAlreadyProvided)
+            {
+                AvailableProducts.Add(p);
+            }
+        }
+
+        if (currentlySelectedId.HasValue && !AvailableProducts.Any(p => p.Id == currentlySelectedId.Value))
+        {
+            SelectedProductIdToAdd = null;
+        }
     }
 
     private void NavigateToProductPage(ProductDto? product)
