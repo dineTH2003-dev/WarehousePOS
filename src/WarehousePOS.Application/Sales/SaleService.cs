@@ -50,7 +50,16 @@ public sealed class SaleService(
             customer = await customerRepo.GetByIdAsync(req.CustomerId.Value, ct)
                 ?? throw new EntityNotFoundException(nameof(Customer), req.CustomerId.Value);
         }
-        else if (req.SaveAsNewCustomer && !string.IsNullOrWhiteSpace(req.CustomerName))
+        else if (!string.IsNullOrWhiteSpace(req.CustomerPhone))
+        {
+            customer = await customerRepo.GetByPhoneAsync(req.CustomerPhone, ct);
+        }
+        else if (!string.IsNullOrWhiteSpace(req.CustomerName))
+        {
+            customer = await customerRepo.GetByNameAsync(req.CustomerName, ct);
+        }
+
+        if (customer is null && req.SaveAsNewCustomer && !string.IsNullOrWhiteSpace(req.CustomerName))
         {
             customer = Customer.Create(req.CustomerName, req.SaleType, req.CustomerPhone, address: req.DeliveryAddress);
             await customerRepo.AddAsync(customer, ct);

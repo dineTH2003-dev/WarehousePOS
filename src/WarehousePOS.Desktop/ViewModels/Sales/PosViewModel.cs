@@ -749,10 +749,28 @@ public sealed class PosViewModel : ViewModelBase
             var items = _cartItems.Select(i => new CreateSaleItemRequest(
                 i.Product.Id, i.Quantity, i.UnitPrice, i.Discount)).ToList();
 
+            var targetCustomerId = SelectedCustomer?.Id;
+            if (targetCustomerId is null)
+            {
+                var queryTerm = CustomerSearchQuery?.Trim();
+                var phoneTerm = CustomCustomerPhone?.Trim();
+
+                var matched = _customers.FirstOrDefault(c =>
+                    (!string.IsNullOrEmpty(phoneTerm) && string.Equals(c.Phone, phoneTerm, StringComparison.OrdinalIgnoreCase)) ||
+                    (!string.IsNullOrEmpty(queryTerm) && (
+                        string.Equals(c.Phone, queryTerm, StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(c.Name, queryTerm, StringComparison.OrdinalIgnoreCase))));
+
+                if (matched is not null)
+                {
+                    targetCustomerId = matched.Id;
+                }
+            }
+
             var req = new CreateSaleRequest(
                 SaleType,
                 userId,
-                SelectedCustomer?.Id,
+                targetCustomerId,
                 OverallDiscount,
                 AmountPaid,
                 $"POS {SelectedPaymentMethod} Transaction",

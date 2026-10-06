@@ -6,6 +6,8 @@ namespace WarehousePOS.Domain.Interfaces;
 public interface ICustomerRepository
 {
     Task<Customer?> GetByIdAsync(int id, CancellationToken ct = default);
+    Task<Customer?> GetByPhoneAsync(string phone, CancellationToken ct = default);
+    Task<Customer?> GetByNameAsync(string name, CancellationToken ct = default);
     Task<IReadOnlyList<Customer>> GetAllAsync(CancellationToken ct = default);
     Task<IReadOnlyList<Customer>> GetActiveAsync(CancellationToken ct = default);
     Task<IReadOnlyList<Customer>> SearchAsync(string term, CancellationToken ct = default);

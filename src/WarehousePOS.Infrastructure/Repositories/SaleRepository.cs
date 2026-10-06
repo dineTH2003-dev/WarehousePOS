@@ -11,6 +11,20 @@ public sealed class CustomerRepository(AppDbContext db) : ICustomerRepository
     public async Task<Customer?> GetByIdAsync(int id, CancellationToken ct = default) =>
         await db.Customers.AsNoTracking().FirstOrDefaultAsync(c => c.Id == id, ct);
 
+    public async Task<Customer?> GetByPhoneAsync(string phone, CancellationToken ct = default)
+    {
+        var trimmed = phone.Trim();
+        return await db.Customers.AsNoTracking()
+            .FirstOrDefaultAsync(c => c.Phone != null && c.Phone == trimmed, ct);
+    }
+
+    public async Task<Customer?> GetByNameAsync(string name, CancellationToken ct = default)
+    {
+        var trimmed = name.Trim().ToLower();
+        return await db.Customers.AsNoTracking()
+            .FirstOrDefaultAsync(c => c.Name.ToLower() == trimmed, ct);
+    }
+
     public async Task<IReadOnlyList<Customer>> GetAllAsync(CancellationToken ct = default) =>
         await db.Customers.AsNoTracking().OrderBy(c => c.Name).ToListAsync(ct);
 
@@ -80,11 +94,44 @@ public sealed class SaleRepository(AppDbContext db) : ISaleRepository
             .OrderByDescending(s => s.SaleDate)
             .ToListAsync(ct);
 
-    public async Task<IReadOnlyList<Sale>> GetByCustomerAsync(int customerId, CancellationToken ct = default) =>
-        await WithIncludesNoTracking()
+    public async Task<IReadOnlyList<Sale>> GetByCustomerAsync(int customerId, CancellationToken ct = default)
+    {
+        var customer = await db.Customers.AsNoTracking().FirstOrDefaultAsync(c => c.Id == customerId, ct);
+        var phone = customer?.Phone?.Trim();
+        var name = customer?.Name?.Trim();
+
+        var query = WithIncludesNoTracking();
+
+        if (!string.IsNullOrEmpty(phone))
+        {
+            var matchingCustomerIds = await db.Customers.AsNoTracking()
+                .Where(c => c.Phone == phone)
+                .Select(c => c.Id)
+                .ToListAsync(ct);
+
+            return await query
+                .Where(s => (s.CustomerId.HasValue && matchingCustomerIds.Contains(s.CustomerId.Value)) ||
+                            s.CustomerId == customerId ||
+                            (s.CustomerPhone != null && s.CustomerPhone == phone))
+                .OrderByDescending(s => s.SaleDate)
+                .ToListAsync(ct);
+        }
+
+        if (!string.IsNullOrEmpty(name))
+        {
+            var lowerName = name.ToLower();
+            return await query
+                .Where(s => s.CustomerId == customerId ||
+                            (s.CustomerId == null && s.CustomerName != null && s.CustomerName.ToLower() == lowerName))
+                .OrderByDescending(s => s.SaleDate)
+                .ToListAsync(ct);
+        }
+
+        return await query
             .Where(s => s.CustomerId == customerId)
             .OrderByDescending(s => s.SaleDate)
             .ToListAsync(ct);
+    }
 
     public async Task<IReadOnlyList<Sale>> SearchAsync(DateTime? from, DateTime? to, string? searchTerm, SaleStatus? status, PaymentMethod? paymentMethod, SaleType? saleType, CancellationToken ct = default)
     {
