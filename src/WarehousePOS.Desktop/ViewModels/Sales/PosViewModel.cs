@@ -778,9 +778,9 @@ public sealed class PosViewModel : ViewModelBase
                 SelectedPaymentMethod,
                 DeliveryFee,
                 LabourCost,
-                string.IsNullOrWhiteSpace(CustomCustomerName) ? null : CustomCustomerName.Trim(),
-                string.IsNullOrWhiteSpace(CustomCustomerPhone) ? null : CustomCustomerPhone.Trim(),
-                string.IsNullOrWhiteSpace(CustomDeliveryAddress) ? null : CustomDeliveryAddress.Trim(),
+                string.IsNullOrWhiteSpace(CustomCustomerName) ? (SelectedCustomer?.Name) : CustomCustomerName.Trim(),
+                string.IsNullOrWhiteSpace(CustomCustomerPhone) ? (SelectedCustomer?.Phone) : CustomCustomerPhone.Trim(),
+                string.IsNullOrWhiteSpace(CustomDeliveryAddress) ? (SelectedCustomer?.Address) : CustomDeliveryAddress.Trim(),
                 IsAdvancePayment,
                 SaveAsNewCustomer);
 
@@ -810,18 +810,15 @@ public sealed class PosViewModel : ViewModelBase
                 var printerConfig = await _settingService.GetPrinterSettingsAsync();
                 if (printerConfig.AutoPrintEnabled)
                 {
-                    _ = Task.Run(async () =>
+                    try
                     {
-                        try
-                        {
-                            await _printer.PrintReceiptAsync(sale);
-                        }
-                        catch
-                        {
-                            // Error is logged within printer service
-                        }
-                    });
-                    SuccessMessage += " [Bill sent to printer]";
+                        await _printer.PrintReceiptAsync(sale);
+                        SuccessMessage += " [Bill sent to printer]";
+                    }
+                    catch
+                    {
+                        // Error is logged within printer service
+                    }
                 }
             }
             catch

@@ -4,12 +4,12 @@
         xmlns:behaviors="clr-namespace:WarehousePOS.Desktop.Behaviors"
         Title="Submit Warranty Liability Claim"
         Icon="/Resources/Images/app-icon.png"
-        SizeToContent="Height" Width="440"
+        SizeToContent="Height" Width="460"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize"
         Background="{StaticResource BackgroundBrush}">
 
-    <Border Style="{StaticResource Card}" Margin="20" Padding="20">
+    <Border Style="{StaticResource Card}" Margin="20" Padding="24">
         <StackPanel behaviors:ArrowNavigationBehavior.IsEnabled="True">
             <!-- Header -->
             <StackPanel Margin="0,0,0,16">
@@ -22,17 +22,22 @@
             <StackPanel Margin="0,0,0,16">
                 <TextBlock Text="Claim Quantity *" Style="{StaticResource LabelText}" Margin="0,0,0,6"/>
                 <TextBox x:Name="TxtQuantity" Style="{StaticResource FormTextBox}" MinHeight="38" Text="1" Margin="0,0,0,4"
-                         behaviors:IntegerOnlyBehavior.IsEnabled="True"/>
-                <TextBlock x:Name="TxtMaxHint" Text="Max available: 1" Foreground="{StaticResource TextSecondaryBrush}" FontSize="11" Margin="0,0,0,12"/>
+                         behaviors:IntegerOnlyBehavior.IsEnabled="True"
+                         TextChanged="TxtQuantity_TextChanged"
+                         PreviewKeyDown="TxtQuantity_PreviewKeyDown"/>
+                <TextBlock x:Name="TxtMaxHint" Text="Unclaimed line quantity available: 1" Foreground="{StaticResource TextSecondaryBrush}" FontSize="11" Margin="0,0,0,4"/>
 
-                <TextBlock Text="Claim Notes / Reason (Optional)" Style="{StaticResource LabelText}" Margin="0,0,0,6"/>
+                <!-- Real-time error message -->
+                <TextBlock x:Name="TxtError" Text="" Foreground="{StaticResource DangerBrush}" FontSize="12" FontWeight="SemiBold" Visibility="Collapsed" Margin="0,0,0,8" TextWrapping="Wrap"/>
+
+                <TextBlock Text="Claim Notes / Reason (Optional)" Style="{StaticResource LabelText}" Margin="0,6,0,6"/>
                 <TextBox x:Name="TxtNotes" Style="{StaticResource FormTextBox}" MinHeight="38"/>
             </StackPanel>
 
             <!-- Buttons -->
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                 <Button Content="Cancel" Style="{StaticResource SecondaryButton}" Margin="0,0,8,0" Click="BtnCancel_Click"/>
-                <Button Content="Submit Claim" Style="{StaticResource DangerButton}" Click="BtnSubmit_Click"/>
+                <Button x:Name="BtnSubmit" Content="Submit Claim" Style="{StaticResource DangerButton}" Click="BtnSubmit_Click"/>
             </StackPanel>
         </StackPanel>
     </Border>

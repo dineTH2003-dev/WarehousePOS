@@ -97,28 +97,56 @@ public sealed class SaleRepository(AppDbContext db) : ISaleRepository
     public async Task<IReadOnlyList<Sale>> GetByCustomerAsync(int customerId, CancellationToken ct = default)
     {
         var customer = await db.Customers.AsNoTracking().FirstOrDefaultAsync(c => c.Id == customerId, ct);
-        var phone = customer?.Phone?.Trim();
-        var name = customer?.Name?.Trim();
-        var lowerName = name?.ToLower();
+        if (customer is null) return [];
 
-        var query = WithIncludesNoTracking();
+        var rawPhone = customer.Phone?.Trim() ?? string.Empty;
+        var cleanPhone = new string(rawPhone.Where(char.IsDigit).ToArray());
+        var phoneWithoutZero = cleanPhone.TrimStart('0');
 
-        List<int> matchingCustomerIds = [];
-        if (!string.IsNullOrEmpty(phone))
-        {
-            matchingCustomerIds = await db.Customers.AsNoTracking()
-                .Where(c => c.Phone == phone)
-                .Select(c => c.Id)
-                .ToListAsync(ct);
-        }
+        var name = customer.Name?.Trim() ?? string.Empty;
+        var lowerName = name.ToLower();
 
-        return await query
-            .Where(s => s.CustomerId == customerId ||
-                        (s.CustomerId.HasValue && matchingCustomerIds.Contains(s.CustomerId.Value)) ||
-                        (!string.IsNullOrEmpty(phone) && s.CustomerPhone != null && s.CustomerPhone == phone) ||
-                        (!string.IsNullOrEmpty(lowerName) && s.CustomerName != null && s.CustomerName.ToLower() == lowerName))
-            .OrderByDescending(s => s.SaleDate)
+        // 1. Find all customer IDs that match this customer by ID, exact name, or matching phone
+        var matchingCustomerIds = await db.Customers.AsNoTracking()
+            .Where(c => c.Id == customerId ||
+                        (!string.IsNullOrEmpty(lowerName) && c.Name.ToLower() == lowerName) ||
+                        (!string.IsNullOrEmpty(rawPhone) && c.Phone == rawPhone))
+            .Select(c => c.Id)
             .ToListAsync(ct);
+
+        // Fetch sales with all includes
+        var allSales = await WithIncludesNoTracking().ToListAsync(ct);
+
+        return allSales.Where(s =>
+        {
+            if (s.CustomerId.HasValue && matchingCustomerIds.Contains(s.CustomerId.Value))
+                return true;
+
+            if (s.CustomerId == customerId)
+                return true;
+
+            if (!string.IsNullOrWhiteSpace(name) && !string.IsNullOrWhiteSpace(s.CustomerName))
+            {
+                if (string.Equals(s.CustomerName.Trim(), name, StringComparison.OrdinalIgnoreCase))
+                    return true;
+            }
+
+            if (!string.IsNullOrWhiteSpace(cleanPhone) && !string.IsNullOrWhiteSpace(s.CustomerPhone))
+            {
+                var saleCleanPhone = new string(s.CustomerPhone.Where(char.IsDigit).ToArray());
+                var salePhoneWithoutZero = saleCleanPhone.TrimStart('0');
+
+                if (saleCleanPhone == cleanPhone ||
+                    (!string.IsNullOrEmpty(phoneWithoutZero) && salePhoneWithoutZero == phoneWithoutZero))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        })
+        .OrderByDescending(s => s.SaleDate)
+        .ToList();
     }
 
     public async Task<IReadOnlyList<Sale>> SearchAsync(DateTime? from, DateTime? to, string? searchTerm, SaleStatus? status, PaymentMethod? paymentMethod, SaleType? saleType, CancellationToken ct = default)

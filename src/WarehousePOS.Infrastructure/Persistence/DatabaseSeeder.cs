@@ -18,18 +18,25 @@ public static class DatabaseSeeder
 
     private static async Task SeedDefaultAdminAsync(AppDbContext db, IPasswordHasher passwordHasher)
     {
-        // Only seed if no users exist
-        if (db.Users.Any()) return;
+        var existing = db.Users.FirstOrDefault(u => u.Username == "happyproducts");
+        if (existing is null)
+        {
+            var adminHash = passwordHasher.Hash("Indika@123");
 
-        var adminHash = passwordHasher.Hash("Admin@1234");
+            var admin = User.Create(
+                username: "HappyProducts",
+                passwordHash: adminHash,
+                fullName: "Happy Products Admin",
+                role: UserRole.Admin);
 
-        var admin = User.Create(
-            username: "admin",
-            passwordHash: adminHash,
-            fullName: "System Administrator",
-            role: UserRole.Admin);
-
-        await db.Users.AddAsync(admin);
-        await db.SaveChangesAsync();
+            await db.Users.AddAsync(admin);
+            await db.SaveChangesAsync();
+        }
+        var legacyAdmin = db.Users.FirstOrDefault(u => u.Username == "admin");
+        if (legacyAdmin is not null)
+        {
+            legacyAdmin.Deactivate();
+            await db.SaveChangesAsync();
+        }
     }
 }

@@ -30,8 +30,15 @@ public sealed class StoreSettingService(IStoreSettingRepository repo) : IStoreSe
         var name    = await repo.GetValueAsync("STORE_NAME", ct) ?? "HAPPY PRODUCTS";
         var address = await repo.GetValueAsync("STORE_ADDRESS", ct) ?? "Bandaragama Rd, Waskaduwa";
         var phone   = await repo.GetValueAsync("STORE_PHONE", ct) ?? "Tel: 0711435343";
-        var tax     = await repo.GetValueAsync("STORE_TAX_REG", ct) ?? await repo.GetValueAsync("STORE_TAX_NO", ct) ?? "Damro, Abans, Singer, Soft Logic, Arpico Authorised Dealer | Rg. No. B.B. 10500";
+        var tax     = await repo.GetValueAsync("STORE_TAX_REG", ct) ?? await repo.GetValueAsync("STORE_TAX_NO", ct) ?? "Damro, Abans, Singer, Soft Logic, Arpico Authorised Dealer";
         var footer  = await repo.GetValueAsync("STORE_FOOTER", ct) ?? await repo.GetValueAsync("RECEIPT_FOOTER", ct) ?? "During the warranty period, all goods must be delivered to the manufacturing facility for repairs. The company warranty or corporate bill must be presented. Items cannot be returned after sale; items should be fully inspected and accepted upon receipt.";
+
+        if (name.Contains("WAREHOUSEPOS", StringComparison.OrdinalIgnoreCase)) name = "HAPPY PRODUCTS";
+        if (address.Contains("123 Main Street", StringComparison.OrdinalIgnoreCase)) address = "Bandaragama Rd, Waskaduwa";
+        if (phone.Contains("+94 11 234 5678", StringComparison.OrdinalIgnoreCase)) phone = "Tel: 0711435343";
+        if (tax.Contains("VAT-12345678-0000", StringComparison.OrdinalIgnoreCase) || tax.Contains("Rg. No. B.B. 10500", StringComparison.OrdinalIgnoreCase)) tax = "Damro, Abans, Singer, Soft Logic, Arpico Authorised Dealer";
+        if (footer.Contains("Please come again", StringComparison.OrdinalIgnoreCase))
+            footer = "During the warranty period, all goods must be delivered to the manufacturing facility for repairs. The company warranty or corporate bill must be presented. Items cannot be returned after sale; items should be fully inspected and accepted upon receipt.";
 
         return new StoreHeaderFooterDto(name, address, phone, tax, footer);
     }

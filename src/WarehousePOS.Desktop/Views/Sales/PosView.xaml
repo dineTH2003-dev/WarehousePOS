@@ -426,15 +426,17 @@
                                     HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
                         </Grid>
 
-                    <Grid Visibility="{Binding HasLastCompletedSale, Converter={StaticResource BoolToVisibilityConverter}}" Margin="0,8,0,0">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="8"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <Button Grid.Column="0" Content="👁️ Preview Bill" Style="{StaticResource SecondaryButton}" Command="{Binding PreviewLastReceiptCommand}" Height="36"/>
-                        <Button Grid.Column="2" Content="🖨️ Print Bill" Style="{StaticResource SuccessButton}" Command="{Binding RePrintLastReceiptCommand}" Height="36"/>
-                    </Grid>
+                    <Button Visibility="{Binding HasLastCompletedSale, Converter={StaticResource BoolToVisibilityConverter}}"
+                            Margin="0,8,0,0"
+                            Content="🖨️ Re-print Bill"
+                            Style="{StaticResource SuccessButton}"
+                            Command="{Binding RePrintLastReceiptCommand}"
+                            Height="36"
+                            Padding="0"
+                            FontSize="14"
+                            FontWeight="SemiBold"
+                            HorizontalContentAlignment="Center"
+                            VerticalContentAlignment="Center"/>
                 </StackPanel>
             </Grid>
         </Border>
