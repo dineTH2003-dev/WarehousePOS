@@ -43,6 +43,8 @@ public partial class App : System.Windows.Application
         DispatcherUnhandledException += OnDispatcherUnhandledException;
         // Catch unhandled exceptions on background threads
         AppDomain.CurrentDomain.UnhandledException += OnDomainUnhandledException;
+        // Catch unobserved task exceptions on asynchronous background tasks
+        TaskScheduler.UnobservedTaskException += OnUnobservedTaskException;
 
         // ── Regional Culture Normalization ───────────────────────
         var culture = (CultureInfo)CultureInfo.InvariantCulture.Clone();
@@ -223,6 +225,10 @@ public partial class App : System.Windows.Application
 
     protected override async void OnExit(ExitEventArgs e)
     {
+        DispatcherUnhandledException -= OnDispatcherUnhandledException;
+        AppDomain.CurrentDomain.UnhandledException -= OnDomainUnhandledException;
+        TaskScheduler.UnobservedTaskException -= OnUnobservedTaskException;
+
         try
         {
             if (_host is not null)
@@ -334,5 +340,30 @@ public partial class App : System.Windows.Application
             Log.CloseAndFlush();
         }
         catch { }
+    }
+
+    private static void OnUnobservedTaskException(object? sender, UnobservedTaskExceptionEventArgs e)
+    {
+        try
+        {
+            Log.Error(e.Exception, "Unobserved background task exception: {Message}", e.Exception.Message);
+        }
+        catch
+        {
+            try
+            {
+                var crashLogPath = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
+                    "WarehousePOS", "Logs", "startup-crash.log");
+                File.AppendAllText(crashLogPath,
+                    $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] UNOBSERVED TASK EXCEPTION:{Environment.NewLine}" +
+                    $"{e.Exception}{Environment.NewLine}{Environment.NewLine}");
+            }
+            catch { }
+        }
+        finally
+        {
+            e.SetObserved();
+        }
     }
 }
