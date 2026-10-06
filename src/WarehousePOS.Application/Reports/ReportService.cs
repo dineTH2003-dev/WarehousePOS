@@ -494,9 +494,10 @@ public sealed class ReportService(
         var (start, end) = ToUtcRange(from, to);
 
         var movements = await movementRepo.GetAllAsync(start, end, ct);
+        // Exclusively fetch records associated with product claims (CustomerClaim, WarrantyClaim, SupplierClaim, etc.)
+        // Never include standard sales returns (SaleReturn), cancellations (SaleCancellation), or general inventory adjustments.
         var claimMovements = movements.Where(m =>
-            m.Type is MovementType.Adjustment or MovementType.ReturnIn or MovementType.ReturnOut ||
-            (m.ReferenceType != null && m.ReferenceType.Contains("Claim", StringComparison.OrdinalIgnoreCase)))
+            m.ReferenceType != null && m.ReferenceType.Contains("Claim", StringComparison.OrdinalIgnoreCase))
             .ToList();
 
         var claimRecords = new List<ClaimRecordDto>();
@@ -506,35 +507,59 @@ public sealed class ReportService(
         decimal customerReturnsVal = 0m;
         int supplierReturnsCount = 0;
         decimal supplierReturnsVal = 0m;
+        int warrantyClaimsCount = 0;
+        int customerClaimsCount = 0;
 
         foreach (var m in claimMovements)
         {
             string source = m.ReferenceType switch
             {
-                "WarrantyClaim" => "Customer Warranty Claim",
-                "SaleCancellation" => "Customer Return (Cancellation)",
-                "SaleReturn" => "Customer Return",
-                _ => m.Type.ToString()
+                "WarrantyClaim" => "Warranty Claim",
+                "CustomerClaim" => "Customer Claim",
+                "SupplierClaim" => "Supplier Claim",
+                _ => m.ReferenceType ?? "Claim"
             };
 
-            decimal unitVal = m.Product?.WholesalePrice ?? 0m;
+            decimal unitVal = m.Product?.RetailPrice > 0 ? m.Product.RetailPrice : (m.Product?.WholesalePrice ?? 0m);
             decimal totalVal = m.Quantity * unitVal;
 
-            if (source.Contains("Warranty") || source.Contains("Customer"))
+            if (!string.IsNullOrWhiteSpace(m.Notes) && m.Notes.Contains("Amount: Rs."))
             {
-                customerReturnsCount++;
-                customerReturnsVal += totalVal;
+                try
+                {
+                    int idx = m.Notes.IndexOf("Amount: Rs.", StringComparison.OrdinalIgnoreCase);
+                    if (idx >= 0)
+                    {
+                        string amtPart = m.Notes.Substring(idx + "Amount: Rs.".Length).Trim();
+                        int endIdx = amtPart.IndexOfAny(new[] { ')', ']', ' ', '\r', '\n' });
+                        if (endIdx > 0) amtPart = amtPart.Substring(0, endIdx);
+                        amtPart = amtPart.Replace(",", "");
+                        if (decimal.TryParse(amtPart, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var parsedAmt) && parsedAmt > 0)
+                        {
+                            totalVal = parsedAmt;
+                            unitVal = m.Quantity > 0 ? Math.Round(totalVal / m.Quantity, 2) : totalVal;
+                        }
+                    }
+                }
+                catch { }
             }
-            else if (m.Type == MovementType.ReturnOut)
+
+            if (source.Contains("Warranty"))
             {
-                supplierReturnsCount++;
-                supplierReturnsVal += totalVal;
+                warrantyClaimsCount++;
             }
-            else
+            else if (source.Contains("Supplier"))
             {
                 supplierClaimsCount++;
                 supplierClaimsVal += totalVal;
             }
+            else
+            {
+                customerClaimsCount++;
+            }
+
+            customerReturnsCount++;
+            customerReturnsVal += totalVal;
 
             claimRecords.Add(new ClaimRecordDto(
                 m.CreatedAt,
@@ -560,7 +585,9 @@ public sealed class ReportService(
             customerReturnsVal,
             supplierReturnsCount,
             supplierReturnsVal,
-            claimRecords.OrderByDescending(c => c.Date).ToList());
+            claimRecords.OrderByDescending(c => c.Date).ToList(),
+            warrantyClaimsCount,
+            customerClaimsCount);
     }
 
     // ── 7. Supplier Balances ──────────────────────────────────────────────────
@@ -726,8 +753,7 @@ public sealed class ReportService(
 
         var movements = await movementRepo.GetAllAsync(start, end, ct);
         var claimMovements = movements.Where(m =>
-            m.Type is MovementType.Adjustment or MovementType.ReturnIn or MovementType.ReturnOut ||
-            (m.ReferenceType != null && m.ReferenceType.Contains("Claim", StringComparison.OrdinalIgnoreCase)))
+            m.ReferenceType != null && m.ReferenceType.Contains("Claim", StringComparison.OrdinalIgnoreCase))
             .ToList();
 
         var allProducts = (await productRepo.GetAllAsync(ct)).Where(p => p.IsActive).ToList();

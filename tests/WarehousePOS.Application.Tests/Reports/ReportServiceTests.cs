@@ -238,5 +238,85 @@ public sealed class ReportServiceTests
         capturedExpense.Description.Should().Contain("[Advance Payment]");
         capturedExpense.ReferenceNo.Should().Be("EMP-1:ADVANCE");
     }
+
+    [Fact]
+    public async Task GetClaimItemsReportAsync_OnlyIncludesClaimMovements_ExcludesSalesReturnsAndCancellations()
+    {
+        // Arrange
+        var from = DateTime.Today.AddDays(-7);
+        var to = DateTime.Today;
+
+        var product = Product.Create("Test Product", "SKU-CLM-01", 1000m, 600m, 1, stockQuantity: 20);
+
+        var claim1 = InventoryMovement.Create(
+            product.Id,
+            MovementType.Adjustment,
+            quantity: 2,
+            quantityBefore: 20,
+            createdByUserId: 1,
+            referenceId: "101",
+            referenceType: "CustomerClaim",
+            notes: "Customer Claim: Defective battery (Amount: Rs. 2,000.00)");
+
+        var claim2 = InventoryMovement.Create(
+            product.Id,
+            MovementType.Adjustment,
+            quantity: 1,
+            quantityBefore: 18,
+            createdByUserId: 1,
+            referenceId: "102",
+            referenceType: "WarrantyClaim",
+            notes: "Warranty Claim: Factory defect");
+
+        var saleReturn = InventoryMovement.Create(
+            product.Id,
+            MovementType.ReturnIn,
+            quantity: 5,
+            quantityBefore: 17,
+            createdByUserId: 1,
+            referenceId: "201",
+            referenceType: "SaleReturn",
+            notes: "Customer return from Invoice #201");
+
+        var saleCancellation = InventoryMovement.Create(
+            product.Id,
+            MovementType.ReturnIn,
+            quantity: 3,
+            quantityBefore: 22,
+            createdByUserId: 1,
+            referenceId: "202",
+            referenceType: "SaleCancellation",
+            notes: "Sale #202 cancelled");
+
+        var stockAudit = InventoryMovement.Create(
+            product.Id,
+            MovementType.Adjustment,
+            quantity: 4,
+            quantityBefore: 25,
+            createdByUserId: 1,
+            referenceId: "AUDIT",
+            referenceType: "Adjustment",
+            notes: "Monthly physical stock count");
+
+        _movementRepoMock
+            .Setup(r => r.GetAllAsync(It.IsAny<DateTime>(), It.IsAny<DateTime>(), default))
+            .ReturnsAsync([claim1, claim2, saleReturn, saleCancellation, stockAudit]);
+
+        _productRepoMock
+            .Setup(r => r.GetAllAsync(default))
+            .ReturnsAsync([product]);
+
+        // Act
+        var result = await _sut.GetClaimItemsReportAsync(from, to);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Items.Should().HaveCount(2); // ONLY the 2 claims
+        result.Items.Should().NotContain(i => i.ClaimSource == "Customer Return" || i.ClaimSource == "Customer Return (Cancellation)");
+        result.TotalClaimQuantity.Should().Be(3); // 2 + 1
+        result.TotalClaimIncidents.Should().Be(2);
+        result.Items.Should().Contain(i => i.ClaimSource == "Customer Claim" && i.TotalValue == 2000m);
+        result.Items.Should().Contain(i => i.ClaimSource == "Warranty Claim");
+    }
 }
 

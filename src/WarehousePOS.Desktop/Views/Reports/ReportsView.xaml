@@ -1184,16 +1184,16 @@
                                     </StackPanel>
                                 </Border>
 
-                                <!-- KPI 3: Customer Returns -->
+                                <!-- KPI 3: Total Claim Incidents -->
                                 <Border Grid.Row="4" Style="{StaticResource Card}" Padding="14,10">
                                     <StackPanel VerticalAlignment="Center">
-                                        <TextBlock Text="Customer Returns" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"/>
-                                        <TextBlock Text="{Binding ClaimReport.CustomerReturnsCount}" FontSize="18" Foreground="{StaticResource SuccessBrush}" Margin="0,2,0,0"/>
+                                        <TextBlock Text="Total Claim Incidents" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"/>
+                                        <TextBlock Text="{Binding ClaimReport.TotalClaimIncidents}" FontSize="18" Foreground="{StaticResource SuccessBrush}" Margin="0,2,0,0"/>
                                     </StackPanel>
                                 </Border>
                             </Grid>
 
-                            <!-- RIGHT: Returns (Claims) by Product Pie Chart Card -->
+                            <!-- RIGHT: Product Claims by Product Pie Chart Card -->
                             <Border Grid.Column="2" Style="{StaticResource Card}" Padding="18">
                                 <Grid>
                                     <Grid.RowDefinitions>
@@ -1202,7 +1202,7 @@
                                     </Grid.RowDefinitions>
 
                                     <Grid Grid.Row="0" Margin="0,0,0,10">
-                                        <TextBlock Text="🥧 Returns (Claims) by Product Distribution" Style="{StaticResource H3}"/>
+                                        <TextBlock Text="🥧 Product Claims Distribution" Style="{StaticResource H3}"/>
                                         <TextBlock Text="💡 Proportional breakdown of claimed product volume" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" HorizontalAlignment="Right" VerticalAlignment="Center" FontStyle="Italic"/>
                                     </Grid>
 
@@ -1297,7 +1297,8 @@
                                     <DataGridTextColumn Header="Date" Binding="{Binding Date, StringFormat=dd MMM yyyy}" Width="100"/>
                                     <DataGridTextColumn Header="SKU" Binding="{Binding SKU}" Width="100"/>
                                     <DataGridTextColumn Header="Product" Binding="{Binding ProductName}" Width="1.2*"/>
-                                    <DataGridTemplateColumn Header="Claim Details" Width="2*">
+                                    <DataGridTextColumn Header="Claim Type" Binding="{Binding ClaimSource}" Width="130"/>
+                                    <DataGridTemplateColumn Header="Claim Details &amp; Notes" Width="2*">
                                         <DataGridTemplateColumn.CellTemplate>
                                             <DataTemplate>
                                                 <TextBlock Text="{Binding Notes}" TextTrimming="CharacterEllipsis" ToolTip="{Binding Notes}" VerticalAlignment="Center"/>

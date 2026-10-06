@@ -160,7 +160,12 @@ public sealed record ClaimItemReportDto(
     decimal CustomerReturnsValue,
     int SupplierReturnsCount,
     decimal SupplierReturnsValue,
-    IReadOnlyList<ClaimRecordDto> Items);
+    IReadOnlyList<ClaimRecordDto> Items,
+    int WarrantyClaimsCount = 0,
+    int CustomerClaimsCount = 0)
+{
+    public int TotalClaimIncidents => Items?.Count ?? 0;
+}
 
 public sealed record ClaimRecordDto(
     DateTime Date,
