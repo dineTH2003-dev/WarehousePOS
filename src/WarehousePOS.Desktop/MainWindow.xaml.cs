@@ -71,7 +71,7 @@ public partial class MainWindow : Window
 
         if (_session.IsLoggedIn)
         {
-            UserLabel.Text = $"{_session.CurrentUser.FullName} ({_session.CurrentUser.Role})";
+            UserLabel.Text = _session.CurrentUser.FullName;
             BtnReports.Visibility = _session.IsAdmin ? Visibility.Visible : Visibility.Collapsed;
             BtnExpenses.Visibility = _session.IsAdmin ? Visibility.Visible : Visibility.Collapsed;
             BtnUserManagement.Visibility = _session.IsAdmin ? Visibility.Visible : Visibility.Collapsed;
