@@ -5,6 +5,7 @@ using WarehousePOS.Application.Products;
 using WarehousePOS.Application.Sales;
 using WarehousePOS.Application.Settings;
 using WarehousePOS.Desktop.Services;
+using WarehousePOS.Desktop.Validation;
 using WarehousePOS.Desktop.ViewModels;
 using WarehousePOS.Domain.Enums;
 
@@ -69,6 +70,7 @@ public sealed class PosViewModel : ViewModelBase
     private readonly IStoreSettingService _settingService;
 
     private SaleDto? _lastCompletedSale;
+    private bool     _isProcessingSale;
 
     private ObservableCollection<ProductDto>  _searchResults = [];
     private ObservableCollection<CustomerDto> _customers     = [];
@@ -269,6 +271,8 @@ public sealed class PosViewModel : ViewModelBase
 
     private decimal _deliveryFee;
     private string  _deliveryFeeText = string.Empty;
+    private decimal _labourCost;
+    private string  _labourCostText = string.Empty;
     private string  _customCustomerName = string.Empty;
     private string  _customCustomerPhone = string.Empty;
     private string  _customDeliveryAddress = string.Empty;
@@ -299,6 +303,30 @@ public sealed class PosViewModel : ViewModelBase
 
     public decimal DeliveryFee => _deliveryFee;
 
+    public string LabourCostText
+    {
+        get => _labourCostText;
+        set
+        {
+            if (SetField(ref _labourCostText, value))
+            {
+                if (decimal.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out var cost) ||
+                    decimal.TryParse(value, NumberStyles.Any, CultureInfo.CurrentCulture, out cost))
+                {
+                    _labourCost = Math.Max(0, cost);
+                }
+                else
+                {
+                    _labourCost = 0;
+                }
+                OnPropertyChanged(nameof(LabourCost));
+                RecalculateTotals();
+            }
+        }
+    }
+
+    public decimal LabourCost => _labourCost;
+
     public string CustomCustomerName
     {
         get => _customCustomerName;
@@ -308,16 +336,7 @@ public sealed class PosViewModel : ViewModelBase
     public string CustomCustomerPhone
     {
         get => _customCustomerPhone;
-        set
-        {
-            if (SetField(ref _customCustomerPhone, value))
-            {
-                if (SelectedCustomer is null && !string.IsNullOrWhiteSpace(value))
-                {
-                    CustomerSearchQuery = value;
-                }
-            }
-        }
+        set => SetField(ref _customCustomerPhone, value);
     }
 
     public string CustomDeliveryAddress
@@ -346,7 +365,7 @@ public sealed class PosViewModel : ViewModelBase
     }
 
     public decimal SubTotal      => _cartItems.Sum(i => i.LineTotal);
-    public decimal TotalAmount   => Math.Max(0, SubTotal - OverallDiscount) + DeliveryFee;
+    public decimal TotalAmount   => Math.Max(0, SubTotal - OverallDiscount) + DeliveryFee + LabourCost;
     public decimal ChangeAmount  => Math.Max(0, AmountPaid - TotalAmount);
     public decimal UnpaidBalance => Math.Max(0, TotalAmount - AmountPaid);
     public bool IsDeficit        => AmountPaid < TotalAmount && _cartItems.Count > 0;
@@ -438,7 +457,7 @@ public sealed class PosViewModel : ViewModelBase
 
     private bool CanProcessSale()
     {
-        if (IsBusy || _cartItems.Count == 0)
+        if (_isProcessingSale || IsBusy || _cartItems.Count == 0)
             return false;
 
         // Unregistered walk-in customers MUST pay in full unless advance payment
@@ -585,6 +604,43 @@ public sealed class PosViewModel : ViewModelBase
         RecalculateTotals();
     }
 
+    public async Task<bool> QuickAddFirstMatchOrBarcodeAsync()
+    {
+        var query = SearchQuery?.Trim();
+        if (string.IsNullOrWhiteSpace(query)) return false;
+
+        // Try exact barcode/SKU match in current search results, then single result fallback
+        var exactMatch = _searchResults.FirstOrDefault(p =>
+            string.Equals(p.Barcode, query, StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(p.SKU, query, StringComparison.OrdinalIgnoreCase));
+
+        var targetProduct = exactMatch ?? (_searchResults.Count == 1 ? _searchResults[0] : null);
+
+        if (targetProduct is not null)
+        {
+            AddToCart(targetProduct);
+            SearchQuery = string.Empty;
+            return true;
+        }
+
+        // Direct search query if not yet loaded in current search results
+        var searchResults = await _productService.SearchAsync(query);
+        var activeMatch = searchResults.FirstOrDefault(p => p.IsActive && (
+            string.Equals(p.Barcode, query, StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(p.SKU, query, StringComparison.OrdinalIgnoreCase)))
+            ?? (searchResults.Count == 1 && searchResults[0].IsActive ? searchResults[0] : null);
+
+        if (activeMatch is not null)
+        {
+            AddToCart(activeMatch);
+            SearchQuery = string.Empty;
+            return true;
+        }
+
+        ErrorMessage = $"No matching product found for '{query}'.";
+        return false;
+    }
+
     private void RemoveFromCart(PosCartItem? item)
     {
         if (item is null) return;
@@ -642,25 +698,47 @@ public sealed class PosViewModel : ViewModelBase
 
     private async Task ProcessSaleAsync()
     {
+        if (_isProcessingSale) return;
+        _isProcessingSale = true;
+        ProcessSaleCommand.RaiseCanExecuteChanged();
+
         ErrorMessage   = string.Empty;
         SuccessMessage = string.Empty;
 
         if (!_cartItems.Any())
         {
             ErrorMessage = "Cart is empty.";
+            _isProcessingSale = false;
+            ProcessSaleCommand.RaiseCanExecuteChanged();
             return;
         }
 
         if (SelectedCustomer is null && !IsAdvancePayment && AmountPaid < TotalAmount)
         {
             ErrorMessage = $"Unregistered walk-in customers cannot make credit purchases. Amount paid (Rs. {AmountPaid:N2}) must be at least total amount (Rs. {TotalAmount:N2}).";
+            _isProcessingSale = false;
+            ProcessSaleCommand.RaiseCanExecuteChanged();
             return;
         }
 
         if (IsAdvancePayment && AmountPaid <= 0)
         {
             ErrorMessage = "Advance orders require an advance payment amount greater than zero.";
+            _isProcessingSale = false;
+            ProcessSaleCommand.RaiseCanExecuteChanged();
             return;
+        }
+
+        if (!string.IsNullOrWhiteSpace(CustomCustomerPhone))
+        {
+            var phoneError = ContactValidation.GetPhoneError(CustomCustomerPhone);
+            if (phoneError is not null)
+            {
+                ErrorMessage = phoneError;
+                _isProcessingSale = false;
+                ProcessSaleCommand.RaiseCanExecuteChanged();
+                return;
+            }
         }
 
         IsBusy = true;
@@ -681,6 +759,7 @@ public sealed class PosViewModel : ViewModelBase
                 items,
                 SelectedPaymentMethod,
                 DeliveryFee,
+                LabourCost,
                 string.IsNullOrWhiteSpace(CustomCustomerName) ? null : CustomCustomerName.Trim(),
                 string.IsNullOrWhiteSpace(CustomCustomerPhone) ? null : CustomCustomerPhone.Trim(),
                 string.IsNullOrWhiteSpace(CustomDeliveryAddress) ? null : CustomDeliveryAddress.Trim(),
@@ -742,6 +821,8 @@ public sealed class PosViewModel : ViewModelBase
         finally
         {
             IsBusy = false;
+            _isProcessingSale = false;
+            ProcessSaleCommand.RaiseCanExecuteChanged();
         }
     }
 
@@ -801,6 +882,10 @@ public sealed class PosViewModel : ViewModelBase
         _deliveryFeeText = string.Empty;
         OnPropertyChanged(nameof(DeliveryFee));
         OnPropertyChanged(nameof(DeliveryFeeText));
+        _labourCost = 0;
+        _labourCostText = string.Empty;
+        OnPropertyChanged(nameof(LabourCost));
+        OnPropertyChanged(nameof(LabourCostText));
         CustomCustomerName = string.Empty;
         CustomCustomerPhone = string.Empty;
         CustomDeliveryAddress = string.Empty;

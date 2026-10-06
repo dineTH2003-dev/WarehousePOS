@@ -180,8 +180,10 @@ public sealed class GoogleDriveBackupService : ICloudBackupService
             {
                 if (uploadProgress.Status == UploadStatus.Uploading)
                 {
-                    var percent = (int)((uploadProgress.BytesSent * 100) / fileStream.Length);
-                    progress?.Report(percent);
+                    var percent = fileStream.Length > 0
+                        ? (int)((uploadProgress.BytesSent * 100) / fileStream.Length)
+                        : 0;
+                    progress?.Report(Math.Clamp(percent, 0, 100));
                 }
                 else if (uploadProgress.Status == UploadStatus.Completed)
                 {

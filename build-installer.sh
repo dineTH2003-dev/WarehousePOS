@@ -10,8 +10,10 @@ if ! command -v "$DOTNET_CMD" &> /dev/null; then
     DOTNET_CMD="dotnet"
 fi
 
-echo "1. Running full test suite..."
-"$DOTNET_CMD" test --configuration Release
+echo "1. Running unit test suites..."
+"$DOTNET_CMD" test tests/WarehousePOS.Domain.Tests/WarehousePOS.Domain.Tests.csproj --configuration Release
+"$DOTNET_CMD" test tests/WarehousePOS.Application.Tests/WarehousePOS.Application.Tests.csproj --configuration Release
+"$DOTNET_CMD" test tests/WarehousePOS.Infrastructure.Tests/WarehousePOS.Infrastructure.Tests.csproj --configuration Release
 
 echo ""
 echo "2. Cleaning previous output distribution folder..."

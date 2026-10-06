@@ -66,6 +66,10 @@ public sealed class ProductRepository(AppDbContext db) : IProductRepository
         {
             db.Entry(product).State = EntityState.Modified;
         }
+        else if (!ReferenceEquals(entry.Entity, product))
+        {
+            entry.CurrentValues.SetValues(product);
+        }
         await db.SaveChangesAsync(ct);
     }
 }

@@ -7,7 +7,10 @@
         Height="620" Width="720"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
-        Background="#F3F4F6">
+        Background="#F3F4F6"
+        FontFamily="{StaticResource AppFontFamily}"
+        TextOptions.TextRenderingMode="ClearType"
+        TextOptions.TextFormattingMode="Display">
 
     <Grid Margin="16" behaviors:ArrowNavigationBehavior.IsEnabled="True">
         <Grid.RowDefinitions>
@@ -23,7 +26,7 @@
         <Border Grid.Row="1" Background="White" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="6" Padding="20">
             <ScrollViewer VerticalScrollBarVisibility="Auto">
                 <TextBlock x:Name="TxtReceiptText"
-                           FontFamily="Consolas, Courier New"
+                           FontFamily="{StaticResource MonospaceFontFamily}"
                            FontSize="13"
                            Foreground="Black"
                            TextWrapping="NoWrap"

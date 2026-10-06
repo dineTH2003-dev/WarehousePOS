@@ -187,4 +187,25 @@ public sealed class ProductTests
         Action act = () => product.FulfillClaim(5);
         act.Should().Throw<InvalidOperationException>();
     }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    [InlineData(null)]
+    public void Create_EmptyOrWhitespaceBarcode_ShouldNormalizeToNull(string? barcode)
+    {
+        var product = Product.Create("Test", "SKU001", 100, 80, 1, barcode: barcode);
+        product.Barcode.Should().BeNull();
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    [InlineData(null)]
+    public void UpdateDetails_EmptyOrWhitespaceBarcode_ShouldNormalizeToNull(string? barcode)
+    {
+        var product = Product.Create("Test", "SKU001", 100, 80, 1, barcode: "123456");
+        product.UpdateDetails("Test", "SKU001", barcode, null, 1, 5);
+        product.Barcode.Should().BeNull();
+    }
 }

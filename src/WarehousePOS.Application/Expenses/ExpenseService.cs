@@ -47,8 +47,8 @@ public sealed class ExpenseService(
     public async Task<IReadOnlyList<ExpenseDto>> GetBySaleIdAsync(int saleId, CancellationToken ct = default)
     {
         var userMap = await GetUserMapAsync(ct);
-        var list = await repo.GetAllAsync(ct);
-        return list.Where(e => e.SaleId == saleId).Select(e => Map(e, userMap)).ToList();
+        var list = await repo.GetBySaleIdAsync(saleId, ct);
+        return list.Select(e => Map(e, userMap)).ToList();
     }
 
     public async Task<ExpenseDto> CreateAsync(CreateExpenseRequest req, CancellationToken ct = default)

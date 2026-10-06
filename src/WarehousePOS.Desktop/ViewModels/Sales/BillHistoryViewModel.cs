@@ -224,8 +224,8 @@ public sealed class BillHistoryViewModel : ViewModelBase
         try
         {
             var criteria = new SaleSearchCriteria(
-                FromDate: FromDate.HasValue ? DateTime.SpecifyKind(FromDate.Value.Date, DateTimeKind.Utc) : null,
-                ToDate: ToDate.HasValue ? DateTime.SpecifyKind(ToDate.Value.Date.AddDays(1).AddTicks(-1), DateTimeKind.Utc) : null,
+                FromDate: FromDate.HasValue ? DateTime.SpecifyKind(FromDate.Value.Date, DateTimeKind.Local).ToUniversalTime() : null,
+                ToDate: ToDate.HasValue ? DateTime.SpecifyKind(ToDate.Value.Date.AddDays(1).AddTicks(-1), DateTimeKind.Local).ToUniversalTime() : null,
                 SearchTerm: string.IsNullOrWhiteSpace(SearchQuery) ? null : SearchQuery.Trim(),
                 Status: SelectedStatusOption.Status,
                 PaymentMethod: SelectedPaymentOption.Method);
@@ -330,9 +330,18 @@ public sealed class BillHistoryViewModel : ViewModelBase
                 };
 
                 var updated = await _saleService.RecordPaymentAsync(req);
-                SuccessMessage = $"Payment of Rs. {req.Amount:N2} recorded for Invoice #{updated.Id}! Remaining: Rs. {updated.UnpaidAmount:N2}";
+                SuccessMessage = $"Payment of Rs. {req.Amount:N2} recorded for Invoice #{updated.Id}! Remaining: Rs. {updated.UnpaidAmount:N2}" +
+                                 (updated.Status == SaleStatus.Completed ? " (Sale is now Completed)" : string.Empty);
+
+                // If currently filtering specifically for AdvancePaid and the sale is now completed, reset to All Statuses so it remains visible
+                if (SelectedStatusOption.Status == SaleStatus.AdvancePaid && updated.Status == SaleStatus.Completed)
+                {
+                    SelectedStatusOption = StatusOptions[0];
+                }
+
                 await SearchAsync();
-                SelectedSale = updated;
+                SelectedSale = Sales.FirstOrDefault(s => s.Id == updated.Id) ?? updated;
+                _ = LoadSelectedSaleExpensesAsync();
             }
             catch (Exception ex)
             {

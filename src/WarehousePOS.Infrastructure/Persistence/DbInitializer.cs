@@ -36,6 +36,12 @@ public static class DbInitializer
             }
         }
 
+        // Configure SQLite PRAGMAs for high concurrency, WAL durability, and immediate busy retries
+        await db.Database.ExecuteSqlRawAsync("PRAGMA journal_mode = WAL;");
+        await db.Database.ExecuteSqlRawAsync("PRAGMA synchronous = NORMAL;");
+        await db.Database.ExecuteSqlRawAsync("PRAGMA busy_timeout = 5000;");
+        await db.Database.ExecuteSqlRawAsync("PRAGMA foreign_keys = ON;");
+
         // Seed Admin user if no users exist
         if (!await db.Users.AnyAsync())
         {
@@ -172,9 +178,16 @@ public static class DbInitializer
                 .SqlQueryRaw<string>("SELECT name FROM pragma_table_info('Sales')")
                 .ToListAsync();
 
-            if (saleColumns.Any() && !saleColumns.Contains("PaymentMethod", StringComparer.OrdinalIgnoreCase))
+            if (saleColumns.Any())
             {
-                await db.Database.ExecuteSqlRawAsync("ALTER TABLE Sales ADD COLUMN PaymentMethod TEXT NOT NULL DEFAULT 'Cash';");
+                if (!saleColumns.Contains("PaymentMethod", StringComparer.OrdinalIgnoreCase))
+                {
+                    await db.Database.ExecuteSqlRawAsync("ALTER TABLE Sales ADD COLUMN PaymentMethod TEXT NOT NULL DEFAULT 'Cash';");
+                }
+                if (!saleColumns.Contains("LabourCost", StringComparer.OrdinalIgnoreCase))
+                {
+                    await db.Database.ExecuteSqlRawAsync("ALTER TABLE Sales ADD COLUMN LabourCost TEXT NOT NULL DEFAULT '0';");
+                }
             }
 
             var customerColumns = await db.Database

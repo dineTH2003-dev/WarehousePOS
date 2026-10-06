@@ -34,6 +34,18 @@ public partial class PosView : Page
         }
     }
 
+    private async void TxtProductSearch_PreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter)
+        {
+            e.Handled = true;
+            if (_vm != null)
+            {
+                await _vm.QuickAddFirstMatchOrBarcodeAsync();
+            }
+        }
+    }
+
     private void TxtCustomerSearch_PreviewKeyDown(object sender, KeyEventArgs e)
     {
         if (_vm == null || !_vm.IsCustomerDropDownOpen || LstCustomerResults == null)

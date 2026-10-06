@@ -20,6 +20,7 @@ public partial class AdjustSaleDialog : Window
         TxtCustomerPhone.Text = sale.CustomerPhone ?? string.Empty;
         TxtDeliveryAddress.Text = sale.DeliveryAddress ?? string.Empty;
         TxtDeliveryFee.Text = sale.DeliveryFee.ToString("F2", CultureInfo.InvariantCulture);
+        TxtLabourCost.Text = sale.LabourCost.ToString("F2", CultureInfo.InvariantCulture);
         TxtNotes.Text = sale.Notes ?? string.Empty;
     }
 
@@ -36,11 +37,33 @@ public partial class AdjustSaleDialog : Window
             }
         }
 
+        decimal labourCost = 0;
+        if (!string.IsNullOrWhiteSpace(TxtLabourCost.Text))
+        {
+            if (!decimal.TryParse(TxtLabourCost.Text?.Trim(), NumberStyles.Any, CultureInfo.InvariantCulture, out labourCost) &&
+                !decimal.TryParse(TxtLabourCost.Text?.Trim(), NumberStyles.Any, CultureInfo.CurrentCulture, out labourCost))
+            {
+                MessageBox.Show("Please enter a valid numeric labour cost.", "Invalid Labour Cost", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(TxtCustomerPhone.Text))
+        {
+            var phoneError = WarehousePOS.Desktop.Validation.ContactValidation.GetPhoneError(TxtCustomerPhone.Text);
+            if (phoneError is not null)
+            {
+                MessageBox.Show(phoneError, "Invalid Phone Number", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+        }
+
         AdjustmentRequest = new AdjustSaleRequest(
             _sale.Id,
             1, // Assigned by caller
             string.IsNullOrWhiteSpace(TxtNotes.Text) ? "Bill details amended" : TxtNotes.Text.Trim(),
             deliveryFee,
+            labourCost,
             string.IsNullOrWhiteSpace(TxtNotes.Text) ? null : TxtNotes.Text.Trim(),
             string.IsNullOrWhiteSpace(TxtCustomerName.Text) ? null : TxtCustomerName.Text.Trim(),
             string.IsNullOrWhiteSpace(TxtCustomerPhone.Text) ? null : TxtCustomerPhone.Text.Trim(),

@@ -52,12 +52,8 @@
                 </StackPanel>
 
                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Bottom" Margin="0,0,0,6">
-                    <CheckBox Content="Show Inactive Customers"
-                              Style="{StaticResource ModernSwitch}"
-                              IsChecked="{Binding ShowInactive}"
-                              ToolTip="Toggle visibility of deactivated customers"/>
                     <Button Content="Refresh" Style="{StaticResource SecondaryButton}"
-                            Margin="16,0,0,0" Command="{Binding RefreshCommand}"/>
+                            Command="{Binding RefreshCommand}"/>
                 </StackPanel>
             </Grid>
         </Border>

@@ -38,14 +38,22 @@ public sealed class CustomerRepository(AppDbContext db) : ICustomerRepository
 
     public async Task UpdateAsync(Customer customer, CancellationToken ct = default)
     {
-        db.Customers.Update(customer);
+        var entry = db.ChangeTracker.Entries<Customer>().FirstOrDefault(e => e.Entity.Id == customer.Id);
+        if (entry is null)
+        {
+            db.Entry(customer).State = EntityState.Modified;
+        }
+        else if (!ReferenceEquals(entry.Entity, customer))
+        {
+            entry.CurrentValues.SetValues(customer);
+        }
         await db.SaveChangesAsync(ct);
     }
 }
 
 public sealed class SaleRepository(AppDbContext db) : ISaleRepository
 {
-    private IQueryable<Sale> WithIncludes() =>
+    private IQueryable<Sale> WithIncludesNoTracking() =>
         db.Sales
           .AsNoTracking()
           .Include(s => s.Customer)
@@ -53,27 +61,34 @@ public sealed class SaleRepository(AppDbContext db) : ISaleRepository
           .Include(s => s.Items)
           .ThenInclude(i => i.Product);
 
+    private IQueryable<Sale> WithIncludesTracking() =>
+        db.Sales
+          .Include(s => s.Customer)
+          .Include(s => s.Payments)
+          .Include(s => s.Items)
+          .ThenInclude(i => i.Product);
+
     public async Task<Sale?> GetByIdAsync(int id, CancellationToken ct = default) =>
-        await WithIncludes().FirstOrDefaultAsync(s => s.Id == id, ct);
+        await WithIncludesNoTracking().FirstOrDefaultAsync(s => s.Id == id, ct);
 
     public async Task<IReadOnlyList<Sale>> GetAllAsync(CancellationToken ct = default) =>
-        await WithIncludes().OrderByDescending(s => s.SaleDate).ToListAsync(ct);
+        await WithIncludesNoTracking().OrderByDescending(s => s.SaleDate).ToListAsync(ct);
 
     public async Task<IReadOnlyList<Sale>> GetByDateRangeAsync(DateTime from, DateTime to, CancellationToken ct = default) =>
-        await WithIncludes()
+        await WithIncludesNoTracking()
             .Where(s => s.SaleDate >= from && s.SaleDate <= to)
             .OrderByDescending(s => s.SaleDate)
             .ToListAsync(ct);
 
     public async Task<IReadOnlyList<Sale>> GetByCustomerAsync(int customerId, CancellationToken ct = default) =>
-        await WithIncludes()
+        await WithIncludesNoTracking()
             .Where(s => s.CustomerId == customerId)
             .OrderByDescending(s => s.SaleDate)
             .ToListAsync(ct);
 
     public async Task<IReadOnlyList<Sale>> SearchAsync(DateTime? from, DateTime? to, string? searchTerm, SaleStatus? status, PaymentMethod? paymentMethod, SaleType? saleType, CancellationToken ct = default)
     {
-        var query = WithIncludes();
+        var query = WithIncludesNoTracking();
 
         if (from.HasValue)
             query = query.Where(s => s.SaleDate >= from.Value);
@@ -113,7 +128,32 @@ public sealed class SaleRepository(AppDbContext db) : ISaleRepository
 
     public async Task UpdateAsync(Sale sale, CancellationToken ct = default)
     {
-        db.Sales.Update(sale);
+        // Detach ALL currently-tracked Sale entities to avoid identity-tracking
+        // conflicts when the same DbContext scope processes multiple sales.
+        foreach (var e in db.ChangeTracker.Entries<Sale>().ToList())
+            e.State = EntityState.Detached;
+
+        // Also detach all tracked related entities to prevent duplicates.
+        foreach (var e in db.ChangeTracker.Entries<SaleItem>().ToList())
+            e.State = EntityState.Detached;
+        foreach (var e in db.ChangeTracker.Entries<SalePayment>().ToList())
+            e.State = EntityState.Detached;
+
+        // Mark the root sale as Modified (updates scalar columns).
+        db.Entry(sale).State = EntityState.Modified;
+
+        // Mark existing items as Unchanged (no structural changes to items during payment).
+        foreach (var item in sale.Items)
+            db.Entry(item).State = EntityState.Unchanged;
+
+        // For each payment: new ones (Id == 0) are Added; existing ones are Unchanged.
+        foreach (var payment in sale.Payments)
+        {
+            db.Entry(payment).State = payment.Id == 0
+                ? EntityState.Added
+                : EntityState.Unchanged;
+        }
+
         await db.SaveChangesAsync(ct);
     }
 

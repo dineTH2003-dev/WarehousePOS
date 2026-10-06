@@ -66,9 +66,12 @@ public sealed class SaleService(
                 req.Notes,
                 req.PaymentMethod,
                 req.DeliveryFee,
+                req.LabourCost,
                 req.CustomerName ?? customer?.Name,
                 req.CustomerPhone ?? customer?.Phone,
                 req.DeliveryAddress ?? customer?.Address);
+
+            var pendingMovements = new List<(int ProductId, int Quantity, int QtyBefore)>();
 
             foreach (var itemReq in req.Items)
             {
@@ -83,18 +86,7 @@ public sealed class SaleService(
                 product.DeductStock(itemReq.Quantity);
                 await productRepo.UpdateAsync(product, ct);
 
-                // Create InventoryMovement log
-                var movement = InventoryMovement.Create(
-                    product.Id,
-                    MovementType.StockOut,
-                    itemReq.Quantity,
-                    qtyBefore,
-                    req.CreatedByUserId,
-                    referenceId: sale.Id.ToString(),
-                    referenceType: "Sale",
-                    notes: req.IsAdvancePayment ? $"POS Sale ({req.SaleType}) [Advance Order]" : $"POS Sale ({req.SaleType})");
-
-                await movementRepo.AddAsync(movement, ct);
+                pendingMovements.Add((product.Id, itemReq.Quantity, qtyBefore));
             }
 
             if (req.DiscountAmount > 0)
@@ -115,6 +107,22 @@ public sealed class SaleService(
             }
 
             await saleRepo.AddAsync(sale, ct);
+
+            // Now that sale is persisted and sale.Id is generated, record inventory movements with the real sale ID
+            foreach (var (productId, quantity, qtyBefore) in pendingMovements)
+            {
+                var movement = InventoryMovement.Create(
+                    productId,
+                    MovementType.StockOut,
+                    quantity,
+                    qtyBefore,
+                    req.CreatedByUserId,
+                    referenceId: sale.Id.ToString(),
+                    referenceType: "Sale",
+                    notes: req.IsAdvancePayment ? $"POS Sale ({req.SaleType}) [Advance Order]" : $"POS Sale ({req.SaleType})");
+
+                await movementRepo.AddAsync(movement, ct);
+            }
         }, ct);
 
         logger.LogInformation("Sale processed successfully: #{SaleId}, Total: {TotalAmount:C2}", sale.Id, sale.TotalAmount);
@@ -141,20 +149,23 @@ public sealed class SaleService(
                 }
             }
 
-            // Revert stock for all items
+            // Revert stock for all items (only unreturned quantity to avoid phantom duplication)
             foreach (var item in sale.Items)
             {
+                var qtyToRevert = item.Quantity - item.ReturnedQuantity;
+                if (qtyToRevert <= 0) continue;
+
                 var product = await productRepo.GetByIdAsync(item.ProductId, ct);
                 if (product is not null)
                 {
                     var qtyBefore = product.StockQuantity;
-                    product.AddStock(item.Quantity);
+                    product.AddStock(qtyToRevert);
                     await productRepo.UpdateAsync(product, ct);
 
                     var movement = InventoryMovement.Create(
                         product.Id,
                         MovementType.ReturnIn,
-                        item.Quantity,
+                        qtyToRevert,
                         qtyBefore,
                         sale.CreatedByUserId,
                         referenceId: sale.Id.ToString(),
@@ -286,7 +297,7 @@ public sealed class SaleService(
                 var saleItem = sale.Items.FirstOrDefault(i => i.ProductId == returnItem.ProductId)
                     ?? throw new BusinessRuleViolationException("ItemNotFound", $"Product ID {returnItem.ProductId} is not on invoice #{sale.Id}.");
 
-                var unitRefund = saleItem.UnitPrice - (saleItem.Quantity > 0 ? (saleItem.Discount / saleItem.Quantity) : 0);
+                var unitRefund = Math.Round(saleItem.UnitPrice - (saleItem.Quantity > 0 ? (saleItem.Discount / saleItem.Quantity) : 0), 2, MidpointRounding.AwayFromZero);
                 totalRefundAmount += unitRefund * returnItem.Quantity;
 
                 sale.ProcessReturn(returnItem.ProductId, returnItem.Quantity);
@@ -340,7 +351,7 @@ public sealed class SaleService(
 
         await unitOfWork.ExecuteInTransactionAsync(async () =>
         {
-            sale.AdjustBillDetails(req.DeliveryFee, req.Notes, req.CustomerName, req.CustomerPhone, req.DeliveryAddress);
+            sale.AdjustBillDetails(req.DeliveryFee, req.LabourCost, req.Notes, req.CustomerName, req.CustomerPhone, req.DeliveryAddress);
             await saleRepo.UpdateAsync(sale, ct);
         }, ct);
 
@@ -423,6 +434,7 @@ public sealed class SaleService(
             i.ReturnableQuantity)).ToList(),
         s.PaymentMethod,
         s.DeliveryFee,
+        s.LabourCost,
         s.CustomerPhone ?? s.Customer?.Phone,
         s.DeliveryAddress ?? s.Customer?.Address,
         s.UnpaidAmount,
