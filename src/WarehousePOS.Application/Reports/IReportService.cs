@@ -52,4 +52,5 @@ public interface IReportService
     // Employee Payroll & Expense Report
     Task<EmployeeReportSummaryDto> GetEmployeeReportSummaryAsync(DateTime from, DateTime to, CancellationToken ct = default);
     Task RecordEmployeePaymentAsync(CreateEmployeePaymentRequest request, int recordedByUserId, CancellationToken ct = default);
+    Task<IReadOnlyList<EmployeeReportDto>> GetEmployeeSalaryStatusAsync(CancellationToken ct = default);
 }

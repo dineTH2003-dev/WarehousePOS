@@ -536,6 +536,20 @@ public sealed class ReportsViewModel : ViewModelBase
         ClearEmployeeSelectionCommand = new RelayCommand(() => SelectedEmployeeReport = null);
         ProcessCustomerClaimCommand = new RelayCommand<object>(async param => await ExecuteProcessCustomerClaimAsync(param as CustomerReportDto));
         ProcessEmployeePaymentCommand = new RelayCommand<object>(async param => await ExecuteProcessEmployeePaymentAsync(param as EmployeeReportDto));
+        ViewEmployeeWageHistoryCommand = new RelayCommand<object>(param =>
+        {
+            var emp = param as EmployeeReportDto ?? SelectedEmployeeReport;
+            if (emp == null) return;
+
+            var activeWindow = System.Windows.Application.Current?.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive)
+                               ?? System.Windows.Application.Current?.MainWindow;
+            var dialog = new Views.Reports.EmployeeWageHistoryDialog(emp);
+            if (activeWindow != null)
+            {
+                dialog.Owner = activeWindow;
+            }
+            dialog.ShowDialog();
+        });
         PrintCurrentReportCommand = new RelayCommand(async () => await PrintCurrentReportAsync(), () => !IsPrinting && _printer is not null);
 
         _ = InitialiseAsync();
@@ -1133,6 +1147,7 @@ public sealed class ReportsViewModel : ViewModelBase
 
     public RelayCommand ClearEmployeeSelectionCommand { get; }
     public RelayCommand<object> ProcessEmployeePaymentCommand { get; }
+    public RelayCommand<object> ViewEmployeeWageHistoryCommand { get; }
 
     private void ApplyEmployeeFilters()
     {

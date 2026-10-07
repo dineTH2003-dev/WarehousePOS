@@ -37,10 +37,21 @@ public sealed class MonthlyTrendBarViewModel
     public string TooltipText => $"{MonthLabel}\nExpenses: Rs. {TotalAmount:N2}\nTransactions: {TransactionCount}";
 }
 
+public sealed class EmployeePickerItem
+{
+    public int EmployeeId { get; init; }
+    public string FullName { get; init; } = string.Empty;
+    public string Role { get; init; } = string.Empty;
+    public decimal BaseSalary { get; init; }
+    public decimal NetBalanceDue { get; init; }
+    public string DisplayName => $"{FullName} ({Role}) — Base: Rs. {BaseSalary:N2}";
+}
+
 public sealed class ExpenseListViewModel : ViewModelBase
 {
     private readonly IExpenseService _expenseService;
     private readonly SessionContext _sessionContext;
+    private readonly IReportService? _reportService;
 
     // Filters
     private DateRangePreset _selectedDatePreset = DateRangePreset.ThisMonth;
@@ -75,6 +86,12 @@ public sealed class ExpenseListViewModel : ViewModelBase
     private string _formErrorMessage = string.Empty;
     private string _successMessage = string.Empty;
     private bool _isBusy;
+
+    // Wages & Salaries Employee Link
+    private bool _isWagesSalarySelected;
+    private ObservableCollection<EmployeePickerItem> _employeePickerList = [];
+    private EmployeePickerItem? _selectedWagesEmployee;
+    private string _wagesRemainingDisplay = string.Empty;
 
     // KPIs
     private decimal _totalExpenses;
@@ -253,10 +270,43 @@ public sealed class ExpenseListViewModel : ViewModelBase
             if (SetField(ref _formCategoryId, value))
             {
                 ClearFormErrors();
+                CheckWagesCategorySelection(value);
                 SaveExpenseCommand.RaiseCanExecuteChanged();
             }
         }
     }
+
+    public bool IsWagesSalarySelected
+    {
+        get => _isWagesSalarySelected;
+        private set => SetField(ref _isWagesSalarySelected, value);
+    }
+
+    public ObservableCollection<EmployeePickerItem> EmployeePickerList => _employeePickerList;
+
+    public EmployeePickerItem? SelectedWagesEmployee
+    {
+        get => _selectedWagesEmployee;
+        set
+        {
+            if (SetField(ref _selectedWagesEmployee, value))
+            {
+                UpdateWagesRemaining();
+            }
+        }
+    }
+
+    public string WagesRemainingDisplay
+    {
+        get => _wagesRemainingDisplay;
+        private set
+        {
+            if (SetField(ref _wagesRemainingDisplay, value))
+                OnPropertyChanged(nameof(HasWagesRemainingDisplay));
+        }
+    }
+
+    public bool HasWagesRemainingDisplay => !string.IsNullOrWhiteSpace(WagesRemainingDisplay);
 
     public string FormAmountText
     {
@@ -380,13 +430,14 @@ public sealed class ExpenseListViewModel : ViewModelBase
     public RelayCommand QuickThisMonthCommand { get; }
     public RelayCommand QuickLast3MonthsCommand { get; }
 
-    public ExpenseListViewModel(IExpenseService expenseService, SessionContext sessionContext)
+    public ExpenseListViewModel(IExpenseService expenseService, SessionContext sessionContext, IReportService? reportService = null)
     {
         if (!sessionContext.IsAdmin)
             throw new UnauthorizedAccessException("Only an Admin can access Expenses.");
 
         _expenseService = expenseService;
         _sessionContext = sessionContext;
+        _reportService = reportService;
 
         ApplyFilterCommand = new RelayCommand(async () => await ApplyFilterAsync(), () => !HasFilterValidationError && !IsBusy);
         ClearFilterCommand = new RelayCommand(async () => await ResetFiltersAsync());
@@ -725,6 +776,14 @@ public sealed class ExpenseListViewModel : ViewModelBase
         {
             var userId = _sessionContext.CurrentUser?.UserId ?? 1;
 
+            if (_isWagesSalarySelected && SelectedWagesEmployee != null)
+            {
+                if (string.IsNullOrWhiteSpace(FormReferenceNo))
+                {
+                    FormReferenceNo = $"EMP-{SelectedWagesEmployee.EmployeeId}:TOTAL_SUM";
+                }
+            }
+
             if (IsEditing && _editingExpenseId.HasValue)
             {
                 var updateReq = new UpdateExpenseRequest(
@@ -825,9 +884,77 @@ public sealed class ExpenseListViewModel : ViewModelBase
         FormDescription = string.Empty;
         FormReferenceNo = string.Empty;
         FormErrorMessage = string.Empty;
+        SelectedWagesEmployee = null;
+        WagesRemainingDisplay = string.Empty;
 
         if (_formCategories.Count > 0)
             FormCategoryId = _formCategories[0].Id;
+    }
+
+    private void CheckWagesCategorySelection(int categoryId)
+    {
+        var category = _formCategories.FirstOrDefault(c => c.Id == categoryId);
+        if (category != null && category.Name.Equals("Wages & Salaries", StringComparison.OrdinalIgnoreCase))
+        {
+            IsWagesSalarySelected = true;
+            _ = LoadEmployeePickerAsync();
+        }
+        else
+        {
+            IsWagesSalarySelected = false;
+            SelectedWagesEmployee = null;
+            WagesRemainingDisplay = string.Empty;
+        }
+    }
+
+    private async Task LoadEmployeePickerAsync()
+    {
+        if (_reportService == null) return;
+        try
+        {
+            var employees = await _reportService.GetEmployeeSalaryStatusAsync();
+            _employeePickerList.Clear();
+            foreach (var e in employees)
+            {
+                _employeePickerList.Add(new EmployeePickerItem
+                {
+                    EmployeeId = e.EmployeeId,
+                    FullName = e.FullName,
+                    Role = e.Role,
+                    BaseSalary = e.BaseSalary,
+                    NetBalanceDue = e.NetBalanceDue
+                });
+            }
+
+            if (SelectedWagesEmployee == null && _employeePickerList.Count > 0)
+            {
+                SelectedWagesEmployee = _employeePickerList[0];
+            }
+            else
+            {
+                UpdateWagesRemaining();
+            }
+        }
+        catch
+        {
+            // Non-blocking fallback
+        }
+    }
+
+    private void UpdateWagesRemaining()
+    {
+        if (SelectedWagesEmployee == null)
+        {
+            WagesRemainingDisplay = string.Empty;
+            return;
+        }
+
+        WagesRemainingDisplay = $"Base Salary: Rs. {SelectedWagesEmployee.BaseSalary:N2} | Balance Due This Month: Rs. {SelectedWagesEmployee.NetBalanceDue:N2}";
+
+        if (!IsEditing && string.IsNullOrWhiteSpace(FormDescription))
+        {
+            FormDescription = $"Monthly Wage / Salary - {SelectedWagesEmployee.FullName}";
+        }
     }
 
     private void ClearFormErrors()

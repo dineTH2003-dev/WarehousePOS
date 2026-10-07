@@ -318,5 +318,39 @@ public sealed class ReportServiceTests
         result.Items.Should().Contain(i => i.ClaimSource == "Customer Claim" && i.TotalValue == 2000m);
         result.Items.Should().Contain(i => i.ClaimSource == "Warranty Claim");
     }
+
+    [Fact]
+    public async Task GetEmployeeSalaryStatusAsync_ReturnsEmployeesWithSalaryStatus()
+    {
+        // Arrange
+        var userMock = new Mock<IUserRepository>();
+        var user = User.Create("kasun", "hashed", "Kasun Perera", UserRole.Worker);
+        user.UpdateSalaryDetails(45000m, null, null);
+        userMock.Setup(u => u.GetAllAsync(default)).ReturnsAsync([user]);
+
+        _expenseRepoMock.Setup(e => e.GetAllAsync(default)).ReturnsAsync([]);
+        _expenseRepoMock.Setup(e => e.GetCategoriesAsync(true, default)).ReturnsAsync([]);
+
+        var sut = new ReportService(
+            _saleRepoMock.Object,
+            _productRepoMock.Object,
+            _supplierRepoMock.Object,
+            _expenseRepoMock.Object,
+            _purchaseRepoMock.Object,
+            _customerRepoMock.Object,
+            _movementRepoMock.Object,
+            _categoryRepoMock.Object,
+            userMock.Object);
+
+        // Act
+        var result = await sut.GetEmployeeSalaryStatusAsync();
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Should().HaveCount(1);
+        result[0].FullName.Should().Be("Kasun Perera");
+        result[0].BaseSalary.Should().Be(45000m);
+        result[0].NetBalanceDue.Should().Be(45000m);
+    }
 }
 

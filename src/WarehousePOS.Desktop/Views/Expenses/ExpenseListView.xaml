@@ -503,6 +503,24 @@
                             <TextBlock Text="Category *" Style="{StaticResource FormLabel}" FontSize="11" Margin="0,0,0,2"/>
                             <ComboBox ItemsSource="{Binding FormCategories}" DisplayMemberPath="Name" SelectedValuePath="Id"
                                       SelectedValue="{Binding FormCategoryId}" Validation.ErrorTemplate="{x:Null}" Height="34"/>
+
+                            <!-- Employee Selection (Visible when Wages & Salaries category is selected) -->
+                            <StackPanel Visibility="{Binding IsWagesSalarySelected, Converter={StaticResource BoolToVisibilityConverter}}" Margin="0,6,0,0">
+                                <TextBlock Text="Select Employee *" Style="{StaticResource FormLabel}" FontSize="11" Margin="0,0,0,2"/>
+                                <ComboBox ItemsSource="{Binding EmployeePickerList}"
+                                          SelectedItem="{Binding SelectedWagesEmployee}"
+                                          DisplayMemberPath="DisplayName"
+                                          Height="34"/>
+
+                                <!-- Remaining Monthly Salary Info Badge -->
+                                <Border Background="#ECFDF5" BorderBrush="#A7F3D0" BorderThickness="1" CornerRadius="6" Padding="8,6" Margin="0,4,0,0"
+                                        Visibility="{Binding HasWagesRemainingDisplay, Converter={StaticResource BoolToVisibilityConverter}}">
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <TextBlock Text="💰 " FontSize="12" VerticalAlignment="Center"/>
+                                        <TextBlock Text="{Binding WagesRemainingDisplay}" FontSize="11" FontWeight="SemiBold" Foreground="#065F46" VerticalAlignment="Center" TextWrapping="Wrap"/>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
                         </StackPanel>
 
 

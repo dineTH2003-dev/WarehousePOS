@@ -1896,6 +1896,18 @@
                                                 </DataTemplate>
                                             </DataGridTemplateColumn.CellTemplate>
                                         </DataGridTemplateColumn>
+                                        <DataGridTemplateColumn Header="Action" Width="105">
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <Button Content="📋 Wages"
+                                                            Style="{StaticResource SecondaryButton}"
+                                                            Height="28" Padding="10,0" FontSize="11"
+                                                            Command="{Binding DataContext.ViewEmployeeWageHistoryCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                            CommandParameter="{Binding}"
+                                                            ToolTip="View partial wage payments and advance history"/>
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                        </DataGridTemplateColumn>
                                     </DataGrid.Columns>
                                 </DataGrid>
                             </Border>
@@ -2014,6 +2026,11 @@
                                     </DataGridTemplateColumn>
                                 </DataGrid.Columns>
                             </DataGrid>
+
+                            <Button Content="📋 Open Wage Card Popup" Style="{StaticResource SecondaryButton}"
+                                    Command="{Binding ViewEmployeeWageHistoryCommand}"
+                                    CommandParameter="{Binding SelectedEmployeeReport}"
+                                    Height="32" Margin="0,10,0,0"/>
 
                         </StackPanel>
                     </Border>

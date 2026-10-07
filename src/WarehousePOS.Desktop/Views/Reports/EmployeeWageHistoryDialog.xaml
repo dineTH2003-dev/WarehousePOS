@@ -1,0 +1,149 @@
+<Window x:Class="WarehousePOS.Desktop.Views.Reports.EmployeeWageHistoryDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:behaviors="clr-namespace:WarehousePOS.Desktop.Behaviors"
+        Title="Employee Wage &amp; Payment History"
+        Icon="/Resources/Images/app-icon.png"
+        Width="700" Height="580"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="CanResize"
+        Background="{StaticResource BackgroundBrush}">
+
+    <Border Style="{StaticResource Card}" Margin="16" Padding="20">
+        <Grid behaviors:ArrowNavigationBehavior.IsEnabled="True">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- 1. Header with Employee Info -->
+            <Grid Grid.Row="0" Margin="0,0,0,14">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="👤 " FontSize="20" VerticalAlignment="Center"/>
+                        <TextBlock x:Name="TxtEmployeeName" Style="{StaticResource H2}" FontSize="18" VerticalAlignment="Center"/>
+                        <Border Background="#DCFCE7" CornerRadius="4" Padding="8,3" Margin="10,0,0,0" VerticalAlignment="Center">
+                            <TextBlock x:Name="TxtEmployeeRole" FontSize="12" FontWeight="SemiBold" Foreground="#15803D"/>
+                        </Border>
+                    </StackPanel>
+                    <TextBlock x:Name="TxtEmployeeSubtitle" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" Margin="0,4,0,0"/>
+                </StackPanel>
+
+                <Button Grid.Column="1" Content="✕" Width="30" Height="30" Click="BtnClose_Click"
+                        Style="{StaticResource SecondaryButton}" Padding="0" FontSize="13" VerticalAlignment="Top"/>
+            </Grid>
+
+            <!-- 2. KPI Summary Boxes -->
+            <Grid Grid.Row="1" Margin="0,0,0,16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="8"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="8"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="8"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Base Salary -->
+                <Border Grid.Column="0" Background="{StaticResource SurfaceAltBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="8" Padding="12,8">
+                    <StackPanel>
+                        <TextBlock Text="Base Salary" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}"/>
+                        <TextBlock x:Name="TxtBaseSalary" FontSize="14" FontWeight="Bold" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,2,0,0"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Total Paid -->
+                <Border Grid.Column="2" Background="#F0FDF4" BorderBrush="#BBF7D0" BorderThickness="1" CornerRadius="8" Padding="12,8">
+                    <StackPanel>
+                        <TextBlock Text="Total Paid" FontSize="11" Foreground="#15803D"/>
+                        <TextBlock x:Name="TxtTotalPaid" FontSize="14" FontWeight="Bold" Foreground="{StaticResource SuccessBrush}" Margin="0,2,0,0"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Advances Paid -->
+                <Border Grid.Column="4" Background="#FFFBEB" BorderBrush="#FDE68A" BorderThickness="1" CornerRadius="8" Padding="12,8">
+                    <StackPanel>
+                        <TextBlock Text="Advances" FontSize="11" Foreground="#B45309"/>
+                        <TextBlock x:Name="TxtTotalAdvances" FontSize="14" FontWeight="Bold" Foreground="{StaticResource WarningBrush}" Margin="0,2,0,0"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Balance Due -->
+                <Border Grid.Column="6" Background="#FEF2F2" BorderBrush="#FECACA" BorderThickness="1" CornerRadius="8" Padding="12,8">
+                    <StackPanel>
+                        <TextBlock Text="Remaining Due" FontSize="11" Foreground="#991B1B"/>
+                        <TextBlock x:Name="TxtBalanceDue" FontSize="14" FontWeight="Bold" Foreground="{StaticResource DangerBrush}" Margin="0,2,0,0"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- 3. Payment History DataGrid -->
+            <Grid Grid.Row="2" Margin="0,0,0,14">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <TextBlock Grid.Row="0" Text="Partial Wage Payments &amp; Advance Installments" Style="{StaticResource H3}" FontSize="13" Margin="0,0,0,8"/>
+
+                <DataGrid x:Name="DgPayments" Grid.Row="1" AutoGenerateColumns="False" IsReadOnly="True"
+                          SelectionMode="Single" VerticalScrollBarVisibility="Auto">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Date &amp; Time" Binding="{Binding FormattedDate}" Width="140"/>
+                        <DataGridTemplateColumn Header="Payment Type" Width="130">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Border CornerRadius="4" Padding="6,2" HorizontalAlignment="Left" VerticalAlignment="Center">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Setter Property="Background" Value="#E0F2FE"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsAdvance}" Value="True">
+                                                        <Setter Property="Background" Value="#FEF3C7"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                        <TextBlock Text="{Binding PaymentType}" FontSize="11">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Foreground" Value="#0369A1"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsAdvance}" Value="True">
+                                                            <Setter Property="Foreground" Value="#B45309"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </Border>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTextColumn Header="Amount" Binding="{Binding FormattedAmount}" Width="110"/>
+                        <DataGridTextColumn Header="Description / Notes" Binding="{Binding Description}" Width="*"/>
+                        <DataGridTextColumn Header="Recorded By" Binding="{Binding RecordedByName}" Width="100"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+
+                <!-- Empty State Notice -->
+                <TextBlock x:Name="TxtEmptyNotice" Grid.Row="1" Text="No partial payments or advance payouts recorded for this employee."
+                           Foreground="{StaticResource TextMutedBrush}" FontSize="13" HorizontalAlignment="Center"
+                           VerticalAlignment="Center" Visibility="Collapsed"/>
+            </Grid>
+
+            <!-- 4. Footer Actions -->
+            <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Content="Close" Style="{StaticResource PrimaryButton}" Height="36" Padding="24,0" Click="BtnClose_Click"/>
+            </StackPanel>
+        </Grid>
+    </Border>
+</Window>
