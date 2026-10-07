@@ -1295,6 +1295,14 @@ public sealed class ReportService(
         await expenseRepo.AddAsync(expense, ct);
     }
 
+    public async Task<IReadOnlyList<EmployeeReportDto>> GetEmployeeSalaryStatusAsync(CancellationToken ct = default)
+    {
+        var today = DateTime.Today;
+        var startOfMonth = new DateTime(today.Year, today.Month, 1);
+        var summary = await GetEmployeeReportSummaryAsync(startOfMonth, today, ct);
+        return summary.Employees;
+    }
+
     private static (DateTime StartUtc, DateTime EndUtc) ToUtcRange(DateTime from, DateTime to)
     {
         var startLocal = from.Kind == DateTimeKind.Utc ? from.ToLocalTime().Date : from.Date;
