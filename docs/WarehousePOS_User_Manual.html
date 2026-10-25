@@ -1,0 +1,1238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Happy Products WarehousePOS - Comprehensive Operations Manual</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+  @page {
+    size: A4 portrait;
+    margin: 15mm 14mm 16mm 14mm;
+    @bottom-right {
+      content: counter(page);
+      font-family: 'Inter', sans-serif;
+      font-size: 8.5pt;
+      color: #64748B;
+    }
+    @bottom-left {
+      content: "Happy Products POS — Actual System Operations Manual";
+      font-family: 'Inter', sans-serif;
+      font-size: 8pt;
+      color: #94A3B8;
+    }
+  }
+
+  @page :first {
+    margin: 0;
+    @bottom-right { content: normal; }
+    @bottom-left { content: normal; }
+  }
+
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 10pt;
+    line-height: 1.5;
+    color: #1E293B;
+    background-color: #FFFFFF;
+    margin: 0;
+    padding: 0;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .page-break {
+    page-break-after: always;
+    break-after: page;
+  }
+  .avoid-break {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* ─────────────────────────────────────────────────────────────
+     COVER PAGE
+  ───────────────────────────────────────────────────────────── */
+  .cover-page {
+    height: 100vh;
+    min-height: 297mm;
+    background: linear-gradient(145deg, #064E3B 0%, #065F46 45%, #0F766E 100%);
+    color: #FFFFFF;
+    padding: 30mm 20mm;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    page-break-after: always;
+    break-after: page;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .cover-page::before {
+    content: "";
+    position: absolute;
+    top: -90px;
+    right: -90px;
+    width: 380px;
+    height: 380px;
+    background: radial-gradient(circle, rgba(16, 185, 129, 0.25) 0%, rgba(16, 185, 129, 0) 70%);
+    border-radius: 50%;
+  }
+
+  .cover-header {
+    position: relative;
+    z-index: 2;
+  }
+
+  .cover-logo-card {
+    background: #FFFFFF;
+    display: inline-block;
+    padding: 12px 26px;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+    margin-bottom: 24px;
+  }
+
+  .cover-logo-card img {
+    height: 50px;
+    display: block;
+  }
+
+  .cover-badge {
+    display: inline-block;
+    background: rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    padding: 5px 14px;
+    border-radius: 20px;
+    font-size: 8.5pt;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #A7F3D0;
+    margin-bottom: 18px;
+  }
+
+  .cover-title {
+    font-size: 30pt;
+    font-weight: 800;
+    line-height: 1.15;
+    margin: 0 0 12px 0;
+    color: #FFFFFF;
+    letter-spacing: -0.5px;
+  }
+
+  .cover-subtitle {
+    font-size: 14pt;
+    font-weight: 400;
+    line-height: 1.4;
+    color: #D1FAE5;
+    margin: 0 0 24px 0;
+    max-width: 650px;
+  }
+
+  .cover-features-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 15px;
+  }
+
+  .cover-pill {
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    padding: 5px 12px;
+    border-radius: 6px;
+    font-size: 8.5pt;
+    color: #ECFDF5;
+    font-weight: 500;
+  }
+
+  .cover-meta {
+    background: rgba(0, 0, 0, 0.35);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    padding: 16px 22px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    position: relative;
+    z-index: 2;
+  }
+
+  .meta-item {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .meta-label {
+    font-size: 7pt;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: #93C5FD;
+    font-weight: 600;
+    margin-bottom: 2px;
+  }
+
+  .meta-value {
+    font-size: 9pt;
+    font-weight: 600;
+    color: #FFFFFF;
+  }
+
+  /* ─────────────────────────────────────────────────────────────
+     DOCUMENT BODY STYLING
+  ───────────────────────────────────────────────────────────── */
+  .doc-container {
+    padding: 0 4mm;
+  }
+
+  h1 {
+    font-size: 18pt;
+    font-weight: 800;
+    color: #064E3B;
+    border-bottom: 2px solid #059669;
+    padding-bottom: 6px;
+    margin-top: 22px;
+    margin-bottom: 12px;
+    page-break-after: avoid;
+    break-after: avoid;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  h1 .chapter-num {
+    background: #059669;
+    color: #FFFFFF;
+    font-size: 10.5pt;
+    padding: 2px 8px;
+    border-radius: 5px;
+    font-weight: 700;
+  }
+
+  h2 {
+    font-size: 13pt;
+    font-weight: 700;
+    color: #0F766E;
+    margin-top: 18px;
+    margin-bottom: 8px;
+    page-break-after: avoid;
+    break-after: avoid;
+    border-left: 3px solid #0D9488;
+    padding-left: 10px;
+  }
+
+  h3 {
+    font-size: 10.5pt;
+    font-weight: 700;
+    color: #1E293B;
+    margin-top: 12px;
+    margin-bottom: 5px;
+    page-break-after: avoid;
+    break-after: avoid;
+  }
+
+  p {
+    margin-top: 0;
+    margin-bottom: 8px;
+    text-align: justify;
+  }
+
+  ul, ol {
+    margin-top: 0;
+    margin-bottom: 10px;
+    padding-left: 18px;
+  }
+
+  li {
+    margin-bottom: 4px;
+  }
+
+  /* Navigation Bar Instruction Pill */
+  .nav-guide-box {
+    background: #F0FDF4;
+    border: 1px solid #86EFAC;
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin: 10px 0 14px 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  .nav-guide-badge {
+    background: #059669;
+    color: #FFFFFF;
+    font-weight: 700;
+    font-size: 8pt;
+    padding: 4px 10px;
+    border-radius: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+  }
+
+  .nav-guide-text {
+    font-size: 9pt;
+    color: #064E3B;
+    font-weight: 500;
+  }
+
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 10px 0 14px 0;
+    font-size: 8.5pt;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  th, td {
+    padding: 7px 9px;
+    text-align: left;
+    border: 1px solid #CBD5E1;
+  }
+
+  th {
+    background-color: #F1F5F9;
+    color: #0F172A;
+    font-weight: 700;
+  }
+
+  tr:nth-child(even) td {
+    background-color: #F8FAFC;
+  }
+
+  /* Callouts */
+  .callout {
+    padding: 10px 12px;
+    border-radius: 7px;
+    margin: 12px 0;
+    font-size: 9pt;
+    border-left: 4px solid;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  .callout-title {
+    font-weight: 700;
+    margin-bottom: 3px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .callout-info { background-color: #F0FDF4; border-color: #16A34A; color: #166534; }
+  .callout-info .callout-title { color: #15803D; }
+
+  .callout-warning { background-color: #FFFBEB; border-color: #D97706; color: #92400E; }
+  .callout-warning .callout-title { color: #B45309; }
+
+  .callout-security { background-color: #FEF2F2; border-color: #DC2626; color: #991B1B; }
+  .callout-security .callout-title { color: #B91C1C; }
+
+  /* Actual System Screenshot Card */
+  .screenshot-card {
+    margin: 12px auto 16px auto;
+    text-align: center;
+    page-break-inside: avoid;
+    break-inside: avoid;
+    max-width: 100%;
+  }
+
+  .screenshot-frame {
+    display: inline-block;
+    border: 1.5px solid #94A3B8;
+    border-radius: 8px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+    background-color: #FFFFFF;
+    overflow: hidden;
+    padding: 3px;
+    max-width: 100%;
+  }
+
+  .screenshot-frame img {
+    display: block;
+    width: 100%;
+    max-height: 380px;
+    object-fit: contain;
+    border-radius: 4px;
+  }
+
+  .screenshot-caption {
+    font-size: 8.5pt;
+    font-weight: 600;
+    color: #334155;
+    margin-top: 6px;
+  }
+
+  /* Keyboard Key Badge */
+  kbd {
+    display: inline-block;
+    padding: 1px 5px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 7.5pt;
+    font-weight: 600;
+    color: #334155;
+    background-color: #F1F5F9;
+    border: 1px solid #CBD5E1;
+    border-bottom: 2px solid #94A3B8;
+    border-radius: 4px;
+  }
+
+  /* Code / Path Text */
+  code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 8pt;
+    background: #F1F5F9;
+    color: #0F766E;
+    padding: 1px 4px;
+    border-radius: 3px;
+    border: 1px solid #E2E8F0;
+  }
+
+  /* Badges */
+  .badge {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 7pt;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+  .badge-admin { background: #F3E8FF; color: #7E22CE; border: 1px solid #D8B4FE; }
+  .badge-worker { background: #E0F2FE; color: #0369A1; border: 1px solid #BAE6FD; }
+  .badge-active { background: #DCFCE7; color: #15803D; border: 1px solid #BBF7D0; }
+
+  /* Steps */
+  .step-container {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 8px;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  .step-number {
+    width: 22px;
+    height: 22px;
+    background: #059669;
+    color: #FFFFFF;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 8.5pt;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .step-content {
+    flex: 1;
+  }
+
+  /* TOC Layout */
+  .toc-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin: 16px 0;
+  }
+
+  .toc-card {
+    background: #F8FAFC;
+    border: 1px solid #E2E8F0;
+    border-radius: 8px;
+    padding: 10px 12px;
+  }
+
+  .toc-card h3 {
+    margin-top: 0;
+    margin-bottom: 6px;
+    color: #0F766E;
+    font-size: 9.5pt;
+    border-bottom: 1px solid #CBD5E1;
+    padding-bottom: 3px;
+  }
+
+  .toc-card ul {
+    list-style: none;
+    padding-left: 0;
+    margin-bottom: 0;
+    font-size: 8pt;
+  }
+
+  .toc-card li {
+    margin-bottom: 3px;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .toc-card li span.page-num {
+    color: #64748B;
+    font-weight: 600;
+  }
+
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     COVER PAGE
+═══════════════════════════════════════════════════════════════════ -->
+<div class="cover-page">
+  <div class="cover-header">
+    <div class="cover-logo-card">
+      <img src="manual_assets/logo.png" alt="Happy Products Logo">
+    </div>
+    <div class="cover-badge">Official Standard Operating Manual</div>
+    <div class="cover-title">WarehousePOS System Operations Guide</div>
+    <div class="cover-subtitle">
+      Complete User Guide Featuring Actual System Screenshots and Screen-by-Screen Navigation Instructions for Point of Sale, Warehouse Inventory, Invoicing, Procurement, and Financial Analytics
+    </div>
+    <div class="cover-features-pills">
+      <div class="cover-pill">✓ Actual WPF Live System Interface</div>
+      <div class="cover-pill">✓ 100% Offline Single-PC Architecture</div>
+      <div class="cover-pill">✓ Epson LQ-310 Dot-Matrix Printing</div>
+      <div class="cover-pill">✓ Multi-Role Security &amp; Permissions</div>
+      <div class="cover-pill">✓ Step-by-Step Screen Navigation</div>
+    </div>
+  </div>
+
+  <div class="cover-meta">
+    <div class="meta-item">
+      <div class="meta-label">System Edition</div>
+      <div class="meta-value">Desktop v1.0 (Windows x64)</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">Hardware Profile</div>
+      <div class="meta-value">Epson LQ-310 Continuous 9.5"×5.5"</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">Business Name</div>
+      <div class="meta-value">Happy Products</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">Database Engine</div>
+      <div class="meta-value">SQLite (Embedded EF Core 10)</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">Deployment Type</div>
+      <div class="meta-value">100% Offline Standalone Desktop</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">Documentation Date</div>
+      <div class="meta-value">October 2026</div>
+    </div>
+  </div>
+</div>
+
+<div class="doc-container">
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     TABLE OF CONTENTS
+═══════════════════════════════════════════════════════════════════ -->
+<h1><span class="chapter-num">TOC</span> Table of Contents &amp; Visual Navigation Map</h1>
+
+<div class="toc-grid">
+  <div class="toc-card">
+    <h3>Module 1: Authentication &amp; System Access</h3>
+    <ul>
+      <li><span>1. System Architecture &amp; Data Directories</span> <span class="page-num">p. 2</span></li>
+      <li><span>2. Sign-In Screen &amp; Sample Credentials</span> <span class="page-num">p. 3</span></li>
+      <li><span>3. Main Window Layout &amp; Navigation Sidebar</span> <span class="page-num">p. 4</span></li>
+    </ul>
+  </div>
+
+  <div class="toc-card">
+    <h3>Module 2: Sales &amp; Hardware Printing</h3>
+    <ul>
+      <li><span>4. Point of Sale (Cash) Terminal View</span> <span class="page-num">p. 5</span></li>
+      <li><span>5. Bill History &amp; Invoices Management</span> <span class="page-num">p. 6</span></li>
+      <li><span>6. Epson LQ-310 Receipt Generation &amp; Preview</span> <span class="page-num">p. 7</span></li>
+    </ul>
+  </div>
+
+  <div class="toc-card">
+    <h3>Module 3: Inventory &amp; Procurement</h3>
+    <ul>
+      <li><span>7. Product Catalog &amp; Inventory Management</span> <span class="page-num">p. 8</span></li>
+      <li><span>8. Purchasing &amp; Stock Inbound (GRN)</span> <span class="page-num">p. 9</span></li>
+      <li><span>9. Supplier Directory &amp; Accounts Payable</span> <span class="page-num">p. 10</span></li>
+    </ul>
+  </div>
+
+  <div class="toc-card">
+    <h3>Module 4: Customers &amp; Operations</h3>
+    <ul>
+      <li><span>10. Customer Directory &amp; Credit Ledger</span> <span class="page-num">p. 11</span></li>
+      <li><span>11. Operational Expenses Tracking</span> <span class="page-num">p. 12</span></li>
+      <li><span>12. Executive Reports &amp; Financial Analytics</span> <span class="page-num">p. 13</span></li>
+    </ul>
+  </div>
+
+  <div class="toc-card">
+    <h3>Module 5: Administration &amp; Maintenance</h3>
+    <ul>
+      <li><span>13. User Accounts &amp; Payroll Parameters</span> <span class="page-num">p. 14</span></li>
+      <li><span>14. Store Profile, Printer &amp; Backup Settings</span> <span class="page-num">p. 15</span></li>
+      <li><span>15. Daily Checklists &amp; Shortcut Hotkeys</span> <span class="page-num">p. 16</span></li>
+    </ul>
+  </div>
+
+  <div class="toc-card">
+    <h3>Reference: Actual System Screen Index</h3>
+    <ul>
+      <li><span>Figure 2.1: Actual Login Window</span> <span class="page-num">p. 3</span></li>
+      <li><span>Figure 4.1: Actual POS Terminal Screen</span> <span class="page-num">p. 5</span></li>
+      <li><span>Figure 5.1: Actual Bill History View</span> <span class="page-num">p. 6</span></li>
+      <li><span>Figure 7.1: Actual Product Catalog Screen</span> <span class="page-num">p. 8</span></li>
+      <li><span>Figure 8.1: Actual Purchasing Screen</span> <span class="page-num">p. 9</span></li>
+      <li><span>Figure 9.1: Actual Suppliers Screen</span> <span class="page-num">p. 10</span></li>
+      <li><span>Figure 10.1: Actual Customers Screen</span> <span class="page-num">p. 11</span></li>
+      <li><span>Figure 11.1: Actual Expenses Screen</span> <span class="page-num">p. 12</span></li>
+      <li><span>Figure 12.1: Actual Analytics Screen</span> <span class="page-num">p. 13</span></li>
+      <li><span>Figure 13.1: Actual Users Screen</span> <span class="page-num">p. 14</span></li>
+      <li><span>Figure 14.1: Actual Settings Screen</span> <span class="page-num">p. 15</span></li>
+    </ul>
+  </div>
+</div>
+
+<div class="page-break"></div>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     CHAPTER 1: SYSTEM ARCHITECTURE & DATA DIRECTORIES
+═══════════════════════════════════════════════════════════════════ -->
+<h1><span class="chapter-num">01</span> System Overview &amp; Local Directories</h1>
+
+<p>
+  <strong>WarehousePOS</strong> is designed as a high-performance, single-PC offline Windows application built on <strong>C# (.NET 10)</strong>, <strong>WPF</strong>, and <strong>Entity Framework Core with SQLite</strong>. It powers all retail transactions, warehouse inventory operations, and dot-matrix continuous invoice printing for <strong>Happy Products</strong> without requiring cloud servers or active internet connections.
+</p>
+
+<h2>1.1 Operating Environment &amp; Storage Paths</h2>
+<table>
+  <thead>
+    <tr>
+      <th style="width: 25%;">Resource</th>
+      <th style="width: 50%;">Local Windows Path</th>
+      <th style="width: 25%;">Function &amp; Security</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Live Database</strong></td>
+      <td><code>C:\ProgramData\WarehousePOS\Data\WarehousePOS.db</code></td>
+      <td>Permanent operational store (WAL mode enabled).</td>
+    </tr>
+    <tr>
+      <td><strong>Automatic Backups</strong></td>
+      <td><code>C:\ProgramData\WarehousePOS\Backups\</code></td>
+      <td>Daily snapshots taken automatically on launch.</td>
+    </tr>
+    <tr>
+      <td><strong>System Logs</strong></td>
+      <td><code>C:\ProgramData\WarehousePOS\Logs\application.log</code></td>
+      <td>Serilog structured logs (30-day retention).</td>
+    </tr>
+    <tr>
+      <td><strong>Application Binaries</strong></td>
+      <td><code>C:\Program Files\WarehousePOS\WarehousePOS.Desktop.exe</code></td>
+      <td>64-bit self-contained desktop binary.</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="page-break"></div>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     CHAPTER 2: SIGN-IN SCREEN & CREDENTIALS
+═══════════════════════════════════════════════════════════════════ -->
+<h1><span class="chapter-num">02</span> User Authentication (Actual System Screen)</h1>
+
+<p>
+  System access is secured using individual credentials. Passwords are never stored in plain text; all authentication utilizes salted <strong>BCrypt</strong> hashing.
+</p>
+
+<div class="screenshot-card">
+  <div class="screenshot-frame">
+    <img src="manual_assets/actual_login.png" alt="Actual Happy Products Sign-In Window">
+  </div>
+  <div class="screenshot-caption">Figure 2.1: Actual Happy Products Sign-In Window displaying entry of sample demonstration credentials.</div>
+</div>
+
+<h2>2.1 How to Sign In with Sample Data</h2>
+<div class="step-container">
+  <div class="step-number">1</div>
+  <div class="step-content">
+    <strong>Enter Username:</strong> Click into the <em>Username</em> text box. Type the assigned handle. For demonstration and training, use sample account: <code>HappyProducts</code> (or cashier accounts <code>cashier1</code>, <code>cashier2</code>).
+  </div>
+</div>
+<div class="step-container">
+  <div class="step-number">2</div>
+  <div class="step-content">
+    <strong>Enter Password:</strong> Click into the <em>Password</em> box. The input displays security bullets (e.g., <code>••••••••••</code>). Use the eye icon toggle button on the right edge to briefly verify input if needed.
+  </div>
+</div>
+<div class="step-container">
+  <div class="step-number">3</div>
+  <div class="step-content">
+    <strong>Sign In:</strong> Click the green <strong>Sign In</strong> button or press <kbd>Enter</kbd>. The authentication event is recorded in the <code>AuditLog</code> and the system transitions directly into the main shell.
+  </div>
+</div>
+
+<div class="page-break"></div>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     CHAPTER 3: MAIN NAVIGATION SIDEBAR
+═══════════════════════════════════════════════════════════════════ -->
+<h1><span class="chapter-num">03</span> Application Navigation Architecture</h1>
+
+<p>
+  WarehousePOS features a persistent left navigation sidebar. It provides clear visual cues indicating the active view with a green highlight and left accent bar.
+</p>
+
+<h2>3.1 Sidebar Navigation Buttons &amp; Permissions</h2>
+<table>
+  <thead>
+    <tr>
+      <th style="width: 25%;">Sidebar Button</th>
+      <th style="width: 30%;">Target View</th>
+      <th style="width: 20%;">Required Role</th>
+      <th style="width: 25%;">Keyboard Shortcut</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>🖥️ Point of Sale</strong></td>
+      <td>Point of Sale (Cash) Terminal</td>
+      <td><span class="badge badge-worker">Worker</span> / <span class="badge badge-admin">Admin</span></td>
+      <td><kbd>Ctrl</kbd> + <kbd>1</kbd> or Default Landing</td>
+    </tr>
+    <tr>
+      <td><strong>🧾 Bill History</strong></td>
+      <td>Bill History &amp; Invoices</td>
+      <td><span class="badge badge-worker">Worker</span> / <span class="badge badge-admin">Admin</span></td>
+      <td><kbd>Ctrl</kbd> + <kbd>2</kbd></td>
+    </tr>
+    <tr>
+      <td><strong>📦 Products</strong></td>
+      <td>Product Catalog &amp; Stock Levels</td>
+      <td><span class="badge badge-worker">Worker</span> / <span class="badge badge-admin">Admin</span></td>
+      <td><kbd>Ctrl</kbd> + <kbd>3</kbd></td>
+    </tr>
+    <tr>
+      <td><strong>🛒 Purchasing</strong></td>
+      <td>Purchasing &amp; Stock Inbound (GRN)</td>
+      <td><span class="badge badge-admin">Admin</span> / Manager</td>
+      <td><kbd>Ctrl</kbd> + <kbd>4</kbd></td>
+    </tr>
+    <tr>
+      <td><strong>🚚 Suppliers</strong></td>
+      <td>Suppliers Directory &amp; Balances</td>
+      <td><span class="badge badge-admin">Admin</span> / Manager</td>
+      <td><kbd>Ctrl</kbd> + <kbd>5</kbd></td>
+    </tr>
+    <tr>
+      <td><strong>👥 Customers</strong></td>
+      <td>Customer Directory &amp; Credit</td>
+      <td><span class="badge badge-worker">Worker</span> / <span class="badge badge-admin">Admin</span></td>
+      <td><kbd>Ctrl</kbd> + <kbd>6</kbd></td>
+    </tr>
+    <tr>
+      <td><strong>📊 Reports</strong></td>
+      <td>Executive Analytics &amp; Reports</td>
+      <td><span class="badge badge-admin">Admin Only</span></td>
+      <td><kbd>Ctrl</kbd> + <kbd>7</kbd></td>
+    </tr>
+    <tr>
+      <td><strong>💸 Expenses</strong></td>
+      <td>Operational Expenses Tracking</td>
+      <td><span class="badge badge-admin">Admin Only</span></td>
+      <td><kbd>Ctrl</kbd> + <kbd>8</kbd></td>
+    </tr>
+    <tr>
+      <td><strong>🔐 User Management</strong></td>
+      <td>User Accounts &amp; Payroll Setup</td>
+      <td><span class="badge badge-admin">Admin Only</span></td>
+      <td><kbd>Ctrl</kbd> + <kbd>9</kbd></td>
+    </tr>
+    <tr>
+      <td><strong>⚙️ Settings</strong></td>
+      <td>Store Information &amp; Hardware</td>
+      <td><span class="badge badge-admin">Admin Only</span></td>
+      <td><kbd>Ctrl</kbd> + <kbd>0</kbd></td>
+    </tr>
+    <tr>
+      <td><strong>⬅ Logout</strong></td>
+      <td>Returns to Login Window</td>
+      <td>All Users</td>
+      <td><kbd>Alt</kbd> + <kbd>L</kbd></td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="page-break"></div>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     CHAPTER 4: POINT OF SALE (POS) TERMINAL
+═══════════════════════════════════════════════════════════════════ -->
+<h1><span class="chapter-num">04</span> Point of Sale (Cash) Terminal</h1>
+
+<div class="nav-guide-box">
+  <div class="nav-guide-badge">Navigation</div>
+  <div class="nav-guide-text">Click <strong>🖥️ Point of Sale</strong> on the sidebar, or press <kbd>F1</kbd> from any screen.</div>
+</div>
+
+<div class="screenshot-card">
+  <div class="screenshot-frame">
+    <img src="manual_assets/actual_pos.png" alt="Actual Point of Sale Terminal">
+  </div>
+  <div class="screenshot-caption">Figure 4.1: Actual Point of Sale (Cash) Terminal showing live catalog, active price tiers, customer input, and billing panel.</div>
+</div>
+
+<h2>4.1 On-Screen Controls &amp; Checkout Workflow</h2>
+<ol>
+  <li><strong>Product Search Bar:</strong> Type product name, SKU (e.g., <code>CFDL72364</code>), or scan the barcode. Items appear in the table with stock counts and prices.</li>
+  <li><strong>Catalog Quick Add:</strong> Click the green <strong>+ Add</strong> button on any item row to add 1 unit to the cart.</li>
+  <li><strong>Customer Assignment:</strong>
+    <ul>
+      <li>For counter sales, leave as Walk-in Customer.</li>
+      <li>To record a client name/phone, type in <em>Walk-in Name</em> and <em>Phone</em>.</li>
+      <li>Check <strong>Save to Customer Directory</strong> to automatically register them for credit tracking.</li>
+    </ul>
+  </li>
+  <li><strong>Price Tier Selection:</strong> Switch between <strong>Retail Price</strong> and <strong>Wholesale Price</strong> using the radio buttons.</li>
+  <li><strong>Concessions &amp; Surcharges:</strong> Enter optional <em>Discount (Rs.)</em>, <em>Delivery Fee (Rs.)</em>, or <em>Labour Cost (Rs.)</em>. The TOTAL updates dynamically.</li>
+  <li><strong>Payment Settlement:</strong> Select <em>Cash</em>, enter <em>Amount Paid (Rs.)</em>. The exact change calculates instantly. Click <strong>Complete Sale</strong> (or press <kbd>F12</kbd>) to finalize the transaction, record inventory decrement, and trigger the Epson LQ-310 printer.</li>
+</ol>
+
+<div class="page-break"></div>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     CHAPTER 5: BILL HISTORY & INVOICES
+═══════════════════════════════════════════════════════════════════ -->
+<h1><span class="chapter-num">05</span> Bill History &amp; Invoice Inquiries</h1>
+
+<div class="nav-guide-box">
+  <div class="nav-guide-badge">Navigation</div>
+  <div class="nav-guide-text">Click <strong>🧾 Bill History</strong> on the left navigation sidebar.</div>
+</div>
+
+<div class="screenshot-card">
+  <div class="screenshot-frame">
+    <img src="manual_assets/actual_bill_history.png" alt="Actual Bill History View">
+  </div>
+  <div class="screenshot-caption">Figure 5.1: Actual Bill History &amp; Invoices screen displaying historical invoices, totals, statuses, and search filters.</div>
+</div>
+
+<h2>5.1 On-Screen Features &amp; Actions</h2>
+<ul>
+  <li><strong>Summary Metrics:</strong> Shows <em>Total Invoices</em>, <em>Total Paid / Collected (Rs.)</em>, and <em>Total Outstanding / Credit (Rs.)</em> for the selected date window.</li>
+  <li><strong>Search &amp; Filter Bar:</strong> Filter by invoice number, customer phone number, date range (From / To), Status (<em>Completed</em>, <em>Returned</em>, <em>Layaway</em>), and Payment Method. Click <strong>Search</strong> to query.</li>
+  <li><strong>Invoice Details Viewer:</strong> Click any invoice row in the table to display the itemized breakdown on the right pane, inspect discounts, verify cashier name, and click <strong>Reprint Receipt</strong> to reissue physical bills.</li>
+  <li><strong>Returns &amp; Adjustments:</strong> Select an eligible invoice to process customer product returns or adjust delivery expenses.</li>
+</ul>
+
+<div class="page-break"></div>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     CHAPTER 6: HARDWARE RECEIPT PRINTING & PREVIEW
+═══════════════════════════════════════════════════════════════════ -->
+<h1><span class="chapter-num">06</span> Receipt Generation &amp; Epson LQ-310 Printing</h1>
+
+<p>
+  Happy Products uses an <strong>Epson LQ-310 24-pin Dot-Matrix Printer</strong> running continuous tractor-feed 9.5" × 5.5" (half-page) 2-ply NCR paper.
+</p>
+
+<div class="screenshot-card">
+  <div class="screenshot-frame">
+    <img src="manual_assets/receipt_preview.jpg" alt="Actual Receipt Preview Window">
+  </div>
+  <div class="screenshot-caption">Figure 6.1: Dot-Matrix Receipt Preview showing store header, itemized lines, totals, warranty policy, and optical barcode.</div>
+</div>
+
+<h2>6.1 Key Receipt Elements</h2>
+<ul>
+  <li><strong>Store Header:</strong> HAPPY PRODUCTS &bull; Bandaragama Rd, Waskaduwa &bull; Tel: 0711435343 &bull; Damro, Abans, Singer, Soft Logic Authorised Dealer.</li>
+  <li><strong>Metadata:</strong> Sequential invoice ID (e.g., <code>INV-2026-0042</code>), timestamp, cashier name, customer name.</li>
+  <li><strong>Line Items:</strong> Description, quantity, unit price (Rs.), and extended line total.</li>
+  <li><strong>Financials:</strong> Subtotal, discounts, net payable, cash tendered, and change returned.</li>
+  <li><strong>Warranty Terms:</strong> Clear warranty policy disclaimer stating manufacturing repair depot terms and inspection guidelines.</li>
+  <li><strong>Optical Barcode:</strong> Code128 barcode of invoice number allowing instant scanning for returns and warranty claims.</li>
+</ul>
+
+<div class="page-break"></div>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     CHAPTER 7: PRODUCT CATALOG & INVENTORY
+═══════════════════════════════════════════════════════════════════ -->
+<h1><span class="chapter-num">07</span> Product Catalog &amp; Inventory Management</h1>
+
+<div class="nav-guide-box">
+  <div class="nav-guide-badge">Navigation</div>
+  <div class="nav-guide-text">Click <strong>📦 Products</strong> on the left navigation sidebar.</div>
+</div>
+
+<div class="screenshot-card">
+  <div class="screenshot-frame">
+    <img src="manual_assets/actual_products.png" alt="Actual Product Catalog Screen">
+  </div>
+  <div class="screenshot-caption">Figure 7.1: Actual Product Catalog screen displaying master inventory records, stock levels, categories, and actions.</div>
+</div>
+
+<h2>7.1 On-Screen Actions &amp; Workflows</h2>
+<ul>
+  <li><strong>Add New Product:</strong> Click the green <strong>+ Add Product</strong> button in the top right to open the product registration form (SKU, barcode, category, cost price, retail price, wholesale price, and reorder levels).</li>
+  <li><strong>Manage Categories:</strong> Click <strong>Manage Categories</strong> to create and organize product categories (e.g., MATTRESS, Home Appliances, Electronics).</li>
+  <li><strong>Bulk CSV Import:</strong> Click <strong>Import CSV</strong> to batch-upload hundreds of product records from a spreadsheet.</li>
+  <li><strong>Stock Level Tracking:</strong> The <em>Stock</em> column highlights available physical units and displays low-stock indicators in red text.</li>
+  <li><strong>Low-Stock Products Alert:</strong> The bottom banner shows current low-stock count and includes a <em>Show Low-Stock Only</em> toggle switch for rapid reordering.</li>
+  <li><strong>Editing &amp; Deactivation:</strong> Use <strong>Edit</strong> to modify prices or specifications; use <strong>Deactivate</strong> for safe soft-deletion without breaking historical invoice data.</li>
+</ul>
+
+<div class="page-break"></div>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     CHAPTER 8: PURCHASING & GOODS RECEIVED (GRN)
+═══════════════════════════════════════════════════════════════════ -->
+<h1><span class="chapter-num">08</span> Purchasing &amp; Stock Inbound (GRN)</h1>
+
+<div class="nav-guide-box">
+  <div class="nav-guide-badge">Navigation</div>
+  <div class="nav-guide-text">Click <strong>🛒 Purchasing</strong> on the left navigation sidebar (Admin / Manager role required).</div>
+</div>
+
+<div class="screenshot-card">
+  <div class="screenshot-frame">
+    <img src="manual_assets/actual_purchasing.png" alt="Actual Purchasing & Stock Inbound Screen">
+  </div>
+  <div class="screenshot-caption">Figure 8.1: Actual Purchasing &amp; Stock Inbound view for processing supplier purchase orders, discounts, and GRN receipts.</div>
+</div>
+
+<h2>8.1 Procurement &amp; Goods Receiving Workflow</h2>
+<ol>
+  <li><strong>Supplier &amp; Terms:</strong> Select the vendor from the <em>Select Supplier</em> dropdown (e.g., Arpico, Piyestra Furniture). Choose payment method (Cash, Bank Transfer, Cheque, Credit).</li>
+  <li><strong>Invoice Reference:</strong> Type supplier delivery note or invoice number in <em>Purchase Order Notes / Invoice No</em>.</li>
+  <li><strong>Add Purchase Items:</strong> Select product, input <em>Paid Qty</em>, <em>Free Qty</em> (bonus units), <em>Unit Cost (Rs.)</em>, and <em>Discount Rate (%)</em>. Total Cost calculates automatically.</li>
+  <li><strong>Payment Recording:</strong> Input <em>Paid Amount (Rs.)</em>. The system computes <em>Remaining Balance</em> and updates the vendor's payable ledger.</li>
+  <li><strong>Stock Inbound:</strong> Click the green <strong>Save &amp; Receive Stock</strong> button. The inventory increments atomically via <code>PurchaseReceive</code> movements, and goods are immediately available at the POS terminal.</li>
+</ol>
+
+<div class="page-break"></div>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     CHAPTER 9: SUPPLIER MANAGEMENT & BALANCES
+═══════════════════════════════════════════════════════════════════ -->
+<h1><span class="chapter-num">09</span> Supplier Directory &amp; Accounts Payable</h1>
+
+<div class="nav-guide-box">
+  <div class="nav-guide-badge">Navigation</div>
+  <div class="nav-guide-text">Click <strong>🚚 Suppliers</strong> on the left navigation sidebar.</div>
+</div>
+
+<div class="screenshot-card">
+  <div class="screenshot-frame">
+    <img src="manual_assets/actual_suppliers.png" alt="Actual Suppliers Management Screen">
+  </div>
+  <div class="screenshot-caption">Figure 9.1: Actual Suppliers screen displaying vendor contacts, outstanding payable balances, and benefit actions.</div>
+</div>
+
+<h2>9.1 Managing Vendors &amp; Balances</h2>
+<ul>
+  <li><strong>Master Directory:</strong> Displays Supplier Name (e.g., Arpico, Piyestra Furniture), Contact Person, Phone number, and current <strong>Balance (Rs.)</strong> owed to the supplier.</li>
+  <li><strong>Adding Vendors:</strong> Click the green <strong>+ Add Supplier</strong> button to register a new vendor company, representative, and address.</li>
+  <li><strong>Supplier Benefits &amp; Entitlements:</strong> Click <strong>Benefits</strong> on any supplier row to view contractual free items, special trade discounts, or rebate agreements.</li>
+  <li><strong>Import CSV:</strong> Batch import supplier lists using the <strong>Import CSV</strong> tool.</li>
+  <li><strong>Settling Accounts:</strong> When payments are made by cheque or bank transfer, record payment entries to decrement the supplier's outstanding balance.</li>
+</ul>
+
+<div class="page-break"></div>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     CHAPTER 10: CUSTOMER DIRECTORY & CREDIT
+═══════════════════════════════════════════════════════════════════ -->
+<h1><span class="chapter-num">10</span> Customer Directory &amp; Credit Management</h1>
+
+<div class="nav-guide-box">
+  <div class="nav-guide-badge">Navigation</div>
+  <div class="nav-guide-text">Click <strong>👥 Customers</strong> on the left navigation sidebar.</div>
+</div>
+
+<div class="screenshot-card">
+  <div class="screenshot-frame">
+    <img src="manual_assets/actual_customers.png" alt="Actual Customer Directory Screen">
+  </div>
+  <div class="screenshot-caption">Figure 10.1: Actual Customer Directory showing wholesale/retail tiers, discount rates, balances, and purchase lookups.</div>
+</div>
+
+<h2>10.1 Customer Directory Capabilities</h2>
+<ul>
+  <li><strong>Customer Search:</strong> Type customer name or phone number into the search bar to locate accounts in under 1 second.</li>
+  <li><strong>Account Types &amp; Discounts:</strong> Customers are tagged as <em>Retail</em> or <em>Wholesale</em> with preset default discount rates (e.g., 0.5%).</li>
+  <li><strong>Outstanding Balance Tracking:</strong> Displays client credit balances in real time.</li>
+  <li><strong>Purchased History:</strong> Click the green <strong>Purchased</strong> button on any row to open the client's lifetime purchase history, verifying past invoices, items, and warranty dates.</li>
+  <li><strong>Adding Customers:</strong> Click <strong>+ Add Customer</strong> to record new commercial contractors, setting credit limits and phone numbers.</li>
+</ul>
+
+<div class="page-break"></div>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     CHAPTER 11: OPERATIONAL EXPENSES TRACKING
+═══════════════════════════════════════════════════════════════════ -->
+<h1><span class="chapter-num">11</span> Warehouse Operational Expenses</h1>
+
+<div class="nav-guide-box">
+  <div class="nav-guide-badge">Navigation</div>
+  <div class="nav-guide-text">Click <strong>💸 Expenses</strong> on the left navigation sidebar (Admin access required).</div>
+</div>
+
+<div class="screenshot-card">
+  <div class="screenshot-frame">
+    <img src="manual_assets/actual_expenses.png" alt="Actual Warehouse Operational Expenses Screen">
+  </div>
+  <div class="screenshot-caption">Figure 11.1: Actual Warehouse Operational Expenses view with category breakdowns, monthly trend charts, and expense logging.</div>
+</div>
+
+<h2>11.1 Logging &amp; Analyzing Operational Overhead</h2>
+<ul>
+  <li><strong>KPI Summary Cards:</strong> Displays <em>Total Expenses (Rs.)</em>, <em>Number of Entries</em>, <em>Average Expense (Rs.)</em>, and <em>Highest Category</em>.</li>
+  <li><strong>Interactive Charts:</strong> Visual donut chart illustrating <em>Expenses by Category</em> (Wages &amp; Salaries, Utility Bills, Transport &amp; Fuel, Rent, etc.) and a 12-month <em>Monthly Expense Trend</em> bar chart.</li>
+  <li><strong>Recording an Expense:</strong> Use the right-hand form: Select <em>Date</em>, pick <em>Category</em> (Utility Bills, Maintenance &amp; Repairs, Transport, etc.), enter <em>Description</em>, optional <em>Reference #</em>, input <em>Amount (Rs.)</em>, and click <strong>Save Expense Entry</strong>.</li>
+  <li><strong>Audit Ledger:</strong> The bottom table displays all historical expense entries, recording the user who authorized the payment.</li>
+</ul>
+
+<div class="page-break"></div>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     CHAPTER 12: FINANCIAL REPORTS & ANALYTICS
+═══════════════════════════════════════════════════════════════════ -->
+<h1><span class="chapter-num">12</span> Reports &amp; Executive Analytics</h1>
+
+<div class="nav-guide-box">
+  <div class="nav-guide-badge">Navigation</div>
+  <div class="nav-guide-text">Click <strong>📊 Reports</strong> on the left navigation sidebar (Admin access required).</div>
+</div>
+
+<div class="screenshot-card">
+  <div class="screenshot-frame">
+    <img src="manual_assets/actual_reports.png" alt="Actual Reports & Executive Analytics Dashboard">
+  </div>
+  <div class="screenshot-caption">Figure 12.1: Actual Reports &amp; Executive Analytics dashboard showing real-time revenue cards, trend charts, and report tabs.</div>
+</div>
+
+<h2>12.1 Analytical Capabilities &amp; Report Tabs</h2>
+<ul>
+  <li><strong>Executive KPI Cards:</strong> Real-time figures for <em>Gross Revenue (Rs.)</em>, <em>Net Revenue (Rs.)</em>, <em>Today's Live Sales (Rs.)</em>, <em>Net Profit &amp; Margin</em>, <em>Sales Volume</em>, <em>Discounts &amp; Expenses</em>, and <em>Cost of Goods Sold (COGS)</em>.</li>
+  <li><strong>Interactive Trend Chart:</strong> Graphical daily revenue distribution chart showing transaction trends across the month.</li>
+  <li><strong>Dedicated Intelligence Tabs:</strong>
+    <ul>
+      <li><strong>General Analytics:</strong> High-level financial overview and margins.</li>
+      <li><strong>Daily Sales:</strong> Shift-by-shift sales totals and counter receipts.</li>
+      <li><strong>Inventory &amp; Stock:</strong> Inventory valuation (Cost vs Retail) and stock reorder reports.</li>
+      <li><strong>GRN Reports:</strong> Inbound purchasing history and supplier goods receipts.</li>
+      <li><strong>Supplier Balances:</strong> Summary of outstanding payables across all vendors.</li>
+      <li><strong>Customer Insights:</strong> Top buyers, aging receivables, and credit ledger.</li>
+    </ul>
+  </li>
+  <li><strong>Hardware Printing:</strong> Click <strong>Print to Epson LQ-310</strong> to print the active report sheet on continuous tractor paper.</li>
+</ul>
+
+<div class="page-break"></div>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     CHAPTER 13: USER MANAGEMENT & PAYROLL
+═══════════════════════════════════════════════════════════════════ -->
+<h1><span class="chapter-num">13</span> User Management &amp; Payroll Setup</h1>
+
+<div class="nav-guide-box">
+  <div class="nav-guide-badge">Navigation</div>
+  <div class="nav-guide-text">Click <strong>🔐 User Management</strong> on the left navigation sidebar (Admin access required).</div>
+</div>
+
+<div class="screenshot-card">
+  <div class="screenshot-frame">
+    <img src="manual_assets/actual_users.png" alt="Actual User Management Screen">
+  </div>
+  <div class="screenshot-caption">Figure 13.1: Actual User Management view showing staff directory, roles, base salaries, and add employee form.</div>
+</div>
+
+<h2>13.1 Managing Staff Accounts &amp; Permissions</h2>
+<ul>
+  <li><strong>Employee Directory:</strong> Lists all staff accounts (e.g., <code>happyproducts</code>, <code>cashier1</code>, <code>cashier2</code>), showing assigned Role (<em>Admin</em>, <em>Cashier</em>, <em>Worker</em>), Base Salary (Rs.), Payment Due Date, Status (<em>Active</em>), and Deactivate action.</li>
+  <li><strong>Adding New Staff Members:</strong>
+    <ol>
+      <li>Enter unique <em>Username</em> and <em>Full Name</em> in the right-hand panel.</li>
+      <li>Set temporary <em>Password</em> (automatically salted and hashed via BCrypt).</li>
+      <li>Select <em>Role</em> (<span class="badge badge-worker">Worker</span>, <span class="badge badge-admin">Admin</span>).</li>
+      <li>Configure payroll: Set <em>Basic Salary (Rs.)</em>, optional <em>Salary Components</em>, <em>Payment Due Date</em>, and <em>Payment Frequency</em> (Monthly).</li>
+      <li>Click <strong>Save User</strong> to activate the account.</li>
+    </ol>
+  </li>
+  <li><strong>Safe Deactivation:</strong> Click <strong>Deactivate</strong> on an employee row to immediately revoke login access while preserving all historical sales records and audit logs.</li>
+</ul>
+
+<div class="page-break"></div>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     CHAPTER 14: SETTINGS, PRINTER & BACKUP
+═══════════════════════════════════════════════════════════════════ -->
+<h1><span class="chapter-num">14</span> System Settings, Printer &amp; Backup Maintenance</h1>
+
+<div class="nav-guide-box">
+  <div class="nav-guide-badge">Navigation</div>
+  <div class="nav-guide-text">Click <strong>⚙️ Settings</strong> on the left navigation sidebar (Admin access required).</div>
+</div>
+
+<div class="screenshot-card">
+  <div class="screenshot-frame">
+    <img src="manual_assets/actual_settings.png" alt="Actual Settings Screen">
+  </div>
+  <div class="screenshot-caption">Figure 14.1: Actual System &amp; Store Settings screen showing receipt headers, backup controls, and printer settings.</div>
+</div>
+
+<h2>14.1 Configuration Modules</h2>
+<ul>
+  <li><strong>Receipt &amp; Store Information Tab:</strong>
+    <ul>
+      <li><em>Store / Business Name:</em> <code>HAPPY PRODUCTS</code></li>
+      <li><em>Store Address:</em> <code>Bandaragama Rd, Waskaduwa</code></li>
+      <li><em>Contact Telephone Numbers:</em> <code>Tel: 0711435343</code></li>
+      <li><em>VAT / Tax Registration Number:</em> <code>Damro, Abans, Singer, Soft Logic, Arpico Authorised Dealer</code></li>
+      <li><em>Receipt Footer Message:</em> Warranty policies and goods return disclaimer clauses.</li>
+      <li>Click <strong>Save Receipt Settings</strong> to update receipt print headers immediately.</li>
+    </ul>
+  </li>
+  <li><strong>Database Backup &amp; Google Drive Tab:</strong> Trigger on-demand manual database backups. Backups are stored in <code>C:\ProgramData\WarehousePOS\Backups\</code>. Periodic USB flash drive export is strongly recommended.</li>
+  <li><strong>Printer &amp; Bill Printing Tab:</strong> Configure default Windows spooler printer (<code>EPSON LQ-310 ESC/P2</code>), set continuous 5.5-inch page format, and calibrate feed lines.</li>
+</ul>
+
+<div class="page-break"></div>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     CHAPTER 15: DAILY CHECKLISTS & SHORTCUT HOTKEYS
+═══════════════════════════════════════════════════════════════════ -->
+<h1><span class="chapter-num">15</span> Daily Checklists &amp; Shortcut Hotkeys</h1>
+
+<h2>15.1 Daily Cashier Opening Checklist</h2>
+<div class="step-container">
+  <div class="step-number">1</div>
+  <div class="step-content">
+    <strong>Boot Workstation:</strong> Power on host PC. Verify system date and time are accurate.
+  </div>
+</div>
+<div class="step-container">
+  <div class="step-number">2</div>
+  <div class="step-content">
+    <strong>Power Epson LQ-310:</strong> Verify green <em>Ready</em> LED is illuminated. Ensure continuous 2-ply tractor paper is aligned at perforation line.
+  </div>
+</div>
+<div class="step-container">
+  <div class="step-number">3</div>
+  <div class="step-content">
+    <strong>Launch POS &amp; Login:</strong> Open WarehousePOS, input individual credentials, and sign in.
+  </div>
+</div>
+<div class="step-container">
+  <div class="step-number">4</div>
+  <div class="step-content">
+    <strong>Count Cash Float:</strong> Verify opening cash drawer balance matches opening register records.
+  </div>
+</div>
+
+<h2>15.2 Daily Store Closing Checklist</h2>
+<div class="step-container">
+  <div class="step-number">1</div>
+  <div class="step-content">
+    <strong>Reconcile Daily Register:</strong> Navigate to <strong>Reports</strong> ➔ <em>Today's Live Sales</em>. Balance cash and card slips against cash drawer contents.
+  </div>
+</div>
+<div class="step-container">
+  <div class="step-number">2</div>
+  <div class="step-content">
+    <strong>Print Closing Summary:</strong> Click <strong>Print to Epson LQ-310</strong> to generate the signed daily audit slip.
+  </div>
+</div>
+<div class="step-container">
+  <div class="step-number">3</div>
+  <div class="step-content">
+    <strong>Trigger Database Backup:</strong> Navigate to <strong>Settings</strong> ➔ <em>Database Backup</em>, click <strong>Backup Database Now</strong>. Copy to external USB drive weekly.
+  </div>
+</div>
+<div class="step-container">
+  <div class="step-number">4</div>
+  <div class="step-content">
+    <strong>Logout &amp; Shutdown:</strong> Click <strong>Logout</strong> on the sidebar and shut down Windows cleanly.
+  </div>
+</div>
+
+<h2>15.3 Complete Keyboard Shortcut Reference</h2>
+<table>
+  <thead>
+    <tr>
+      <th style="width: 25%;">Shortcut Key</th>
+      <th style="width: 35%;">Action Performed</th>
+      <th style="width: 40%;">Context / Screen</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><kbd>F1</kbd></td>
+      <td>Focus Product Search Bar</td>
+      <td>Point of Sale (POS)</td>
+    </tr>
+    <tr>
+      <td><kbd>F2</kbd></td>
+      <td>Focus Customer Search Input</td>
+      <td>Point of Sale (POS)</td>
+    </tr>
+    <tr>
+      <td><kbd>F4</kbd></td>
+      <td>Toggle Retail / Wholesale Price</td>
+      <td>Point of Sale (POS)</td>
+    </tr>
+    <tr>
+      <td><kbd>F8</kbd></td>
+      <td>Focus Discount Input Box</td>
+      <td>Point of Sale (POS)</td>
+    </tr>
+    <tr>
+      <td><kbd>F9</kbd></td>
+      <td>Focus Cash Amount Paid Box</td>
+      <td>Point of Sale (POS)</td>
+    </tr>
+    <tr>
+      <td><kbd>F12</kbd> or <kbd>Ctrl</kbd>+<kbd>Enter</kbd></td>
+      <td>Complete Sale &amp; Print Bill</td>
+      <td>Point of Sale (POS)</td>
+    </tr>
+    <tr>
+      <td><kbd>Ctrl</kbd> + <kbd>P</kbd></td>
+      <td>Reprint Last Receipt</td>
+      <td>POS / Bill History</td>
+    </tr>
+    <tr>
+      <td><kbd>Esc</kbd></td>
+      <td>Clear Search / Close Modal</td>
+      <td>All Application Windows</td>
+    </tr>
+  </tbody>
+</table>
+
+<div style="margin-top: 30px; border-top: 1.5px solid #CBD5E1; padding-top: 12px; text-align: center; font-size: 8pt; color: #64748B;">
+  <strong>Happy Products WarehousePOS Operations Manual</strong> &bull; Version 1.0 Desktop Edition &copy; 2026<br>
+  Bandaragama Rd, Waskaduwa &bull; Telephone: 0711435343 &bull; Damro, Abans, Singer, Soft Logic, Arpico Authorised Dealer.
+</div>
+
+</div>
+</body>
+</html>
