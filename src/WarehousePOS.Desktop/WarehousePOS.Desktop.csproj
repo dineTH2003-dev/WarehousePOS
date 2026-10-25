@@ -22,6 +22,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+      <_Parameter1>WarehousePOS.IntegrationTests</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+  <ItemGroup>
     <Resource Include="Resources\Images\happy-products-logo.png" />
     <Resource Include="Resources\Images\pos-retail-background.jpg" />
     <Resource Include="Resources\Images\app-icon.ico" />
